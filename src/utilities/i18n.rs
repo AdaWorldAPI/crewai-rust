@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 /// Embedded English translations JSON (used when no custom file is provided).
 const EMBEDDED_EN_JSON: &str = include_str!("../translations/en.json");
@@ -13,11 +14,15 @@ const EMBEDDED_EN_JSON: &str = include_str!("../translations/en.json");
 /// Handles loading and retrieving internationalized prompts.
 ///
 /// Prompts are stored in a nested map: `kind -> key -> value`.
+/// Values can be strings or nested objects (which are serialized to JSON
+/// strings when retrieved).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct I18N {
     /// The loaded prompts, keyed by `kind` then by `key`.
+    /// Leaf values are `serde_json::Value` to support both string and
+    /// nested-object entries (e.g. `tools.add_image`).
     #[serde(skip)]
-    prompts: HashMap<String, HashMap<String, String>>,
+    prompts: HashMap<String, HashMap<String, Value>>,
     /// Optional path to a custom JSON file containing prompts.
     pub prompt_file: Option<String>,
 }
@@ -32,7 +37,7 @@ impl I18N {
     /// Create a new `I18N` instance, loading prompts from the given file
     /// or the embedded default `en.json`.
     pub fn new(prompt_file: Option<String>) -> Self {
-        let prompts = match &prompt_file {
+        let raw: HashMap<String, Value> = match &prompt_file {
             Some(path) => {
                 let content = std::fs::read_to_string(path)
                     .unwrap_or_else(|_| panic!("Prompt file '{}' not found.", path));
@@ -44,6 +49,27 @@ impl I18N {
                     .expect("Error decoding embedded en.json translations.")
             }
         };
+
+        // Convert the raw two-level JSON into our internal representation.
+        // Top-level keys map to sections; each section can be either a flat
+        // object whose values are strings/objects, or a single-level object
+        // that we store as-is.
+        let mut prompts: HashMap<String, HashMap<String, Value>> = HashMap::new();
+        for (section_key, section_val) in raw {
+            match section_val {
+                Value::Object(map) => {
+                    let inner: HashMap<String, Value> = map.into_iter().collect();
+                    prompts.insert(section_key, inner);
+                }
+                // If a top-level key is a plain string, wrap it in a
+                // single-entry map so retrieve("key", "value") still works.
+                other => {
+                    let mut inner = HashMap::new();
+                    inner.insert(String::new(), other);
+                    prompts.insert(section_key, inner);
+                }
+            }
+        }
 
         Self {
             prompts,
@@ -68,14 +94,33 @@ impl I18N {
 
     /// Retrieve a prompt by `kind` and `key`.
     ///
+    /// For string values, returns the string directly.
+    /// For non-string values (e.g. nested objects), returns the JSON
+    /// serialization.
+    ///
     /// # Panics
     /// Panics if the prompt for the given kind and key is not found.
     pub fn retrieve(&self, kind: &str, key: &str) -> String {
+        let value = self
+            .prompts
+            .get(kind)
+            .and_then(|section| section.get(key))
+            .unwrap_or_else(|| panic!("Prompt for '{}':'{}' not found.", kind, key));
+
+        match value {
+            Value::String(s) => s.clone(),
+            other => serde_json::to_string(other).unwrap_or_default(),
+        }
+    }
+
+    /// Retrieve a prompt value as a raw `serde_json::Value`.
+    ///
+    /// Useful for entries like `tools.add_image` that contain nested
+    /// structured data rather than a single string.
+    pub fn retrieve_value(&self, kind: &str, key: &str) -> Option<&Value> {
         self.prompts
             .get(kind)
             .and_then(|section| section.get(key))
-            .cloned()
-            .unwrap_or_else(|| panic!("Prompt for '{}':'{}' not found.", kind, key))
     }
 }
 

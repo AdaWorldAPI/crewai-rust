@@ -14,7 +14,7 @@ use serde_json::Value;
 ///
 /// Used to capture the LLM's intent to invoke a specific tool with
 /// the given arguments.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ToolCalling {
     /// The name of the tool to be called.
     pub tool_name: String,
