@@ -1,0 +1,133 @@
+capability:
+  id: "minecraft:server_control"
+  version: "1.0.0"
+  description: >
+    Control a Minecraft Java Edition server via RCON protocol. Provides
+    commands for server management, player administration, world control,
+    and real-time chat. Requires RCON to be enabled in server.properties.
+  tags:
+    - "gaming"
+    - "server"
+    - "rcon"
+    - "minecraft"
+    - "administration"
+
+  metadata:
+    author: "crewAI"
+    license: "Apache-2.0"
+    fingerprint_hint: "minecraft java server rcon command player world game"
+
+  interface:
+    protocol: rcon
+    config:
+      default_port: 25575
+      requires_auth: true
+    endpoint_template: "${MINECRAFT_HOST}:${MINECRAFT_RCON_PORT}"
+    auth_scheme: "rcon_password"
+
+  tools:
+    - name: "mc_execute"
+      description: "Execute an arbitrary Minecraft server command via RCON"
+      args_schema:
+        command:
+          type: "string"
+          required: true
+          description: "The Minecraft server command to execute (without leading /)"
+      fingerprint_hint: "minecraft server command execute rcon"
+      requires_approval: false
+      idempotent: false
+      read_only: false
+
+    - name: "list_players"
+      description: "List all currently connected players on the server"
+      args_schema: {}
+      fingerprint_hint: "minecraft list players online connected"
+      idempotent: true
+      read_only: true
+
+    - name: "say"
+      description: "Broadcast a message to all connected players"
+      args_schema:
+        message:
+          type: "string"
+          required: true
+          description: "The message to broadcast"
+      fingerprint_hint: "minecraft say broadcast message chat"
+      idempotent: true
+      read_only: false
+
+    - name: "whitelist_add"
+      description: "Add a player to the server whitelist"
+      args_schema:
+        player:
+          type: "string"
+          required: true
+          description: "Player username to add to whitelist"
+      fingerprint_hint: "minecraft whitelist add player allow"
+      requires_roles:
+        - "server_admin"
+      idempotent: true
+      read_only: false
+
+    - name: "whitelist_remove"
+      description: "Remove a player from the server whitelist"
+      args_schema:
+        player:
+          type: "string"
+          required: true
+          description: "Player username to remove from whitelist"
+      fingerprint_hint: "minecraft whitelist remove player deny"
+      requires_roles:
+        - "server_admin"
+      idempotent: true
+      read_only: false
+
+    - name: "op"
+      description: "Grant operator (admin) permissions to a player"
+      args_schema:
+        player:
+          type: "string"
+          required: true
+          description: "Player username to grant operator status"
+      fingerprint_hint: "minecraft op operator admin grant permissions"
+      requires_roles:
+        - "server_admin"
+      requires_approval: true
+      idempotent: true
+      read_only: false
+
+    - name: "deop"
+      description: "Revoke operator (admin) permissions from a player"
+      args_schema:
+        player:
+          type: "string"
+          required: true
+          description: "Player username to revoke operator status"
+      fingerprint_hint: "minecraft deop operator admin revoke permissions"
+      requires_roles:
+        - "server_admin"
+      requires_approval: true
+      idempotent: true
+      read_only: false
+
+    - name: "server_info"
+      description: "Get server status information (TPS, player count, version)"
+      args_schema: {}
+      fingerprint_hint: "minecraft server status info tps version performance"
+      idempotent: true
+      read_only: true
+
+  policy:
+    requires_roles:
+      - "server_admin"
+    max_rpm: 30
+    requires_approval_for:
+      - "op"
+      - "deop"
+      - "stop"
+      - "ban"
+    data_classification: "internal"
+    audit_level: "full"
+    deny_patterns:
+      - "rm\\s+-rf"
+      - "format\\s+c:"

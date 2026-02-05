@@ -1,0 +1,66 @@
+capability:
+  id: "mcp:bridge"
+  version: "1.0.0"
+  description: >
+    Bridge to any MCP (Model Context Protocol) server. Connects via stdio,
+    HTTP, or SSE transport and auto-discovers the server's available tools.
+    Tools are dynamically registered at runtime after discovery.
+  tags:
+    - "mcp"
+    - "model_context_protocol"
+    - "bridge"
+    - "dynamic"
+    - "auto_discovery"
+
+  metadata:
+    author: "crewAI"
+    license: "Apache-2.0"
+    fingerprint_hint: "model context protocol mcp server bridge tools dynamic"
+
+  interface:
+    protocol: mcp
+    config:
+      auto_discover: true
+      reconnect_on_failure: true
+      max_reconnect_attempts: 3
+
+  tools:
+    # MCP tools are discovered dynamically at runtime.
+    # These are meta-tools for managing the bridge itself.
+    - name: "mcp_list_tools"
+      description: "List all tools available from the connected MCP server"
+      args_schema: {}
+      fingerprint_hint: "mcp list tools available discover"
+      idempotent: true
+      read_only: true
+
+    - name: "mcp_call_tool"
+      description: "Call a tool on the connected MCP server by name"
+      args_schema:
+        tool_name:
+          type: "string"
+          required: true
+          description: "Name of the MCP tool to call"
+        arguments:
+          type: "object"
+          required: true
+          description: "Arguments to pass to the MCP tool"
+      fingerprint_hint: "mcp call invoke tool execute"
+      idempotent: false
+      read_only: false
+
+    - name: "mcp_get_resource"
+      description: "Read a resource from the MCP server"
+      args_schema:
+        uri:
+          type: "string"
+          required: true
+          description: "Resource URI"
+      fingerprint_hint: "mcp resource read fetch"
+      idempotent: true
+      read_only: true
+
+  policy:
+    max_rpm: 60
+    data_classification: "internal"
+    audit_level: "full"

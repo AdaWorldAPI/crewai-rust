@@ -1,0 +1,78 @@
+capability:
+  id: "o365:calendar"
+  version: "1.0.0"
+  description: >
+    Manage calendar events via Microsoft 365 using the Microsoft Graph API.
+    Supports listing events, creating meetings, and managing attendees.
+    Requires Azure AD app registration with Calendar permissions.
+  tags:
+    - "calendar"
+    - "microsoft"
+    - "o365"
+    - "graph_api"
+    - "scheduling"
+
+  metadata:
+    author: "crewAI"
+    license: "Apache-2.0"
+    fingerprint_hint: "microsoft 365 office calendar event meeting schedule"
+
+  interface:
+    protocol: ms_graph
+    config:
+      api_version: "v1.0"
+      required_scopes:
+        - "Calendars.ReadWrite"
+
+  tools:
+    - name: "list_events"
+      description: "List upcoming calendar events"
+      args_schema:
+        top:
+          type: "integer"
+          default: 10
+          description: "Maximum number of events to return"
+      fingerprint_hint: "calendar events upcoming schedule list"
+      idempotent: true
+      read_only: true
+
+    - name: "create_event"
+      description: "Create a new calendar event or meeting"
+      args_schema:
+        subject:
+          type: "string"
+          required: true
+          description: "Event title"
+        start_time:
+          type: "string"
+          required: true
+          description: "Start time in ISO 8601 format"
+        end_time:
+          type: "string"
+          required: true
+          description: "End time in ISO 8601 format"
+        timezone:
+          type: "string"
+          default: "UTC"
+          description: "Timezone for the event"
+        body:
+          type: "string"
+          description: "Event description (HTML supported)"
+        attendees:
+          type: "array"
+          description: "List of attendee email addresses"
+          items:
+            type: "string"
+      fingerprint_hint: "calendar create event meeting schedule invite"
+      requires_approval: true
+      idempotent: false
+      read_only: false
+
+  policy:
+    requires_roles:
+      - "calendar_user"
+    max_rpm: 30
+    requires_approval_for:
+      - "create"
+    data_classification: "internal"
+    audit_level: "summary"

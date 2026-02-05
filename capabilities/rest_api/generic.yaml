@@ -1,0 +1,106 @@
+capability:
+  id: "rest_api:generic"
+  version: "1.0.0"
+  description: >
+    Generic REST API adapter. Connect to any HTTP REST endpoint by providing
+    a base URL and optional OpenAPI specification. Supports all HTTP methods,
+    path parameters, query parameters, and request bodies.
+  tags:
+    - "rest"
+    - "api"
+    - "http"
+    - "generic"
+    - "integration"
+
+  metadata:
+    author: "crewAI"
+    license: "Apache-2.0"
+    fingerprint_hint: "rest api http endpoint web service integration"
+
+  interface:
+    protocol: rest_api
+    config:
+      timeout_ms: 30000
+
+  tools:
+    - name: "http_get"
+      description: "Make an HTTP GET request to a REST endpoint"
+      args_schema:
+        path:
+          type: "string"
+          required: true
+          description: "URL path (appended to base_url)"
+        query_params:
+          type: "object"
+          description: "Query string parameters"
+        headers:
+          type: "object"
+          description: "Additional request headers"
+      fingerprint_hint: "http get request read fetch"
+      idempotent: true
+      read_only: true
+
+    - name: "http_post"
+      description: "Make an HTTP POST request to a REST endpoint"
+      args_schema:
+        path:
+          type: "string"
+          required: true
+          description: "URL path (appended to base_url)"
+        body:
+          type: "object"
+          required: true
+          description: "Request body (JSON)"
+        headers:
+          type: "object"
+          description: "Additional request headers"
+      fingerprint_hint: "http post request create submit"
+      idempotent: false
+      read_only: false
+
+    - name: "http_put"
+      description: "Make an HTTP PUT request to a REST endpoint"
+      args_schema:
+        path:
+          type: "string"
+          required: true
+          description: "URL path (appended to base_url)"
+        body:
+          type: "object"
+          required: true
+          description: "Request body (JSON)"
+      fingerprint_hint: "http put request update replace"
+      idempotent: true
+      read_only: false
+
+    - name: "http_patch"
+      description: "Make an HTTP PATCH request to a REST endpoint"
+      args_schema:
+        path:
+          type: "string"
+          required: true
+          description: "URL path (appended to base_url)"
+        body:
+          type: "object"
+          required: true
+          description: "Partial update body (JSON)"
+      fingerprint_hint: "http patch request update partial"
+      idempotent: false
+      read_only: false
+
+    - name: "http_delete"
+      description: "Make an HTTP DELETE request to a REST endpoint"
+      args_schema:
+        path:
+          type: "string"
+          required: true
+          description: "URL path (appended to base_url)"
+      fingerprint_hint: "http delete request remove destroy"
+      requires_approval: true
+      idempotent: true
+      read_only: false
+
+  policy:
+    max_rpm: 120
+    data_classification: "internal"
+    audit_level: "summary"

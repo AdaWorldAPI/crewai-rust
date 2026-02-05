@@ -1,0 +1,91 @@
+capability:
+  id: "o365:mail"
+  version: "1.0.0"
+  description: >
+    Read and send emails via Microsoft 365 using the Microsoft Graph API.
+    Supports listing messages, reading content, sending emails, and managing
+    mail folders. Requires Azure AD app registration with Mail permissions.
+  tags:
+    - "email"
+    - "microsoft"
+    - "o365"
+    - "graph_api"
+    - "communication"
+
+  metadata:
+    author: "crewAI"
+    license: "Apache-2.0"
+    fingerprint_hint: "microsoft 365 office email mail outlook graph api"
+
+  interface:
+    protocol: ms_graph
+    config:
+      api_version: "v1.0"
+      required_scopes:
+        - "Mail.Read"
+        - "Mail.Send"
+    auth_scheme: "oauth2_client_credentials"
+
+  tools:
+    - name: "list_messages"
+      description: "List emails in a mail folder (default: inbox)"
+      args_schema:
+        folder:
+          type: "string"
+          default: "inbox"
+          description: "Mail folder to list (inbox, sentitems, drafts, etc.)"
+        top:
+          type: "integer"
+          default: 10
+          description: "Maximum number of messages to return"
+      fingerprint_hint: "email list inbox messages outlook"
+      idempotent: true
+      read_only: true
+
+    - name: "read_message"
+      description: "Read the full content of a specific email"
+      args_schema:
+        message_id:
+          type: "string"
+          required: true
+          description: "The unique message ID"
+      fingerprint_hint: "email read message content body"
+      idempotent: true
+      read_only: true
+
+    - name: "send_message"
+      description: "Send an email to one or more recipients"
+      args_schema:
+        to:
+          type: "array"
+          required: true
+          description: "List of recipient email addresses"
+          items:
+            type: "string"
+        subject:
+          type: "string"
+          required: true
+          description: "Email subject line"
+        body:
+          type: "string"
+          required: true
+          description: "Email body content (HTML supported)"
+      fingerprint_hint: "email send message compose write"
+      requires_approval: true
+      idempotent: false
+      read_only: false
+      max_rpm: 10
+
+  policy:
+    requires_roles:
+      - "mail_user"
+    max_rpm: 60
+    requires_approval_for:
+      - "send"
+    data_classification: "confidential"
+    audit_level: "full"
+    min_confidence: 0.75
+    deny_patterns:
+      - "(?i)password"
+      - "(?i)credit.?card"
+      - "(?i)social.?security"
