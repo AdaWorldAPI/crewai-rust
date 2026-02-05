@@ -1,0 +1,67 @@
+[package]
+name = "crewai"
+version = "1.9.3"
+edition = "2021"
+description = "A 1:1 Rust port of the crewAI Python framework for AI agent orchestration"
+license = "MIT"
+
+[dependencies]
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# UUID
+uuid = { version = "1", features = ["v4", "v5", "serde"] }
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Crypto (MD5 hashing)
+md-5 = "0.10"
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Regex
+regex = "1"
+
+# SQLite
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# Template rendering
+tera = "1"
+
+# Thread-safe collections
+dashmap = "6"
+parking_lot = "0.12"
+
+# OpenTelemetry
+opentelemetry = "0.27"
+opentelemetry_sdk = "0.27"
+
+# Signal handling
+ctrlc = "3"
+
+# Lazy statics
+once_cell = "1"
+lazy_static = "1"
+
+# Base64 encoding
+base64 = "0.22"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3"
