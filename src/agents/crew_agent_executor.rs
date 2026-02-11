@@ -13,9 +13,10 @@ use std::fmt;
 
 use serde_json::Value;
 
-use super::parser::AgentFinish;
+use super::parser::{AgentAction, AgentFinish, ParseResult};
 use super::tools_handler::ToolsHandler;
 use crate::tools::structured_tool::CrewStructuredTool;
+use crate::tools::tool_calling::ToolCalling;
 
 // ---------------------------------------------------------------------------
 // LLM Message type alias (re-export from base_llm for convenience)
@@ -78,6 +79,14 @@ pub struct CrewAgentExecutor {
     pub iterations: u32,
     /// Number of iterations after which to log errors.
     pub log_error_after: u32,
+    /// Callback to invoke the LLM with messages and optional tools.
+    /// Returns the LLM response as a string.
+    pub llm_call: Option<Box<dyn Fn(&[LLMMessage], Option<&[Value]>) -> Result<String, Box<dyn std::error::Error + Send + Sync>> + Send + Sync>>,
+    /// Callback to execute a tool by name with the given input.
+    /// Returns the tool result as a string.
+    pub tool_executor: Option<Box<dyn Fn(&str, &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> + Send + Sync>>,
+    /// Whether the LLM supports native function calling.
+    pub supports_function_calling: bool,
 }
 
 impl fmt::Debug for CrewAgentExecutor {
@@ -147,7 +156,31 @@ impl CrewAgentExecutor {
             messages: Vec::new(),
             iterations: 0,
             log_error_after: 3,
+            llm_call: None,
+            tool_executor: None,
+            supports_function_calling: false,
         }
+    }
+
+    /// Set the LLM call callback.
+    pub fn set_llm_call<F>(&mut self, callback: F)
+    where
+        F: Fn(&[LLMMessage], Option<&[Value]>) -> Result<String, Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+    {
+        self.llm_call = Some(Box::new(callback));
+    }
+
+    /// Set the tool executor callback.
+    pub fn set_tool_executor<F>(&mut self, callback: F)
+    where
+        F: Fn(&str, &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+    {
+        self.tool_executor = Some(Box::new(callback));
+    }
+
+    /// Set whether the LLM supports native function calling.
+    pub fn set_supports_function_calling(&mut self, supports: bool) {
+        self.supports_function_calling = supports;
     }
 
     /// Check whether stop words are being used.
@@ -224,18 +257,20 @@ impl CrewAgentExecutor {
     ///
     /// Checks if the LLM supports native function calling and uses that
     /// approach if available, otherwise falls back to the ReAct text pattern.
-    ///
-    /// This is a stub implementation showing the loop structure.
     fn invoke_loop(&mut self) -> Result<AgentFinish, Box<dyn std::error::Error + Send + Sync>> {
-        // Stub: In a full implementation, this would:
-        // 1. Check if the LLM supports native function calling
-        // 2. If yes, use _invoke_loop_native_tools
-        // 3. If no, use _invoke_loop_react
+        // Check if LLM call is configured
+        if self.llm_call.is_none() {
+            return Err("LLM call callback not configured. Use set_llm_call() to configure.".into());
+        }
 
-        // For now, return a placeholder indicating the executor structure is in place
-        Err("CrewAgentExecutor invoke_loop not yet fully implemented. \
-             The executor structure is in place but requires LLM integration."
-            .into())
+        // Check if LLM supports native function calling and we have tools
+        let use_native_tools = self.supports_function_calling && !self.original_tools.is_empty();
+
+        if use_native_tools {
+            self.invoke_loop_native_tools()
+        } else {
+            self.invoke_loop_react()
+        }
     }
 
     /// Execute agent loop using ReAct text-based pattern.
@@ -246,30 +281,93 @@ impl CrewAgentExecutor {
     fn invoke_loop_react(
         &mut self,
     ) -> Result<AgentFinish, Box<dyn std::error::Error + Send + Sync>> {
-        let formatted_answer: Option<AgentFinish> = None;
-
-        while formatted_answer.is_none() {
+        loop {
+            // Check iteration limit
             if self.iterations >= self.max_iter {
-                return Err(format!(
-                    "Agent exceeded maximum iterations ({})",
+                log::warn!(
+                    "Agent reached max iterations ({}), forcing final answer",
                     self.max_iter
-                )
-                .into());
+                );
+                return Ok(AgentFinish {
+                    thought: "Maximum iterations reached".to_string(),
+                    output: Value::String("Agent reached maximum iterations without completing the task.".to_string()),
+                    text: "".to_string(),
+                });
             }
 
-            // In a full implementation:
-            // 1. Enforce RPM limit
-            // 2. Call LLM with messages
-            // 3. Parse response into AgentAction or AgentFinish
-            // 4. If AgentAction, execute tool and append result
-            // 5. If AgentFinish, return
+            // Enforce RPM limit if configured
+            if let Some(ref check_rpm) = self.request_within_rpm_limit {
+                while !check_rpm() {
+                    log::debug!("Waiting for RPM limit...");
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
+            }
 
-            self.iterations += 1;
+            // Get LLM callback
+            let llm_call = self.llm_call.as_ref()
+                .ok_or("LLM call callback not configured")?;
+
+            // Call LLM with current messages (no tools for ReAct - tools are in prompt)
+            let response = llm_call(&self.messages, None)?;
+
+            log::debug!("LLM response (iteration {}): {}", self.iterations, &response[..response.len().min(200)]);
+
+            // Parse the response
+            let parse_result = match super::parser::parse(&response) {
+                Ok(result) => result,
+                Err(e) => {
+                    // Log parse error and append error message to conversation
+                    if self.iterations >= self.log_error_after {
+                        log::warn!("Parse error (iteration {}): {}", self.iterations, e);
+                    }
+                    let error_msg = format!(
+                        "I encountered an error parsing your response: {}. \
+                         Please format your response correctly with either:\n\
+                         - Action: [tool_name]\\nAction Input: [input]\n\
+                         - Final Answer: [your answer]",
+                        e
+                    );
+                    self.append_message(&response, "assistant");
+                    self.append_message(&error_msg, "user");
+                    self.iterations += 1;
+                    continue;
+                }
+            };
+
+            match parse_result {
+                ParseResult::Finish(finish) => {
+                    log::debug!("Agent finished with output: {:?}", finish.output);
+                    self.invoke_step_callback(&finish);
+                    return Ok(finish);
+                }
+                ParseResult::Action(mut action) => {
+                    log::debug!("Agent action: tool={}, input={}", action.tool, action.tool_input);
+
+                    // Execute the tool
+                    let tool_result = self.execute_tool(&action.tool, &action.tool_input)?;
+                    action.result = Some(tool_result.clone());
+
+                    // Record tool use for caching
+                    let calling = ToolCalling::new(
+                        action.tool.clone(),
+                        serde_json::from_str(&action.tool_input).ok(),
+                    );
+                    self.tools_handler.on_tool_use(&calling, &tool_result, true);
+
+                    // Invoke step callback
+                    self.invoke_step_callback(&action);
+
+                    // Append the action and result to conversation
+                    self.append_message(&action.text, "assistant");
+
+                    // Format tool result as observation
+                    let observation = format!("Observation: {}", tool_result);
+                    self.append_message(&observation, "user");
+
+                    self.iterations += 1;
+                }
+            }
         }
-
-        formatted_answer.ok_or_else(|| {
-            "Agent execution ended without reaching a final answer".into()
-        })
     }
 
     /// Execute agent loop using native function calling.
@@ -279,8 +377,132 @@ impl CrewAgentExecutor {
     fn invoke_loop_native_tools(
         &mut self,
     ) -> Result<AgentFinish, Box<dyn std::error::Error + Send + Sync>> {
-        // Stub: Similar to invoke_loop_react but uses native tool calls
-        Err("Native tool calling not yet implemented".into())
+        // Build tool schemas for the LLM
+        let tool_schemas: Vec<Value> = self.tools.iter().map(|t| {
+            let params = if t.args_schema.is_null() {
+                serde_json::json!({"type": "object", "properties": {}})
+            } else {
+                t.args_schema.clone()
+            };
+            serde_json::json!({
+                "type": "function",
+                "function": {
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": params
+                }
+            })
+        }).collect();
+
+        loop {
+            // Check iteration limit
+            if self.iterations >= self.max_iter {
+                log::warn!(
+                    "Agent reached max iterations ({}), forcing final answer",
+                    self.max_iter
+                );
+                return Ok(AgentFinish {
+                    thought: "Maximum iterations reached".to_string(),
+                    output: Value::String("Agent reached maximum iterations without completing the task.".to_string()),
+                    text: "".to_string(),
+                });
+            }
+
+            // Get LLM callback
+            let llm_call = self.llm_call.as_ref()
+                .ok_or("LLM call callback not configured")?;
+
+            // Call LLM with tools
+            let response = llm_call(&self.messages, Some(&tool_schemas))?;
+
+            // Try to parse as JSON (native tool calling returns structured response)
+            let response_json: Value = serde_json::from_str(&response).unwrap_or_else(|_| {
+                // If not JSON, treat as plain text final answer
+                Value::String(response.clone())
+            });
+
+            // Check if there are tool_calls in the response
+            if let Some(tool_calls) = response_json.get("tool_calls").and_then(|v| v.as_array()) {
+                if !tool_calls.is_empty() {
+                    // Append assistant message with tool calls
+                    let mut assistant_msg = HashMap::new();
+                    assistant_msg.insert("role".to_string(), Value::String("assistant".to_string()));
+                    assistant_msg.insert("content".to_string(), Value::Null);
+                    assistant_msg.insert("tool_calls".to_string(), Value::Array(tool_calls.clone()));
+                    self.messages.push(assistant_msg);
+
+                    // Execute each tool call
+                    for tool_call in tool_calls {
+                        let function = tool_call.get("function").ok_or("Missing function in tool_call")?;
+                        let tool_name = function.get("name").and_then(|v| v.as_str()).ok_or("Missing tool name")?;
+                        let tool_args = function.get("arguments").and_then(|v| v.as_str()).unwrap_or("{}");
+                        let call_id = tool_call.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
+
+                        log::debug!("Native tool call: {}({})", tool_name, tool_args);
+
+                        // Execute the tool
+                        let tool_result = self.execute_tool(tool_name, tool_args)?;
+
+                        // Record tool use
+                        let calling = ToolCalling::new(
+                            tool_name.to_string(),
+                            serde_json::from_str(tool_args).ok(),
+                        );
+                        self.tools_handler.on_tool_use(&calling, &tool_result, true);
+
+                        // Append tool result message
+                        let mut tool_msg = HashMap::new();
+                        tool_msg.insert("role".to_string(), Value::String("tool".to_string()));
+                        tool_msg.insert("tool_call_id".to_string(), Value::String(call_id.to_string()));
+                        tool_msg.insert("content".to_string(), Value::String(tool_result));
+                        self.messages.push(tool_msg);
+                    }
+
+                    self.iterations += 1;
+                    continue;
+                }
+            }
+
+            // No tool calls - this is the final answer
+            let content = response_json.get("content")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| {
+                    if response_json.is_string() {
+                        response_json.as_str().unwrap_or("").to_string()
+                    } else {
+                        response.clone()
+                    }
+                });
+
+            return Ok(AgentFinish {
+                thought: "".to_string(),
+                output: Value::String(content),
+                text: response,
+            });
+        }
+    }
+
+    /// Execute a tool by name with the given input.
+    fn execute_tool(&self, tool_name: &str, tool_input: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        // Try tool executor callback first
+        if let Some(ref executor) = self.tool_executor {
+            return executor(tool_name, tool_input);
+        }
+
+        // Fall back to finding tool in self.tools and executing
+        let tool = self.tools.iter()
+            .find(|t| t.name == tool_name)
+            .ok_or_else(|| format!("Tool '{}' not found. Available tools: {}", tool_name, self.tools_names))?;
+
+        // Execute the tool's func if available
+        if let Some(ref func) = tool.func {
+            let args: HashMap<String, Value> = serde_json::from_str(tool_input).unwrap_or_default();
+            let result = func(args)?;
+            return Ok(result.to_string());
+        }
+
+        Err(format!("Tool '{}' has no executable function", tool_name).into())
     }
 
     /// Append a message to the conversation history.

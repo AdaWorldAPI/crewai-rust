@@ -20,6 +20,13 @@ pub type GuardrailFn = Box<dyn Fn(&TaskOutput) -> (bool, String) + Send + Sync>;
 /// Type alias for a task completion callback.
 pub type TaskCallback = Box<dyn Fn(&TaskOutput) + Send + Sync>;
 
+/// Type alias for an agent executor callback.
+///
+/// Takes the task prompt and context, returns the agent's response.
+/// Parameters: (task_prompt, context, tools_names)
+/// Returns: Result<(raw_output, messages), error_message>
+pub type AgentExecutorFn = Box<dyn Fn(&str, Option<&str>, &[String]) -> Result<(String, Vec<crate::tasks::task_output::LLMMessage>), String> + Send + Sync>;
+
 /// Represents a task to be executed.
 ///
 /// Each task must have a description, an expected output, and an agent responsible
@@ -143,6 +150,11 @@ pub struct Task {
     #[serde(skip)]
     pub callback: Option<TaskCallback>,
 
+    /// Agent executor callback (not serialized).
+    /// Set by the Crew to execute the task via the assigned agent.
+    #[serde(skip)]
+    pub agent_executor: Option<AgentExecutorFn>,
+
     /// Original description before interpolation.
     #[serde(skip)]
     original_description: Option<String>,
@@ -204,6 +216,7 @@ impl Clone for Task {
             guardrail_fn: None,
             guardrails_fns: Vec::new(),
             callback: None,
+            agent_executor: None,
             original_description: self.original_description.clone(),
             original_expected_output: self.original_expected_output.clone(),
             original_output_file: self.original_output_file.clone(),
@@ -249,10 +262,19 @@ impl Task {
             allow_crewai_trigger_context: None,
             guardrail_fn: None,
             guardrails_fns: Vec::new(),
+            agent_executor: None,
             original_description: None,
             original_expected_output: None,
             original_output_file: None,
         }
+    }
+
+    /// Set the agent executor callback.
+    pub fn set_agent_executor<F>(&mut self, executor: F)
+    where
+        F: Fn(&str, Option<&str>, &[String]) -> Result<(String, Vec<crate::tasks::task_output::LLMMessage>), String> + Send + Sync + 'static,
+    {
+        self.agent_executor = Some(Box::new(executor));
     }
 
     /// Execute the task synchronously.
@@ -285,8 +307,20 @@ impl Task {
 
         self.processed_by_agents.insert(agent_role.clone());
 
-        // TODO: Implement actual agent execution.
-        let result = format!("[Task execution placeholder for: {}]", self.description);
+        // Build the task prompt
+        let task_prompt = self.prompt();
+
+        // Collect tool names
+        let tool_names: Vec<String> = self.tools.clone();
+
+        // Execute via the agent executor callback if set
+        let (result, messages) = if let Some(ref executor) = self.agent_executor {
+            executor(&task_prompt, context, &tool_names)?
+        } else {
+            // Fallback: return placeholder if no executor configured
+            log::warn!("No agent_executor configured for task, returning placeholder");
+            (format!("[Task execution placeholder for: {}]", self.description), Vec::new())
+        };
 
         let task_output = TaskOutput {
             description: self.description.clone(),
@@ -305,7 +339,7 @@ impl Task {
             json_dict: None,
             agent: agent_role,
             output_format: self.get_output_format(),
-            messages: Vec::new(),
+            messages,
         };
 
         self.output = Some(task_output.clone());
