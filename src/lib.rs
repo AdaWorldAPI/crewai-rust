@@ -13,6 +13,7 @@ pub mod agent;
 pub mod agents;
 pub mod capabilities;
 pub mod cli;
+pub mod contract;
 pub mod context;
 pub mod core;
 pub mod crew;
@@ -34,6 +35,7 @@ pub mod process;
 pub mod project;
 pub mod rag;
 pub mod security;
+pub mod server;
 pub mod task;
 pub mod tasks;
 pub mod telemetry;
@@ -54,6 +56,12 @@ pub use process::Process;
 pub use task::Task;
 pub use tasks::llm_guardrail::LLMGuardrail;
 pub use tasks::task_output::TaskOutput;
+
+// Unified Execution Contract re-exports
+pub use contract::types::{
+    DataEnvelope, EnvelopeMetadata, StepDelegationRequest, StepDelegationResponse, StepStatus,
+    UnifiedExecution, UnifiedStep,
+};
 
 /// Library version matching Python crewai 1.9.3
 pub const VERSION: &str = "1.9.3";
