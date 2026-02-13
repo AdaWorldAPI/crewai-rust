@@ -14,6 +14,7 @@
 //! |----------|--------|-------------------|
 //! | OpenAI | [`openai`] | `crewai.llms.providers.openai.completion` |
 //! | Anthropic | [`anthropic`] | `crewai.llms.providers.anthropic.completion` |
+//! | xAI / Grok | [`xai`] | — (new in Rust port) |
 //! | Azure | [`azure`] | `crewai.llms.providers.azure.completion` |
 //! | Bedrock | [`bedrock`] | `crewai.llms.providers.bedrock.completion` |
 //! | Gemini | [`gemini`] | `crewai.llms.providers.gemini.completion` |
@@ -29,4 +30,5 @@ pub mod azure;
 pub mod bedrock;
 pub mod gemini;
 pub mod openai;
+pub mod xai;
 pub mod utils;
