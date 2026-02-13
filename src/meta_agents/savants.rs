@@ -224,6 +224,79 @@ pub fn security_savant(llm: &str) -> AgentBlueprint {
     .with_tools(vec!["FileReadTool".into()])
 }
 
+/// Create a DevOps savant blueprint.
+///
+/// Expert at deployment, CI/CD pipelines, containerization, infrastructure
+/// as code, monitoring, and cloud platform management.
+pub fn devops_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Senior DevOps Engineer",
+        "Design, automate, and maintain deployment pipelines, infrastructure, and monitoring systems",
+        "You are a senior DevOps engineer with deep expertise in CI/CD, containerization (Docker, \
+         Kubernetes), infrastructure as code (Terraform, Pulumi), cloud platforms (AWS, GCP, Azure), \
+         and observability (Prometheus, Grafana, OpenTelemetry). You automate everything, ensure \
+         reliability through SRE practices, and optimize for cost and performance.",
+        llm,
+        SavantDomain::DevOps,
+    )
+    .with_skill(
+        SkillDescriptor::new("ci_cd_pipelines", "CI/CD Pipeline Design", "Design and maintain continuous integration and deployment pipelines")
+            .with_tags(vec!["ci/cd".into(), "pipeline".into(), "automation".into(), "deploy".into(), "build".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("containerization", "Containerization", "Build and manage Docker containers and Kubernetes orchestration")
+            .with_tags(vec!["docker".into(), "kubernetes".into(), "container".into(), "k8s".into(), "orchestration".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("infrastructure_as_code", "Infrastructure as Code", "Define and provision infrastructure using code-based tools")
+            .with_tags(vec!["terraform".into(), "infrastructure".into(), "cloud".into(), "provisioning".into(), "iac".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("monitoring_observability", "Monitoring & Observability", "Set up monitoring, alerting, and observability systems")
+            .with_tags(vec!["monitoring".into(), "logging".into(), "alerting".into(), "observability".into(), "metrics".into()])
+    )
+    .with_tools(vec![
+        "FileReadTool".into(),
+        "FileWriterTool".into(),
+        "DirectoryReadTool".into(),
+    ])
+    .with_delegation()
+}
+
+/// Create a design savant blueprint.
+///
+/// Expert at UX/UI design, design systems, accessibility, prototyping,
+/// and user research synthesis.
+pub fn design_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Senior UX/UI Designer",
+        "Design intuitive, accessible, and visually compelling user interfaces and experiences",
+        "You are a senior UX/UI designer with expertise in user-centered design, design systems, \
+         accessibility (WCAG), information architecture, and visual design. You create wireframes, \
+         prototypes, and design specifications. You synthesize user research into actionable design \
+         decisions and maintain consistent design language across products.",
+        llm,
+        SavantDomain::Design,
+    )
+    .with_skill(
+        SkillDescriptor::new("ux_research_synthesis", "UX Research Synthesis", "Analyze user research data and extract design insights")
+            .with_tags(vec!["ux".into(), "research".into(), "user".into(), "personas".into(), "journey".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("ui_design", "UI Design", "Create visual designs, layouts, and component specifications")
+            .with_tags(vec!["ui".into(), "design".into(), "layout".into(), "visual".into(), "components".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("design_systems", "Design Systems", "Build and maintain consistent design systems and pattern libraries")
+            .with_tags(vec!["design_system".into(), "patterns".into(), "tokens".into(), "consistency".into(), "library".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("accessibility_audit", "Accessibility Audit", "Evaluate and improve designs for accessibility compliance")
+            .with_tags(vec!["accessibility".into(), "wcag".into(), "a11y".into(), "inclusive".into(), "aria".into()])
+    )
+    .with_tools(vec!["FileReadTool".into()])
+}
+
 /// Get all available savant blueprints.
 ///
 /// Returns one blueprint for each domain, all using the specified LLM.
@@ -236,6 +309,8 @@ pub fn all_savants(llm: &str) -> Vec<AgentBlueprint> {
         planning_savant(llm),
         qa_savant(llm),
         security_savant(llm),
+        devops_savant(llm),
+        design_savant(llm),
     ]
 }
 
@@ -249,9 +324,9 @@ pub fn savant_for_domain(domain: SavantDomain, llm: &str) -> AgentBlueprint {
         SavantDomain::Planning => planning_savant(llm),
         SavantDomain::QualityAssurance => qa_savant(llm),
         SavantDomain::Security => security_savant(llm),
-        SavantDomain::DevOps => engineering_savant(llm), // Fallback
-        SavantDomain::Design => content_creation_savant(llm), // Fallback
-        SavantDomain::General => planning_savant(llm), // Fallback
+        SavantDomain::DevOps => devops_savant(llm),
+        SavantDomain::Design => design_savant(llm),
+        SavantDomain::General => planning_savant(llm),
     }
 }
 
@@ -283,11 +358,30 @@ mod tests {
     #[test]
     fn test_all_savants() {
         let savants = all_savants("openai/gpt-4o-mini");
-        assert_eq!(savants.len(), 7);
+        assert_eq!(savants.len(), 9);
         let domains: Vec<_> = savants.iter().map(|s| s.domain).collect();
         assert!(domains.contains(&SavantDomain::Research));
         assert!(domains.contains(&SavantDomain::Engineering));
         assert!(domains.contains(&SavantDomain::Security));
+        assert!(domains.contains(&SavantDomain::DevOps));
+        assert!(domains.contains(&SavantDomain::Design));
+    }
+
+    #[test]
+    fn test_devops_savant() {
+        let bp = devops_savant("openai/gpt-4o");
+        assert_eq!(bp.domain, SavantDomain::DevOps);
+        assert!(bp.skills.len() >= 4);
+        assert!(bp.allow_delegation);
+        assert!(!bp.tools.is_empty());
+    }
+
+    #[test]
+    fn test_design_savant() {
+        let bp = design_savant("anthropic/claude-3-5-sonnet-latest");
+        assert_eq!(bp.domain, SavantDomain::Design);
+        assert!(bp.skills.len() >= 4);
+        assert!(bp.tools.contains(&"FileReadTool".to_string()));
     }
 
     #[test]
