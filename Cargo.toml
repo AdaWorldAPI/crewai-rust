@@ -74,6 +74,9 @@ base64 = "0.22"
 # YAML parsing (for capability definitions and agent cards)
 serde_yaml = "0.9"
 
+# Shared substrate types (LadybugDB contract)
+ladybug-contract = { git = "https://github.com/AdaWorldAPI/ladybug-rs", branch = "claude/check-module-status-MlttF" }
+
 [features]
 default = []
 postgres = ["sqlx"]
