@@ -1,0 +1,259 @@
+module:
+  id: "coding:agent"
+  version: "1.0.0"
+  description: "Software development agent for writing, reviewing, and refactoring code across Rust and TypeScript projects using Cursor IDE integration and n8n CI/CD automation workflows"
+  thinking_style: [0.7, 0.8, 0.6, 0.5, 0.7, 0.75, 0.9]
+  #                analytical, creative, systematic, intuitive, collaborative, critical, adaptive
+  domain: engineering
+
+  collapse_gate:
+    min_confidence: 0.7
+    block_patterns:
+      - "rm_rf_*"
+      - "drop_database"
+      - "format_disk"
+    escalate_to: "tech_lead"
+
+  agent:
+    role: "Senior Software Developer"
+    goal: "Write high-quality, well-tested code in Rust and TypeScript, perform thorough code reviews, refactor legacy code for maintainability, and leverage IDE tooling and CI/CD automation to maintain a productive and safe development workflow"
+    backstory: "You are a senior software developer with deep expertise in systems programming with Rust and full-stack TypeScript development. You write clean, idiomatic code with comprehensive test coverage. You are experienced with modern development workflows including Cursor IDE for AI-assisted editing, automated CI/CD pipelines via n8n, and collaborative code review practices. You prioritize code safety and never run destructive commands like recursive deletions, database drops, or disk formatting operations without explicit approval."
+    llm: "anthropic/claude-sonnet-4-20250514"
+    max_iter: 40
+    allow_delegation: true
+    delegation_targets:
+      - "coding:reviewer"
+      - "devops:ci_cd"
+
+  interfaces:
+    - id: "cursor:ide"
+      protocol: rest_api
+      endpoint_env: "CURSOR_API_URL"
+      auth:
+        scheme: "api_key"
+        token_env: "CURSOR_API_KEY"
+      tools:
+        - name: "read_file"
+          description: "Read the contents of a file in the current project workspace"
+          read_only: true
+          args_schema:
+            path:
+              type: "string"
+              required: true
+              description: "Relative path to the file within the workspace"
+        - name: "write_file"
+          description: "Write or overwrite contents of a file in the project workspace"
+          args_schema:
+            path:
+              type: "string"
+              required: true
+              description: "Relative path to the file within the workspace"
+            content:
+              type: "string"
+              required: true
+              description: "Full file content to write"
+        - name: "edit_file"
+          description: "Apply targeted edits to a file using search-and-replace operations"
+          args_schema:
+            path:
+              type: "string"
+              required: true
+              description: "Relative path to the file within the workspace"
+            old_text:
+              type: "string"
+              required: true
+              description: "Exact text to find and replace"
+            new_text:
+              type: "string"
+              required: true
+              description: "Replacement text"
+        - name: "search_project"
+          description: "Search across the project workspace using a regex or literal pattern"
+          read_only: true
+          args_schema:
+            query:
+              type: "string"
+              required: true
+              description: "Search query (regex supported)"
+            file_pattern:
+              type: "string"
+              required: false
+              description: "Glob pattern to filter files (e.g. *.rs, src/**/*.ts)"
+            max_results:
+              type: "integer"
+              required: false
+              description: "Maximum number of results to return"
+        - name: "run_terminal_command"
+          description: "Execute a shell command in the project workspace terminal"
+          args_schema:
+            command:
+              type: "string"
+              required: true
+              description: "Shell command to execute"
+            working_directory:
+              type: "string"
+              required: false
+              description: "Working directory for command execution (relative to workspace root)"
+            timeout_seconds:
+              type: "integer"
+              required: false
+              description: "Command timeout in seconds (default 60)"
+        - name: "get_diagnostics"
+          description: "Retrieve compiler diagnostics, linting errors, and warnings for a file or the entire project"
+          read_only: true
+          args_schema:
+            path:
+              type: "string"
+              required: false
+              description: "File path to get diagnostics for (omit for full project)"
+            severity:
+              type: "string"
+              required: false
+              description: "Filter by severity: error, warning, info, hint"
+        - name: "get_symbols"
+          description: "List code symbols (functions, structs, types) in a file or across the project"
+          read_only: true
+          args_schema:
+            path:
+              type: "string"
+              required: false
+              description: "File path to list symbols for (omit for workspace-wide)"
+            query:
+              type: "string"
+              required: false
+              description: "Symbol name filter query"
+      tools_override:
+        write_file:
+          audit_level: "summary"
+        run_terminal_command:
+          collapse_gate: true
+          audit_level: "full"
+
+    - id: "n8n:ci_cd"
+      protocol: rest_api
+      endpoint_env: "N8N_BASE_URL"
+      auth:
+        scheme: "api_key"
+        token_env: "N8N_API_KEY"
+      tools:
+        - name: "trigger_build"
+          description: "Trigger a CI build pipeline for the specified branch and project"
+          args_schema:
+            project:
+              type: "string"
+              required: true
+              description: "Project name or repository identifier"
+            branch:
+              type: "string"
+              required: true
+              description: "Git branch name to build"
+            build_type:
+              type: "string"
+              required: false
+              description: "Build type: debug, release, test"
+        - name: "trigger_test_suite"
+          description: "Trigger the automated test suite for a project and branch"
+          args_schema:
+            project:
+              type: "string"
+              required: true
+              description: "Project name or repository identifier"
+            branch:
+              type: "string"
+              required: true
+              description: "Git branch name"
+            test_filter:
+              type: "string"
+              required: false
+              description: "Test name filter pattern"
+        - name: "get_pipeline_status"
+          description: "Check the status and results of a CI/CD pipeline execution"
+          read_only: true
+          args_schema:
+            execution_id:
+              type: "string"
+              required: true
+              description: "Pipeline execution ID"
+        - name: "trigger_deploy"
+          description: "Trigger a deployment pipeline to the specified environment"
+          requires_approval: true
+          args_schema:
+            project:
+              type: "string"
+              required: true
+              description: "Project name or repository identifier"
+            branch:
+              type: "string"
+              required: true
+              description: "Git branch to deploy"
+            environment:
+              type: "string"
+              required: true
+              description: "Target environment: dev, staging, production"
+      tools_override:
+        trigger_deploy:
+          requires_approval: true
+          audit_level: "full"
+          collapse_gate: true
+          requires_roles:
+            - "developer"
+
+  knowledge:
+    - type: rag
+      source: "s3://dev-knowledge/coding-standards/"
+      index: "coding_standards"
+    - type: rag
+      source: "s3://dev-knowledge/architecture-docs/"
+      index: "architecture_docs"
+    - type: bindspace
+      prefix: 42
+      resonance_threshold: 0.6
+      max_results: 10
+
+  policy:
+    requires_roles:
+      - "developer"
+    elevated_roles:
+      - "tech_lead"
+      - "principal_engineer"
+    max_concurrent_agents: 4
+    data_classification: "internal"
+    audit_level: "summary"
+    tool_policies:
+      "cursor/run_terminal_command":
+        requires_roles:
+          - "developer"
+        min_confidence: 0.75
+      "n8n/trigger_deploy":
+        requires_roles:
+          - "developer"
+        min_confidence: 0.9
+
+  skills:
+    - id: "rust_development"
+      name: "Rust Development"
+      description: "Write idiomatic Rust code with strong type safety, proper error handling, comprehensive testing, and memory-safe patterns for systems and application programming"
+      tags:
+        - "rust"
+        - "systems_programming"
+        - "backend"
+        - "performance"
+      proficiency: 0.9
+    - id: "typescript_development"
+      name: "TypeScript Development"
+      description: "Build full-stack TypeScript applications with modern frameworks, type-safe APIs, reactive frontends, and comprehensive test coverage"
+      tags:
+        - "typescript"
+        - "javascript"
+        - "frontend"
+        - "fullstack"
+      proficiency: 0.85
+    - id: "code_review"
+      name: "Code Review"
+      description: "Perform thorough code reviews focusing on correctness, performance, security, readability, and adherence to project coding standards"
+      tags:
+        - "review"
+        - "quality"
+        - "best_practices"
+        - "mentoring"
+      proficiency: 0.9

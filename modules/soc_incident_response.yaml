@@ -1,0 +1,219 @@
+module:
+  id: "soc:incident_response"
+  version: "1.0.0"
+  description: "SOC Level 2 incident response agent for triaging, correlating, and responding to security incidents using JIRA ticketing, CloudWatch monitoring, and MCP knowledge integration"
+  thinking_style: [0.9, 0.3, 0.8, 0.5, 0.7, 0.95, 0.6]
+  #                analytical, creative, systematic, intuitive, collaborative, critical, adaptive
+  domain: security
+
+  collapse_gate:
+    min_confidence: 0.7
+    block_patterns:
+      - "delete_*"
+      - "terminate_*"
+    escalate_to: "soc_lead"
+
+  agent:
+    role: "SOC Level 2 Analyst"
+    goal: "Triage, correlate, and respond to security incidents by analyzing alerts, identifying indicators of compromise, and executing standardized playbooks to contain threats"
+    backstory: "You are a senior SOC analyst with deep expertise in incident response, threat intelligence, and SIEM correlation. You have years of experience triaging alerts across cloud and on-premise environments, correlating IOCs from multiple data sources, and executing containment playbooks under pressure. You follow strict escalation procedures and never take destructive actions without explicit approval."
+    llm: "anthropic/claude-sonnet-4-20250514"
+    max_iter: 50
+    allow_delegation: true
+    delegation_targets:
+      - "soc:threat_intel"
+
+  interfaces:
+    - id: "jira:incidents"
+      protocol: rest_api
+      endpoint_env: "JIRA_BASE_URL"
+      auth:
+        scheme: "oauth2"
+        token_env: "JIRA_OAUTH_TOKEN"
+        scopes:
+          - "read:jira-work"
+          - "write:jira-work"
+      tools:
+        - name: "create_incident"
+          description: "Create a new JIRA incident ticket with severity, category, and initial findings"
+          requires_approval: true
+          args_schema:
+            summary:
+              type: "string"
+              required: true
+              description: "Incident summary title"
+            severity:
+              type: "string"
+              required: true
+              description: "Severity level: P1, P2, P3, P4"
+            description:
+              type: "string"
+              required: true
+              description: "Detailed incident description and initial findings"
+            category:
+              type: "string"
+              required: false
+              description: "Incident category such as malware, phishing, unauthorized_access"
+        - name: "update_incident"
+          description: "Update an existing JIRA incident with new findings or status changes"
+          args_schema:
+            issue_key:
+              type: "string"
+              required: true
+              description: "JIRA issue key (e.g. INC-1234)"
+            comment:
+              type: "string"
+              required: true
+              description: "Update comment with new findings"
+            status:
+              type: "string"
+              required: false
+              description: "New status: investigating, contained, resolved"
+        - name: "close_incident"
+          description: "Close a resolved JIRA incident with root cause analysis and remediation notes"
+          args_schema:
+            issue_key:
+              type: "string"
+              required: true
+              description: "JIRA issue key to close"
+            root_cause:
+              type: "string"
+              required: true
+              description: "Root cause analysis summary"
+            resolution:
+              type: "string"
+              required: true
+              description: "Remediation and resolution notes"
+      tools_override:
+        create_incident:
+          audit_level: "full"
+        close_incident:
+          collapse_gate: true
+          requires_approval: true
+
+    - id: "aws:cloudwatch"
+      protocol: aws_sdk
+      endpoint_env: "AWS_REGION"
+      auth:
+        scheme: "iam_role"
+        role_env: "SOC_CLOUDWATCH_ROLE_ARN"
+      tools:
+        - name: "query_log_insights"
+          description: "Run a CloudWatch Logs Insights query across specified log groups"
+          read_only: true
+          args_schema:
+            query:
+              type: "string"
+              required: true
+              description: "CloudWatch Logs Insights query string"
+            log_groups:
+              type: "array"
+              required: true
+              description: "List of log group names to search"
+            time_range_hours:
+              type: "integer"
+              required: false
+              description: "Lookback window in hours (default 24)"
+        - name: "get_metric_alarms"
+          description: "Retrieve active CloudWatch metric alarms matching specified filters"
+          read_only: true
+          args_schema:
+            alarm_prefix:
+              type: "string"
+              required: false
+              description: "Alarm name prefix filter"
+            state:
+              type: "string"
+              required: false
+              description: "Alarm state filter: ALARM, OK, INSUFFICIENT_DATA"
+        - name: "describe_anomaly_detectors"
+          description: "List CloudWatch anomaly detectors and their current status"
+          read_only: true
+          args_schema:
+            namespace:
+              type: "string"
+              required: false
+              description: "CloudWatch metric namespace filter"
+
+    - id: "mcp:threat_intel"
+      protocol: mcp
+      endpoint_env: "MCP_THREAT_INTEL_URL"
+      auth:
+        scheme: "api_key"
+        token_env: "MCP_THREAT_INTEL_KEY"
+      tools:
+        - name: "lookup_ioc"
+          description: "Look up an indicator of compromise (IP, domain, hash) against threat intelligence feeds"
+          read_only: true
+          args_schema:
+            indicator:
+              type: "string"
+              required: true
+              description: "IOC value (IP address, domain, file hash)"
+            indicator_type:
+              type: "string"
+              required: true
+              description: "Type of indicator: ip, domain, md5, sha256, url"
+        - name: "get_threat_context"
+          description: "Retrieve enriched threat context and attribution data for a known threat actor or campaign"
+          read_only: true
+          args_schema:
+            query:
+              type: "string"
+              required: true
+              description: "Threat actor name, campaign ID, or malware family"
+
+  knowledge:
+    - type: rag
+      source: "s3://soc-runbooks/"
+      index: "soc_playbooks"
+    - type: bindspace
+      prefix: 14
+      resonance_threshold: 0.65
+      max_results: 10
+    - type: mcp_knowledge
+      interface_ref: "mcp:threat_intel"
+
+  policy:
+    requires_roles:
+      - "soc_analyst"
+    elevated_roles:
+      - "soc_lead"
+      - "ciso"
+    max_concurrent_agents: 5
+    data_classification: "confidential"
+    audit_level: "full"
+    geo_restrictions:
+      - "us"
+      - "eu"
+    tool_policies:
+      "jira/close_incident":
+        requires_roles:
+          - "soc_analyst"
+        min_confidence: 0.85
+
+  skills:
+    - id: "threat_triage"
+      name: "Threat Triage"
+      description: "Classify and prioritize security incidents based on severity, affected assets, and threat intelligence context"
+      tags:
+        - "security"
+        - "triage"
+        - "incident_response"
+      proficiency: 0.9
+    - id: "ioc_correlation"
+      name: "IOC Correlation"
+      description: "Correlate indicators of compromise across multiple data sources to identify attack patterns and threat actor attribution"
+      tags:
+        - "security"
+        - "threat_intel"
+        - "correlation"
+      proficiency: 0.85
+    - id: "playbook_execution"
+      name: "Playbook Execution"
+      description: "Execute standardized incident response playbooks for containment, eradication, and recovery procedures"
+      tags:
+        - "security"
+        - "playbook"
+        - "incident_response"
+      proficiency: 0.8

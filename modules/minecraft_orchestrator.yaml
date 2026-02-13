@@ -1,0 +1,229 @@
+module:
+  id: "minecraft:orchestrator"
+  version: "1.0.0"
+  description: "Minecraft server orchestration agent for world building, event design, player management, and server administration through RCON protocol"
+  thinking_style: [0.4, 0.95, 0.5, 0.7, 0.6, 0.5, 0.9]
+  #                analytical, creative, systematic, intuitive, collaborative, critical, adaptive
+  domain: design
+
+  collapse_gate:
+    min_confidence: 0.6
+    block_patterns:
+      - "ban_player"
+      - "reset_world"
+    escalate_to: "server_admin"
+
+  agent:
+    role: "Minecraft Server Orchestrator"
+    goal: "Design and manage immersive Minecraft experiences by building custom worlds, orchestrating server events, managing player interactions, and maintaining server health through creative and adaptive approaches"
+    backstory: "You are an expert Minecraft world designer and server administrator. You combine deep technical knowledge of server commands, world generation, and plugin systems with an artistic vision for creating immersive player experiences. You design elaborate builds, orchestrate community events, manage server performance, and handle day-to-day administration. You always prioritize player safety and server stability, and you never take irreversible destructive actions like banning players or resetting worlds without administrator approval."
+    llm: "anthropic/claude-sonnet-4-20250514"
+    max_iter: 30
+    allow_delegation: false
+    delegation_targets: []
+
+  interfaces:
+    - id: "rcon:minecraft"
+      protocol: rcon
+      endpoint_env: "MC_RCON_HOST"
+      auth:
+        scheme: "password"
+        token_env: "MC_RCON_PASSWORD"
+      tools:
+        - name: "execute_command"
+          description: "Execute a Minecraft server command via RCON"
+          args_schema:
+            command:
+              type: "string"
+              required: true
+              description: "Minecraft server command to execute (without leading /)"
+        - name: "set_game_rule"
+          description: "Set a Minecraft game rule for the current world"
+          args_schema:
+            rule:
+              type: "string"
+              required: true
+              description: "Game rule name (e.g. doDaylightCycle, keepInventory)"
+            value:
+              type: "string"
+              required: true
+              description: "Game rule value (true/false or integer)"
+        - name: "teleport_player"
+          description: "Teleport a player to specified coordinates or to another player"
+          args_schema:
+            player:
+              type: "string"
+              required: true
+              description: "Player name or selector (e.g. @a, @p, PlayerName)"
+            destination:
+              type: "string"
+              required: true
+              description: "Target coordinates (x y z) or player name"
+        - name: "give_item"
+          description: "Give an item to a player"
+          args_schema:
+            player:
+              type: "string"
+              required: true
+              description: "Player name or selector"
+            item:
+              type: "string"
+              required: true
+              description: "Item ID (e.g. minecraft:diamond_sword)"
+            count:
+              type: "integer"
+              required: false
+              description: "Number of items to give (default 1)"
+        - name: "set_block"
+          description: "Place a block at specified coordinates"
+          args_schema:
+            x:
+              type: "integer"
+              required: true
+              description: "X coordinate"
+            y:
+              type: "integer"
+              required: true
+              description: "Y coordinate"
+            z:
+              type: "integer"
+              required: true
+              description: "Z coordinate"
+            block:
+              type: "string"
+              required: true
+              description: "Block ID (e.g. minecraft:stone, minecraft:oak_planks)"
+        - name: "fill_region"
+          description: "Fill a region between two coordinates with a specified block"
+          args_schema:
+            x1:
+              type: "integer"
+              required: true
+              description: "Start X coordinate"
+            y1:
+              type: "integer"
+              required: true
+              description: "Start Y coordinate"
+            z1:
+              type: "integer"
+              required: true
+              description: "Start Z coordinate"
+            x2:
+              type: "integer"
+              required: true
+              description: "End X coordinate"
+            y2:
+              type: "integer"
+              required: true
+              description: "End Y coordinate"
+            z2:
+              type: "integer"
+              required: true
+              description: "End Z coordinate"
+            block:
+              type: "string"
+              required: true
+              description: "Block ID to fill with"
+            mode:
+              type: "string"
+              required: false
+              description: "Fill mode: destroy, hollow, keep, outline, replace"
+        - name: "list_players"
+          description: "List all currently connected players on the server"
+          read_only: true
+          args_schema: {}
+        - name: "send_message"
+          description: "Send a chat message or title to players"
+          args_schema:
+            message:
+              type: "string"
+              required: true
+              description: "Message content (supports Minecraft color codes with &)"
+            target:
+              type: "string"
+              required: false
+              description: "Player name or selector (default @a for all players)"
+            type:
+              type: "string"
+              required: false
+              description: "Message type: chat, title, actionbar"
+        - name: "set_weather"
+          description: "Set the weather on the server"
+          args_schema:
+            weather:
+              type: "string"
+              required: true
+              description: "Weather type: clear, rain, thunder"
+            duration:
+              type: "integer"
+              required: false
+              description: "Duration in ticks (optional)"
+        - name: "set_time"
+          description: "Set the time of day on the server"
+          args_schema:
+            time:
+              type: "string"
+              required: true
+              description: "Time value: day, night, noon, midnight, or tick number"
+      tools_override:
+        execute_command:
+          collapse_gate: true
+          audit_level: "full"
+        fill_region:
+          collapse_gate: true
+          audit_level: "summary"
+
+  knowledge:
+    - type: rag
+      source: "s3://minecraft-assets/build-templates/"
+      index: "mc_build_templates"
+    - type: rag
+      source: "s3://minecraft-assets/event-playbooks/"
+      index: "mc_event_playbooks"
+
+  policy:
+    requires_roles:
+      - "mc_operator"
+    elevated_roles:
+      - "server_admin"
+    max_concurrent_agents: 2
+    data_classification: "internal"
+    audit_level: "summary"
+    tool_policies:
+      "rcon/fill_region":
+        requires_roles:
+          - "mc_operator"
+        min_confidence: 0.7
+      "rcon/execute_command":
+        requires_roles:
+          - "mc_operator"
+        min_confidence: 0.75
+
+  skills:
+    - id: "world_building"
+      name: "World Building"
+      description: "Design and construct elaborate Minecraft structures, landscapes, and themed areas using creative block placement and fill commands"
+      tags:
+        - "minecraft"
+        - "building"
+        - "creative"
+        - "design"
+      proficiency: 0.95
+    - id: "event_design"
+      name: "Event Design"
+      description: "Plan and orchestrate interactive Minecraft server events including treasure hunts, PvP tournaments, building competitions, and community gatherings"
+      tags:
+        - "minecraft"
+        - "events"
+        - "community"
+        - "gameplay"
+      proficiency: 0.9
+    - id: "server_admin"
+      name: "Server Administration"
+      description: "Manage Minecraft server operations including player management, game rule configuration, performance monitoring, and world maintenance"
+      tags:
+        - "minecraft"
+        - "admin"
+        - "server"
+        - "management"
+      proficiency: 0.8
