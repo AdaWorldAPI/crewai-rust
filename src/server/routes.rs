@@ -2,13 +2,18 @@
 //!
 //! # Routes
 //!
-//! - `GET  /health`  — Returns `{"status": "ok", "version": "1.9.3"}`
-//! - `POST /execute` — Accepts `StepDelegationRequest`, runs crew task, returns `StepDelegationResponse`
+//! - `GET  /health`            — Returns `{"status": "ok", "version": "1.9.3"}`
+//! - `POST /execute`           — Accepts `StepDelegationRequest`, runs crew task
+//! - `GET  /modules`           — List active modules
+//! - `GET  /modules/:id`       — Get module details
+//! - `POST /modules/:id/activate`   — Activate a loaded module
+//! - `POST /modules/:id/deactivate` — Deactivate a module
+//! - `POST /modules/:id/gate-check` — Check cognitive gate
 
 use std::sync::{Arc, RwLock};
 
 use axum::{
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -24,18 +29,22 @@ use crate::contract::types::{
     DataEnvelope, EnvelopeMetadata, StepDelegationRequest, StepDelegationResponse, StepStatus,
     UnifiedStep,
 };
+use crate::modules::runtime::ModuleRuntime;
 
 /// Shared application state for the HTTP server.
 #[derive(Clone)]
 pub struct AppState {
     /// Contract recorder for tracking execution state.
     pub recorder: Arc<RwLock<ContractRecorder>>,
+    /// Module runtime for managing active modules.
+    pub module_runtime: Arc<RwLock<ModuleRuntime>>,
 }
 
 impl AppState {
     pub fn new() -> Self {
         Self {
             recorder: Arc::new(RwLock::new(ContractRecorder::new())),
+            module_runtime: Arc::new(RwLock::new(ModuleRuntime::new("anthropic/claude-sonnet-4-20250514"))),
         }
     }
 }
@@ -51,6 +60,11 @@ pub fn app_router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health_handler))
         .route("/execute", post(execute_handler))
+        .route("/modules", get(list_modules_handler))
+        .route("/modules/{id}", get(get_module_handler))
+        .route("/modules/{id}/activate", post(activate_module_handler))
+        .route("/modules/{id}/deactivate", post(deactivate_module_handler))
+        .route("/modules/{id}/gate-check", post(gate_check_handler))
         .layer(CorsLayer::permissive())
         .with_state(state)
 }
@@ -235,6 +249,225 @@ async fn execute_handler(
             ))
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Module management handlers
+// ---------------------------------------------------------------------------
+
+/// GET /modules — list active module IDs and their agent IDs.
+async fn list_modules_handler(
+    State(state): State<AppState>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let runtime = state.module_runtime.read().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "Module runtime lock poisoned"})),
+        )
+    })?;
+
+    let modules: Vec<Value> = runtime
+        .active_modules()
+        .iter()
+        .map(|id| {
+            let agent_id = runtime.agent_id_for_module(id).unwrap_or("");
+            serde_json::json!({
+                "id": id,
+                "agent_id": agent_id,
+            })
+        })
+        .collect();
+
+    Ok(Json(serde_json::json!({ "modules": modules })))
+}
+
+/// GET /modules/:id — get module details.
+async fn get_module_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let runtime = state.module_runtime.read().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "Module runtime lock poisoned"})),
+        )
+    })?;
+
+    let module = runtime.get_module(&id).ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": format!("Module '{}' not found", id)})),
+        )
+    })?;
+
+    let agent_id = runtime.agent_id_for_module(&id).unwrap_or("");
+    let thinking_style = runtime.thinking_style(agent_id);
+
+    Ok(Json(serde_json::json!({
+        "id": module.def.module.id,
+        "version": module.def.module.version,
+        "description": module.def.module.description,
+        "domain": module.def.module.domain,
+        "agent_id": agent_id,
+        "thinking_style": thinking_style,
+        "capabilities": module.capabilities.iter().map(|c| &c.id).collect::<Vec<_>>(),
+        "skills": module.blueprint.skills.iter().map(|s| &s.id).collect::<Vec<_>>(),
+        "has_gate": module.gate.is_some(),
+    })))
+}
+
+/// POST /modules/:id/activate — activate a module by loading its YAML.
+///
+/// Request body: `{ "yaml": "<module YAML string>" }`
+async fn activate_module_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let yaml = body
+        .get("yaml")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Missing 'yaml' field in request body"})),
+            )
+        })?;
+
+    // Load the module definition
+    let mut loader = crate::modules::ModuleLoader::new();
+    let instance = loader.load_yaml(yaml).map_err(|e| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": format!("Failed to load module: {}", e)})),
+        )
+    })?;
+
+    // Verify ID matches
+    if instance.def.module.id != id {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "error": format!("Module ID '{}' does not match path '{}'", instance.def.module.id, id)
+            })),
+        ));
+    }
+
+    let mut runtime = state.module_runtime.write().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "Module runtime lock poisoned"})),
+        )
+    })?;
+
+    let agent_id = runtime.activate_module(instance).map_err(|e| {
+        (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({"error": format!("Failed to activate: {}", e)})),
+        )
+    })?;
+
+    Ok(Json(serde_json::json!({
+        "status": "activated",
+        "module_id": id,
+        "agent_id": agent_id,
+    })))
+}
+
+/// POST /modules/:id/deactivate — deactivate a module.
+async fn deactivate_module_handler(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let mut runtime = state.module_runtime.write().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "Module runtime lock poisoned"})),
+        )
+    })?;
+
+    runtime.deactivate_module(&id).map_err(|e| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": format!("Failed to deactivate: {}", e)})),
+        )
+    })?;
+
+    Ok(Json(serde_json::json!({
+        "status": "deactivated",
+        "module_id": id,
+    })))
+}
+
+/// POST /modules/:id/gate-check — check cognitive gate for a tool call.
+///
+/// Request body: `{ "agent_id": "...", "tool_name": "...", "confidence": 0.85 }`
+async fn gate_check_handler(
+    State(state): State<AppState>,
+    Path(_id): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+    let agent_id = body
+        .get("agent_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Missing 'agent_id'"})),
+            )
+        })?;
+    let tool_name = body
+        .get("tool_name")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Missing 'tool_name'"})),
+            )
+        })?;
+    let confidence = body
+        .get("confidence")
+        .and_then(|v| v.as_f64())
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::json!({"error": "Missing 'confidence'"})),
+            )
+        })?;
+
+    let runtime = state.module_runtime.read().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "Module runtime lock poisoned"})),
+        )
+    })?;
+
+    let decision = runtime.check_gate(agent_id, tool_name, confidence);
+    let response = match decision {
+        crate::modules::GateDecision::Flow => {
+            serde_json::json!({"decision": "flow"})
+        }
+        crate::modules::GateDecision::Hold {
+            escalate_to,
+            confidence,
+            required,
+        } => {
+            serde_json::json!({
+                "decision": "hold",
+                "escalate_to": escalate_to,
+                "confidence": confidence,
+                "required": required,
+            })
+        }
+        crate::modules::GateDecision::Block { reason } => {
+            serde_json::json!({
+                "decision": "block",
+                "reason": reason,
+            })
+        }
+    };
+
+    Ok(Json(response))
 }
 
 // ---------------------------------------------------------------------------

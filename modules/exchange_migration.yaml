@@ -1,0 +1,284 @@
+module:
+  id: "exchange:migration"
+  version: "1.0.0"
+  description: "Exchange hybrid migration agent for planning and executing mailbox migrations from on-premises Exchange to Exchange Online, managing hybrid configuration, and orchestrating migration workflows through PowerShell bridge, MS Graph, and n8n automation"
+  thinking_style: [0.7, 0.2, 0.95, 0.3, 0.5, 0.9, 0.4]
+  #                analytical, creative, systematic, intuitive, collaborative, critical, adaptive
+  domain: dev_ops
+
+  collapse_gate:
+    min_confidence: 0.85
+    block_patterns:
+      - "disable_mailbox"
+      - "remove_migration_endpoint"
+      - "delete_org_relationship"
+    escalate_to: "exchange_admin_lead"
+
+  agent:
+    role: "Exchange Migration Engineer"
+    goal: "Plan and execute mailbox migrations from on-premises Exchange Server to Exchange Online, ensuring zero data loss, minimal downtime, and full coexistence functionality throughout the hybrid migration lifecycle"
+    backstory: "You are a senior Exchange migration engineer with deep expertise in hybrid Exchange environments, Active Directory synchronization, and large-scale mailbox migrations. You have led dozens of enterprise migrations from Exchange 2013/2016/2019 to Exchange Online, managing complex scenarios including shared mailboxes, public folders, and resource rooms. You follow a rigorous migration methodology with pre-flight validation, batch planning, and post-migration verification. You never disable mailboxes, remove migration endpoints, or delete organization relationships without explicit approval from the migration lead."
+    llm: "anthropic/claude-sonnet-4-20250514"
+    max_iter: 60
+    allow_delegation: true
+    delegation_targets:
+      - "o365:admin"
+      - "ad:management"
+
+  interfaces:
+    - id: "powershell:exchange_hybrid"
+      protocol: rest_api
+      endpoint_env: "PS_BRIDGE_URL"
+      auth:
+        scheme: "api_key"
+        token_env: "PS_BRIDGE_API_KEY"
+      tools:
+        - name: "get_migration_batch"
+          description: "Retrieve status and details of an Exchange migration batch"
+          read_only: true
+          args_schema:
+            identity:
+              type: "string"
+              required: true
+              description: "Migration batch name or identity"
+        - name: "new_migration_batch"
+          description: "Create a new Exchange migration batch for a set of mailboxes"
+          requires_approval: true
+          args_schema:
+            name:
+              type: "string"
+              required: true
+              description: "Migration batch name"
+            csv_path:
+              type: "string"
+              required: true
+              description: "Path to CSV file containing mailbox list"
+            target_delivery_domain:
+              type: "string"
+              required: true
+              description: "Target delivery domain (e.g. contoso.mail.onmicrosoft.com)"
+            notification_emails:
+              type: "string"
+              required: false
+              description: "Comma-separated email addresses for completion notifications"
+            auto_start:
+              type: "boolean"
+              required: false
+              description: "Whether to auto-start the batch (default false)"
+        - name: "start_migration_batch"
+          description: "Start a previously created migration batch"
+          requires_approval: true
+          args_schema:
+            identity:
+              type: "string"
+              required: true
+              description: "Migration batch name to start"
+        - name: "complete_migration_batch"
+          description: "Complete (finalize) a synced migration batch, performing the final switchover"
+          requires_approval: true
+          args_schema:
+            identity:
+              type: "string"
+              required: true
+              description: "Migration batch name to complete"
+        - name: "get_move_request_statistics"
+          description: "Get detailed move request statistics for a specific mailbox migration"
+          read_only: true
+          args_schema:
+            identity:
+              type: "string"
+              required: true
+              description: "User principal name or mailbox identity"
+            include_report:
+              type: "boolean"
+              required: false
+              description: "Include detailed migration report"
+        - name: "test_migration_readiness"
+          description: "Run pre-migration readiness checks for a mailbox or set of mailboxes"
+          read_only: true
+          args_schema:
+            identity:
+              type: "string"
+              required: true
+              description: "User principal name or mailbox identity to test"
+        - name: "get_hybrid_configuration"
+          description: "Retrieve current Exchange hybrid configuration settings"
+          read_only: true
+          args_schema: {}
+        - name: "run_exchange_cmdlet"
+          description: "Execute an arbitrary Exchange Management Shell cmdlet through the bridge"
+          args_schema:
+            cmdlet:
+              type: "string"
+              required: true
+              description: "PowerShell cmdlet name"
+            parameters:
+              type: "object"
+              required: false
+              description: "Cmdlet parameters as key-value pairs"
+      tools_override:
+        new_migration_batch:
+          audit_level: "full"
+          collapse_gate: true
+          requires_approval: true
+        complete_migration_batch:
+          audit_level: "full"
+          collapse_gate: true
+          requires_approval: true
+        run_exchange_cmdlet:
+          collapse_gate: true
+          audit_level: "full"
+
+    - id: "graph:exchange_online"
+      protocol: ms_graph
+      endpoint_env: "MS_GRAPH_BASE_URL"
+      auth:
+        scheme: "oauth2"
+        token_env: "MS_GRAPH_TOKEN"
+        scopes:
+          - "User.Read.All"
+          - "MailboxSettings.ReadWrite"
+          - "Mail.ReadWrite"
+      tools:
+        - name: "get_user_mailbox"
+          description: "Retrieve mailbox information for a user in Exchange Online"
+          read_only: true
+          args_schema:
+            user_id:
+              type: "string"
+              required: true
+              description: "User principal name or object ID"
+        - name: "verify_mail_flow"
+          description: "Verify mail flow is working correctly for a migrated user by checking recent messages"
+          read_only: true
+          args_schema:
+            user_id:
+              type: "string"
+              required: true
+              description: "User principal name to verify"
+            hours_back:
+              type: "integer"
+              required: false
+              description: "Number of hours to look back for messages (default 24)"
+        - name: "get_mailbox_usage"
+          description: "Get mailbox storage usage and quota information for a user"
+          read_only: true
+          args_schema:
+            user_id:
+              type: "string"
+              required: true
+              description: "User principal name or object ID"
+
+    - id: "n8n:migration_workflows"
+      protocol: rest_api
+      endpoint_env: "N8N_BASE_URL"
+      auth:
+        scheme: "api_key"
+        token_env: "N8N_API_KEY"
+      tools:
+        - name: "trigger_pre_migration_workflow"
+          description: "Trigger the n8n pre-migration validation workflow that checks AD sync, DNS, and hybrid config"
+          args_schema:
+            batch_name:
+              type: "string"
+              required: true
+              description: "Migration batch name to validate"
+            target_domain:
+              type: "string"
+              required: true
+              description: "Target Exchange Online domain"
+        - name: "trigger_post_migration_workflow"
+          description: "Trigger the n8n post-migration verification workflow that validates mailbox access, mail flow, and client connectivity"
+          args_schema:
+            batch_name:
+              type: "string"
+              required: true
+              description: "Migration batch name to verify"
+            notification_email:
+              type: "string"
+              required: false
+              description: "Email address for verification report"
+        - name: "get_workflow_status"
+          description: "Check the status of a running n8n migration workflow execution"
+          read_only: true
+          args_schema:
+            execution_id:
+              type: "string"
+              required: true
+              description: "n8n workflow execution ID"
+
+  knowledge:
+    - type: rag
+      source: "s3://exchange-migration/runbooks/"
+      index: "migration_playbooks"
+    - type: rag
+      source: "s3://exchange-migration/known-issues/"
+      index: "migration_known_issues"
+    - type: bindspace
+      prefix: 30
+      resonance_threshold: 0.7
+      max_results: 12
+
+  policy:
+    requires_roles:
+      - "exchange_admin"
+    elevated_roles:
+      - "exchange_admin_lead"
+      - "global_admin"
+    max_concurrent_agents: 2
+    data_classification: "confidential"
+    audit_level: "full"
+    geo_restrictions:
+      - "us"
+      - "eu"
+    tool_policies:
+      "powershell/new_migration_batch":
+        requires_roles:
+          - "exchange_admin"
+        min_confidence: 0.9
+      "powershell/complete_migration_batch":
+        requires_roles:
+          - "exchange_admin"
+        min_confidence: 0.95
+      "powershell/run_exchange_cmdlet":
+        requires_roles:
+          - "exchange_admin"
+        min_confidence: 0.85
+
+  skills:
+    - id: "hybrid_exchange"
+      name: "Hybrid Exchange Management"
+      description: "Configure and manage hybrid Exchange environments including organization relationships, migration endpoints, and coexistence settings"
+      tags:
+        - "exchange"
+        - "hybrid"
+        - "migration"
+        - "coexistence"
+      proficiency: 0.95
+    - id: "ad_management"
+      name: "Active Directory Management"
+      description: "Manage Active Directory objects, Azure AD Connect synchronization, and directory attribute mapping for Exchange migrations"
+      tags:
+        - "active_directory"
+        - "azure_ad"
+        - "sync"
+        - "identity"
+      proficiency: 0.85
+    - id: "powershell_automation"
+      name: "PowerShell Automation"
+      description: "Develop and execute PowerShell scripts for Exchange management, migration batch operations, and post-migration validation"
+      tags:
+        - "powershell"
+        - "automation"
+        - "scripting"
+        - "exchange"
+      proficiency: 0.9
+    - id: "migration_planning"
+      name: "Migration Planning"
+      description: "Plan and schedule large-scale mailbox migrations including batch sizing, dependency mapping, rollback strategies, and communication plans"
+      tags:
+        - "migration"
+        - "planning"
+        - "project_management"
+        - "exchange"
+      proficiency: 0.9

@@ -1,0 +1,261 @@
+module:
+  id: "o365:admin"
+  version: "1.0.0"
+  description: "Microsoft 365 administration agent for managing users, licenses, mailboxes, and organizational policies through MS Graph API and PowerShell bridge"
+  thinking_style: [0.7, 0.2, 0.95, 0.3, 0.6, 0.8, 0.4]
+  #                analytical, creative, systematic, intuitive, collaborative, critical, adaptive
+  domain: dev_ops
+
+  collapse_gate:
+    min_confidence: 0.75
+    block_patterns:
+      - "delete_user"
+      - "remove_license_*"
+      - "disable_mfa"
+    escalate_to: "it_admin_lead"
+
+  agent:
+    role: "Microsoft 365 Administrator"
+    goal: "Manage Microsoft 365 tenant operations including user lifecycle management, license assignment, mailbox provisioning, and Exchange Online configuration while enforcing organizational policies and compliance requirements"
+    backstory: "You are a certified Microsoft 365 administrator with extensive experience managing enterprise tenants. You handle user provisioning and deprovisioning, license management, mailbox configuration, and Exchange Online policies. You follow strict change management procedures and always verify operations against compliance policies before execution. You never disable security features or remove users without proper authorization chains."
+    llm: "anthropic/claude-sonnet-4-20250514"
+    max_iter: 40
+    allow_delegation: true
+    delegation_targets:
+      - "o365:security_compliance"
+
+  interfaces:
+    - id: "graph:users"
+      protocol: ms_graph
+      endpoint_env: "MS_GRAPH_BASE_URL"
+      auth:
+        scheme: "oauth2"
+        token_env: "MS_GRAPH_TOKEN"
+        scopes:
+          - "User.ReadWrite.All"
+          - "Directory.ReadWrite.All"
+          - "Organization.Read.All"
+      tools:
+        - name: "list_users"
+          description: "List Microsoft 365 users with optional filtering by department, status, or license"
+          read_only: true
+          args_schema:
+            filter:
+              type: "string"
+              required: false
+              description: "OData filter expression (e.g. department eq 'Engineering')"
+            select:
+              type: "string"
+              required: false
+              description: "Comma-separated list of properties to return"
+            top:
+              type: "integer"
+              required: false
+              description: "Maximum number of results to return"
+        - name: "get_user"
+          description: "Retrieve detailed profile information for a specific Microsoft 365 user"
+          read_only: true
+          args_schema:
+            user_id:
+              type: "string"
+              required: true
+              description: "User principal name or object ID"
+        - name: "create_user"
+          description: "Create a new Microsoft 365 user account with specified profile attributes and license"
+          requires_approval: true
+          args_schema:
+            display_name:
+              type: "string"
+              required: true
+              description: "User display name"
+            user_principal_name:
+              type: "string"
+              required: true
+              description: "User principal name (email format)"
+            mail_nickname:
+              type: "string"
+              required: true
+              description: "Mail alias"
+            department:
+              type: "string"
+              required: false
+              description: "Department name"
+            password:
+              type: "string"
+              required: true
+              description: "Initial password (must meet complexity requirements)"
+        - name: "update_user"
+          description: "Update profile attributes for an existing Microsoft 365 user"
+          args_schema:
+            user_id:
+              type: "string"
+              required: true
+              description: "User principal name or object ID"
+            properties:
+              type: "object"
+              required: true
+              description: "Key-value pairs of properties to update"
+        - name: "assign_license"
+          description: "Assign a Microsoft 365 license SKU to a user"
+          args_schema:
+            user_id:
+              type: "string"
+              required: true
+              description: "User principal name or object ID"
+            sku_id:
+              type: "string"
+              required: true
+              description: "License SKU identifier"
+        - name: "disable_user"
+          description: "Disable sign-in for a Microsoft 365 user account (soft disable, account retained)"
+          requires_approval: true
+          args_schema:
+            user_id:
+              type: "string"
+              required: true
+              description: "User principal name or object ID"
+            reason:
+              type: "string"
+              required: true
+              description: "Reason for disabling the account"
+      tools_override:
+        create_user:
+          audit_level: "full"
+          collapse_gate: true
+        disable_user:
+          requires_approval: true
+          audit_level: "full"
+
+    - id: "graph:exchange"
+      protocol: ms_graph
+      endpoint_env: "MS_GRAPH_BASE_URL"
+      auth:
+        scheme: "oauth2"
+        token_env: "MS_GRAPH_TOKEN"
+        scopes:
+          - "Mail.ReadWrite"
+          - "MailboxSettings.ReadWrite"
+      tools:
+        - name: "get_mailbox_settings"
+          description: "Retrieve mailbox settings including auto-reply, locale, and forwarding rules for a user"
+          read_only: true
+          args_schema:
+            user_id:
+              type: "string"
+              required: true
+              description: "User principal name or object ID"
+        - name: "update_mailbox_settings"
+          description: "Update mailbox settings such as auto-reply configuration or locale preferences"
+          args_schema:
+            user_id:
+              type: "string"
+              required: true
+              description: "User principal name or object ID"
+            settings:
+              type: "object"
+              required: true
+              description: "Mailbox settings to update (e.g. automaticRepliesSetting, language)"
+        - name: "set_mail_forwarding"
+          description: "Configure mail forwarding for a user mailbox to an internal or external address"
+          requires_approval: true
+          args_schema:
+            user_id:
+              type: "string"
+              required: true
+              description: "User principal name or object ID"
+            forwarding_address:
+              type: "string"
+              required: true
+              description: "Email address to forward mail to"
+            deliver_and_forward:
+              type: "boolean"
+              required: false
+              description: "If true, keep a copy in the original mailbox"
+      tools_override:
+        set_mail_forwarding:
+          audit_level: "full"
+          collapse_gate: true
+          requires_roles:
+            - "it_admin"
+
+    - id: "powershell:exchange_online"
+      protocol: rest_api
+      endpoint_env: "POWERSHELL_BRIDGE_URL"
+      auth:
+        scheme: "api_key"
+        token_env: "PS_BRIDGE_API_KEY"
+      tools:
+        - name: "run_exchange_cmdlet"
+          description: "Execute an Exchange Online PowerShell cmdlet through the bridge service"
+          args_schema:
+            cmdlet:
+              type: "string"
+              required: true
+              description: "PowerShell cmdlet name (e.g. Get-Mailbox, Set-MailboxAutoReplyConfiguration)"
+            parameters:
+              type: "object"
+              required: false
+              description: "Cmdlet parameters as key-value pairs"
+        - name: "get_mailbox_statistics"
+          description: "Retrieve mailbox size, item count, and quota status for a user"
+          read_only: true
+          args_schema:
+            identity:
+              type: "string"
+              required: true
+              description: "Mailbox identity (UPN or email address)"
+      tools_override:
+        run_exchange_cmdlet:
+          collapse_gate: true
+          audit_level: "full"
+
+  knowledge:
+    - type: rag
+      source: "s3://it-runbooks/o365-admin/"
+      index: "o365_admin_docs"
+    - type: bindspace
+      prefix: 22
+      resonance_threshold: 0.6
+      max_results: 8
+
+  policy:
+    requires_roles:
+      - "it_admin"
+    elevated_roles:
+      - "it_admin_lead"
+      - "global_admin"
+    max_concurrent_agents: 3
+    data_classification: "confidential"
+    audit_level: "full"
+    geo_restrictions:
+      - "us"
+      - "eu"
+    tool_policies:
+      "graph/create_user":
+        requires_roles:
+          - "it_admin"
+        min_confidence: 0.8
+      "graph/disable_user":
+        requires_roles:
+          - "it_admin"
+        min_confidence: 0.9
+
+  skills:
+    - id: "user_management"
+      name: "User Management"
+      description: "Manage Microsoft 365 user lifecycle including provisioning, profile updates, license assignment, and account deactivation"
+      tags:
+        - "o365"
+        - "user_management"
+        - "identity"
+        - "directory"
+      proficiency: 0.9
+    - id: "mailbox_management"
+      name: "Mailbox Management"
+      description: "Configure and manage Exchange Online mailboxes including settings, forwarding rules, auto-reply, and quota management"
+      tags:
+        - "o365"
+        - "exchange"
+        - "mailbox"
+        - "email"
+      proficiency: 0.85
