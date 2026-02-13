@@ -1,8 +1,13 @@
 //! RAG-based storage extending the base storage with embedding support.
 //!
 //! Port of crewai/memory/storage/rag_storage.py
+//!
+//! This MVP implements in-memory keyword-based search using TF-IDF-style
+//! term frequency scoring. For production, swap the `entries` vec with a
+//! proper vector DB (Qdrant, ChromaDB, LanceDB, etc.).
 
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 use async_trait::async_trait;
 use serde_json::Value;
@@ -12,8 +17,22 @@ use crate::memory::storage::interface::Storage;
 /// Maximum file name length for storage paths.
 const MAX_FILE_NAME_LENGTH: usize = 255;
 
+/// A single stored entry with its text and metadata.
+#[derive(Debug, Clone)]
+struct MemoryEntry {
+    /// The raw text content.
+    value: String,
+    /// Lowercased words for search matching.
+    tokens: Vec<String>,
+    /// Associated metadata.
+    metadata: HashMap<String, Value>,
+}
+
 /// RAGStorage extends Storage to handle embeddings for memory entries,
 /// improving search efficiency through vector-based retrieval.
+///
+/// This MVP uses in-memory keyword search with term-frequency scoring.
+/// When a real embedder/vector DB is configured, it should delegate to that.
 pub struct RAGStorage {
     /// The type of memory (e.g., "short_term", "entities").
     pub storage_type: String,
@@ -27,8 +46,8 @@ pub struct RAGStorage {
     pub storage_file_name: String,
     /// Optional persist path.
     pub path: Option<String>,
-    /// Optional reference to a RAG client (type-erased).
-    client: Option<Box<dyn std::any::Any + Send + Sync>>,
+    /// In-memory entries for keyword search MVP.
+    entries: Arc<RwLock<Vec<MemoryEntry>>>,
 }
 
 impl RAGStorage {
@@ -63,7 +82,7 @@ impl RAGStorage {
             agents: agents_str,
             storage_file_name,
             path,
-            client: None,
+            entries: Arc::new(RwLock::new(Vec::new())),
         }
     }
 
@@ -102,6 +121,28 @@ impl RAGStorage {
             format!("memory_{}_{}", self.storage_type, self.agents)
         }
     }
+
+    /// Tokenize text into lowercase words for keyword matching.
+    fn tokenize(text: &str) -> Vec<String> {
+        text.to_lowercase()
+            .split(|c: char| !c.is_alphanumeric() && c != '-' && c != '_')
+            .filter(|w| w.len() >= 2)
+            .map(String::from)
+            .collect()
+    }
+
+    /// Compute a keyword overlap score between query tokens and entry tokens.
+    /// Returns a value in [0.0, 1.0] representing the fraction of query terms found.
+    fn keyword_score(query_tokens: &[String], entry_tokens: &[String]) -> f64 {
+        if query_tokens.is_empty() {
+            return 0.0;
+        }
+        let matches = query_tokens
+            .iter()
+            .filter(|qt| entry_tokens.contains(qt))
+            .count();
+        matches as f64 / query_tokens.len() as f64
+    }
 }
 
 #[async_trait]
@@ -111,15 +152,23 @@ impl Storage for RAGStorage {
         value: &str,
         metadata: &HashMap<String, Value>,
     ) -> Result<(), anyhow::Error> {
-        let collection_name = self.collection_name();
         log::debug!(
-            "RAGStorage save to collection '{}': value='{}'",
-            collection_name,
+            "RAGStorage save to '{}': value='{}'",
+            self.collection_name(),
             &value[..std::cmp::min(value.len(), 100)]
         );
-        // TODO: Integrate with actual RAG client (ChromaDB/Qdrant)
-        // client.get_or_create_collection(collection_name)
-        // client.add_documents(collection_name, documents)
+
+        let entry = MemoryEntry {
+            value: value.to_string(),
+            tokens: Self::tokenize(value),
+            metadata: metadata.clone(),
+        };
+
+        let mut entries = self
+            .entries
+            .write()
+            .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+        entries.push(entry);
         Ok(())
     }
 
@@ -128,14 +177,7 @@ impl Storage for RAGStorage {
         value: &str,
         metadata: &HashMap<String, Value>,
     ) -> Result<(), anyhow::Error> {
-        let collection_name = self.collection_name();
-        log::debug!(
-            "RAGStorage async save to collection '{}': value='{}'",
-            collection_name,
-            &value[..std::cmp::min(value.len(), 100)]
-        );
-        // TODO: Integrate with actual RAG client (ChromaDB/Qdrant) async API
-        Ok(())
+        self.save(value, metadata)
     }
 
     fn search(
@@ -144,15 +186,45 @@ impl Storage for RAGStorage {
         limit: usize,
         score_threshold: f64,
     ) -> Result<Vec<Value>, anyhow::Error> {
-        let collection_name = self.collection_name();
         log::debug!(
-            "RAGStorage search in collection '{}': query='{}'",
-            collection_name,
+            "RAGStorage search in '{}': query='{}'",
+            self.collection_name(),
             query
         );
-        // TODO: Integrate with actual RAG client search
-        // client.search(collection_name, query, limit, score_threshold)
-        Ok(Vec::new())
+
+        let query_tokens = Self::tokenize(query);
+        let entries = self
+            .entries
+            .read()
+            .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+
+        // Score all entries and filter by threshold
+        let mut scored: Vec<(f64, &MemoryEntry)> = entries
+            .iter()
+            .map(|entry| {
+                let score = Self::keyword_score(&query_tokens, &entry.tokens);
+                (score, entry)
+            })
+            .filter(|(score, _)| *score >= score_threshold)
+            .collect();
+
+        // Sort by score descending
+        scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+
+        // Take top-k results
+        let results: Vec<Value> = scored
+            .into_iter()
+            .take(limit)
+            .map(|(score, entry)| {
+                serde_json::json!({
+                    "content": entry.value,
+                    "metadata": entry.metadata,
+                    "score": score,
+                })
+            })
+            .collect();
+
+        Ok(results)
     }
 
     async fn asearch(
@@ -161,24 +233,97 @@ impl Storage for RAGStorage {
         limit: usize,
         score_threshold: f64,
     ) -> Result<Vec<Value>, anyhow::Error> {
-        let collection_name = self.collection_name();
-        log::debug!(
-            "RAGStorage async search in collection '{}': query='{}'",
-            collection_name,
-            query
-        );
-        // TODO: Integrate with actual RAG client async search
-        Ok(Vec::new())
+        self.search(query, limit, score_threshold)
     }
 
     fn reset(&self) -> Result<(), anyhow::Error> {
-        let collection_name = self.collection_name();
-        log::debug!(
-            "RAGStorage reset collection '{}'",
-            collection_name
-        );
-        // TODO: Integrate with actual RAG client reset
-        // client.delete_collection(collection_name)
+        log::debug!("RAGStorage reset collection '{}'", self.collection_name());
+        let mut entries = self
+            .entries
+            .write()
+            .map_err(|e| anyhow::anyhow!("Lock poisoned: {}", e))?;
+        entries.clear();
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_rag_storage_save_and_search() {
+        let storage = RAGStorage::new("short_term", true, None, None, None);
+
+        let mut meta = HashMap::new();
+        meta.insert("agent".to_string(), Value::String("researcher".to_string()));
+
+        storage
+            .save("Rust is a systems programming language", &meta)
+            .unwrap();
+        storage
+            .save("Python is great for data science", &meta)
+            .unwrap();
+        storage
+            .save("Rust and Python are both popular languages", &meta)
+            .unwrap();
+
+        let results = storage.search("Rust programming", 10, 0.1).unwrap();
+        assert!(!results.is_empty());
+        // First result should be about Rust programming
+        let first = &results[0];
+        assert!(first["content"].as_str().unwrap().contains("Rust"));
+    }
+
+    #[test]
+    fn test_rag_storage_search_threshold() {
+        let storage = RAGStorage::new("entities", true, None, None, None);
+
+        let meta = HashMap::new();
+        storage.save("machine learning algorithms", &meta).unwrap();
+        storage.save("completely unrelated text", &meta).unwrap();
+
+        // High threshold should filter out poor matches
+        let results = storage.search("machine learning", 10, 0.9).unwrap();
+        assert!(results.len() <= 1);
+    }
+
+    #[test]
+    fn test_rag_storage_reset() {
+        let storage = RAGStorage::new("short_term", true, None, None, None);
+        let meta = HashMap::new();
+        storage.save("test entry", &meta).unwrap();
+
+        let results = storage.search("test", 10, 0.0).unwrap();
+        assert!(!results.is_empty());
+
+        storage.reset().unwrap();
+        let results = storage.search("test", 10, 0.0).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_rag_storage_collection_name() {
+        let s1 = RAGStorage::new("short_term", true, None, None, None);
+        assert_eq!(s1.collection_name(), "memory_short_term");
+
+        let s2 = RAGStorage::new(
+            "short_term",
+            true,
+            None,
+            Some(vec!["researcher".to_string(), "writer".to_string()]),
+            None,
+        );
+        assert_eq!(s2.collection_name(), "memory_short_term_researcher_writer");
+    }
+
+    #[test]
+    fn test_tokenize() {
+        let tokens = RAGStorage::tokenize("Hello, World! This is a test.");
+        assert!(tokens.contains(&"hello".to_string()));
+        assert!(tokens.contains(&"world".to_string()));
+        assert!(tokens.contains(&"test".to_string()));
+        // Single-char words should be filtered
+        assert!(!tokens.contains(&"a".to_string()));
     }
 }

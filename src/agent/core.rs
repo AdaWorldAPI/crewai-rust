@@ -12,6 +12,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
+use crate::agents::crew_agent_executor::CrewAgentExecutor;
+use crate::agents::tools_handler::ToolsHandler;
+use crate::llms::base_llm::{BaseLLM, BaseLLMState, LLMMessage};
+use crate::llms::providers::anthropic::AnthropicCompletion;
+use crate::llms::providers::openai::OpenAICompletion;
+use crate::llms::providers::xai::XAICompletion;
 use crate::security::security_config::SecurityConfig;
 
 /// MCP connection timeout in seconds.
@@ -460,13 +466,142 @@ impl Agent {
     }
 
     /// Execute a task without a timeout.
+    ///
+    /// Builds a `CrewAgentExecutor` with the agent's LLM and tools, then
+    /// runs the invoke loop (ReAct or native function calling) to produce
+    /// the final answer.
     fn execute_without_timeout(&mut self, task_prompt: &str) -> Result<String, String> {
-        // TODO: Delegate to agent_executor.invoke() when implemented.
-        Ok(format!(
-            "[Agent '{}' result for prompt: {}]",
+        // 1. Create the LLM instance from agent config
+        let llm = self.create_llm_instance()
+            .map_err(|e| format!("Failed to create LLM instance: {}", e))?;
+
+        // 2. Build system + user prompt
+        let system_prompt = format!(
+            "You are {}.\n{}\n\nYour goal: {}\n\nAvailable tools: {}\n\n\
+             You MUST use the following format:\n\n\
+             Thought: you should always think about what to do\n\
+             Action: the action to take, one of [{}]\n\
+             Action Input: the input to the action\n\
+             Observation: the result of the action\n\
+             ... (this Thought/Action/Action Input/Observation can repeat N times)\n\
+             Thought: I now know the final answer\n\
+             Final Answer: the final answer to the original input question",
             self.role,
-            &task_prompt[..task_prompt.len().min(100)]
-        ))
+            self.backstory,
+            self.goal,
+            self.tools.join(", "),
+            self.tools.join(", "),
+        );
+
+        let mut prompt = HashMap::new();
+        prompt.insert("system".to_string(), system_prompt);
+        prompt.insert("user".to_string(), task_prompt.to_string());
+
+        // 3. Build the executor
+        let tools_names = self.tools.join(", ");
+        let tools_description = self.tools.iter()
+            .map(|t| format!("- {}: A tool named {}", t, t))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        let mut executor = CrewAgentExecutor::new(
+            Box::new(()),                          // llm placeholder (we use callback)
+            Box::new(()),                          // task placeholder
+            Box::new(()),                          // agent placeholder
+            Box::new(()),                          // crew placeholder
+            prompt,
+            self.max_iter as u32,
+            Vec::new(),                            // structured tools
+            tools_names.clone(),
+            vec!["Observation:".to_string()],      // stop words
+            tools_description,
+            ToolsHandler::new(None),
+        );
+
+        // 4. Set the LLM call callback using the real LLM instance
+        let llm_arc: std::sync::Arc<dyn BaseLLM> = std::sync::Arc::from(llm);
+        let llm_for_call = llm_arc.clone();
+        executor.set_llm_call(move |messages: &[crate::agents::crew_agent_executor::LLMMessage], tools: Option<&[serde_json::Value]>| {
+            let msgs: Vec<LLMMessage> = messages.iter().map(|m| {
+                m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+            }).collect();
+
+            let tools_vec = tools.map(|t| t.to_vec());
+
+            let result = llm_for_call.call(msgs, tools_vec, None)?;
+
+            // Extract text from the LLM Value response
+            match result {
+                serde_json::Value::String(s) => Ok(s),
+                other => Ok(other.to_string()),
+            }
+        });
+
+        // 5. Set a basic tool executor (logs tool calls, returns stub for now)
+        executor.set_tool_executor(|tool_name: &str, tool_input: &str| {
+            log::info!("Tool call: {}({})", tool_name, tool_input);
+            Ok(format!("Tool '{}' executed with input: {}", tool_name, tool_input))
+        });
+
+        // 6. Run the executor
+        let mut inputs = HashMap::new();
+        inputs.insert("input".to_string(), task_prompt.to_string());
+        inputs.insert("tool_names".to_string(), tools_names);
+
+        let result = executor.invoke(inputs)
+            .map_err(|e| format!("Agent execution failed: {}", e))?;
+
+        // 7. Extract the output
+        let output = result.get("output")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        Ok(output)
+    }
+
+    /// Create an LLM instance based on the agent's `llm` configuration string.
+    ///
+    /// Parses strings like `"openai/gpt-4o"`, `"anthropic/claude-3-5-sonnet"`,
+    /// `"xai/grok-3"`, or bare model names like `"gpt-4o-mini"` (defaults to OpenAI).
+    ///
+    /// Corresponds to `Agent._create_llm` in Python.
+    pub fn create_llm_instance(&self) -> Result<Box<dyn BaseLLM>, String> {
+        let llm_str = self.llm.as_deref().unwrap_or("openai/gpt-4o-mini");
+        let (provider, model) = if let Some(idx) = llm_str.find('/') {
+            (&llm_str[..idx], &llm_str[idx + 1..])
+        } else {
+            // Infer provider from model name
+            let lower = llm_str.to_lowercase();
+            if lower.starts_with("claude") {
+                ("anthropic", llm_str)
+            } else if lower.starts_with("grok") {
+                ("xai", llm_str)
+            } else if lower.starts_with("gemini") {
+                ("gemini", llm_str)
+            } else {
+                ("openai", llm_str)
+            }
+        };
+
+        log::debug!("Creating LLM instance: provider={}, model={}", provider, model);
+
+        match provider.to_lowercase().as_str() {
+            "openai" => {
+                Ok(Box::new(OpenAICompletion::new(model, None, None)))
+            }
+            "anthropic" => {
+                Ok(Box::new(AnthropicCompletion::new(model, None, None)))
+            }
+            "xai" | "grok" => {
+                Ok(Box::new(XAICompletion::new(model, None, None)))
+            }
+            other => {
+                // Default to OpenAI-compatible with the full string as model
+                log::warn!("Unknown provider '{}', falling back to OpenAI-compatible", other);
+                Ok(Box::new(OpenAICompletion::new(llm_str, None, None)))
+            }
+        }
     }
 
     /// Create the agent executor.
@@ -475,13 +610,7 @@ impl Agent {
     /// with tools, prompts, stop words, and RPM limits.
     pub fn create_agent_executor(&mut self) {
         log::debug!("Creating agent executor for '{}'", self.role);
-        // TODO: Initialize the agent executor based on configuration.
-        // This mirrors the Python create_agent_executor which sets up:
-        //   - parsed tools
-        //   - Prompts with agent context
-        //   - stop words
-        //   - RPM limits
-        //   - CrewAgentExecutor or AgentExecutor instance
+        // The executor is now built on-demand in execute_without_timeout().
     }
 
     /// Get delegation tools for the specified agents.

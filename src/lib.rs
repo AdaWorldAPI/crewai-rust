@@ -28,6 +28,7 @@ pub mod llm;
 pub mod llms;
 pub mod mcp;
 pub mod memory;
+pub mod meta_agents;
 pub mod policy;
 pub mod process;
 pub mod project;

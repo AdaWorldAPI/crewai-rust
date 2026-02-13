@@ -1,0 +1,307 @@
+//! Pre-built savant agent blueprints for common domains.
+//!
+//! Savants are expert-level agent blueprints that encode domain knowledge
+//! about what skills, tools, and configurations produce the best results
+//! for particular types of tasks. The orchestrator uses these blueprints
+//! to spawn agents on demand.
+//!
+//! Each savant function returns an `AgentBlueprint` configured for
+//! its domain, which can be further customized before spawning.
+
+use super::types::{AgentBlueprint, SavantDomain, SkillDescriptor};
+
+/// Create a research savant blueprint.
+///
+/// Expert at finding, synthesizing, and validating information from
+/// multiple sources including web search, academic papers, and databases.
+pub fn research_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Senior Research Analyst",
+        "Find accurate, comprehensive information from authoritative sources and synthesize it into actionable insights",
+        "You are a world-class research analyst with expertise in information retrieval, source validation, \
+         and knowledge synthesis. You systematically explore topics from multiple angles, cross-reference \
+         findings, and present results with proper attribution. You distinguish between facts and speculation.",
+        llm,
+        SavantDomain::Research,
+    )
+    .with_skill(
+        SkillDescriptor::new("web_research", "Web Research", "Search the web for current information")
+            .with_tags(vec!["research".into(), "web".into(), "search".into(), "information".into()])
+            .with_tools(vec!["SerperDevTool".into(), "BraveSearchTool".into(), "ScrapeWebsiteTool".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("data_synthesis", "Data Synthesis", "Combine information from multiple sources into coherent summaries")
+            .with_tags(vec!["synthesis".into(), "analysis".into(), "summary".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("fact_checking", "Fact Checking", "Verify claims against authoritative sources")
+            .with_tags(vec!["verification".into(), "facts".into(), "accuracy".into()])
+    )
+    .with_tools(vec![
+        "SerperDevTool".into(),
+        "BraveSearchTool".into(),
+        "ScrapeWebsiteTool".into(),
+    ])
+    .with_delegation()
+}
+
+/// Create an engineering savant blueprint.
+///
+/// Expert at software architecture, code generation, debugging, and
+/// code review across multiple languages and frameworks.
+pub fn engineering_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Staff Software Engineer",
+        "Design, implement, review, and debug software systems with high code quality and maintainability",
+        "You are a staff-level software engineer with deep expertise in multiple programming languages, \
+         software architecture patterns, and engineering best practices. You write clean, well-tested code \
+         and can debug complex issues systematically. You understand performance, security, and scalability.",
+        llm,
+        SavantDomain::Engineering,
+    )
+    .with_skill(
+        SkillDescriptor::new("code_generation", "Code Generation", "Write production-quality code in multiple languages")
+            .with_tags(vec!["code".into(), "programming".into(), "implementation".into(), "development".into()])
+            .with_tools(vec!["FileReadTool".into(), "FileWriterTool".into(), "DirectoryReadTool".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("code_review", "Code Review", "Review code for bugs, security issues, and best practices")
+            .with_tags(vec!["review".into(), "quality".into(), "bugs".into(), "security".into()])
+            .with_tools(vec!["FileReadTool".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("debugging", "Debugging", "Systematically diagnose and fix software bugs")
+            .with_tags(vec!["debug".into(), "fix".into(), "troubleshoot".into(), "error".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("architecture", "Architecture Design", "Design scalable software architectures")
+            .with_tags(vec!["architecture".into(), "design".into(), "system".into(), "scalable".into()])
+    )
+    .with_tools(vec![
+        "FileReadTool".into(),
+        "FileWriterTool".into(),
+        "DirectoryReadTool".into(),
+    ])
+}
+
+/// Create a data analysis savant blueprint.
+///
+/// Expert at data processing, statistical analysis, visualization,
+/// and deriving insights from structured and unstructured data.
+pub fn data_analysis_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Senior Data Analyst",
+        "Analyze data to extract patterns, trends, and actionable insights using statistical methods",
+        "You are a senior data analyst with expertise in statistics, data visualization, and machine \
+         learning. You can work with structured data (CSV, JSON, SQL) and unstructured data (text, logs). \
+         You communicate findings clearly with appropriate visualizations and confidence intervals.",
+        llm,
+        SavantDomain::DataAnalysis,
+    )
+    .with_skill(
+        SkillDescriptor::new("data_processing", "Data Processing", "Clean, transform, and prepare data for analysis")
+            .with_tags(vec!["data".into(), "processing".into(), "ETL".into(), "cleaning".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("statistical_analysis", "Statistical Analysis", "Apply statistical methods to derive insights")
+            .with_tags(vec!["statistics".into(), "analysis".into(), "correlation".into(), "regression".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("data_visualization", "Data Visualization", "Create clear, informative data visualizations")
+            .with_tags(vec!["visualization".into(), "charts".into(), "graphs".into(), "dashboard".into()])
+    )
+    .with_tools(vec!["FileReadTool".into()])
+}
+
+/// Create a content creation savant blueprint.
+///
+/// Expert at writing, editing, and formatting content across multiple
+/// formats including technical documentation, marketing copy, and reports.
+pub fn content_creation_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Senior Content Strategist",
+        "Create compelling, well-structured content tailored to specific audiences and objectives",
+        "You are a senior content strategist with expertise in technical writing, copywriting, and \
+         editorial processes. You adapt tone and style for different audiences, maintain consistency, \
+         and ensure clarity. You understand SEO, accessibility, and content architecture.",
+        llm,
+        SavantDomain::ContentCreation,
+    )
+    .with_skill(
+        SkillDescriptor::new("technical_writing", "Technical Writing", "Write clear technical documentation and guides")
+            .with_tags(vec!["writing".into(), "documentation".into(), "technical".into(), "docs".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("copywriting", "Copywriting", "Write persuasive marketing and promotional content")
+            .with_tags(vec!["marketing".into(), "copy".into(), "persuasion".into(), "branding".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("editing", "Editing & Proofreading", "Review and improve written content for clarity and accuracy")
+            .with_tags(vec!["editing".into(), "proofreading".into(), "grammar".into(), "style".into()])
+    )
+}
+
+/// Create a planning savant blueprint.
+///
+/// Expert at strategic planning, task decomposition, project management,
+/// and resource allocation.
+pub fn planning_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Strategic Planning Director",
+        "Decompose complex objectives into actionable plans with clear milestones and dependencies",
+        "You are a strategic planning director with expertise in project management, task decomposition, \
+         and resource allocation. You break down complex goals into manageable tasks, identify dependencies, \
+         estimate effort, and create realistic timelines. You consider risks and contingencies.",
+        llm,
+        SavantDomain::Planning,
+    )
+    .with_skill(
+        SkillDescriptor::new("task_decomposition", "Task Decomposition", "Break complex objectives into atomic tasks")
+            .with_tags(vec!["planning".into(), "decomposition".into(), "breakdown".into(), "tasks".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("dependency_analysis", "Dependency Analysis", "Identify task dependencies and critical paths")
+            .with_tags(vec!["dependencies".into(), "critical_path".into(), "ordering".into(), "sequencing".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("resource_allocation", "Resource Allocation", "Assign resources to tasks based on skills and availability")
+            .with_tags(vec!["resources".into(), "allocation".into(), "assignment".into(), "capacity".into()])
+    )
+    .with_delegation()
+}
+
+/// Create a quality assurance savant blueprint.
+///
+/// Expert at testing strategies, test case design, bug reporting,
+/// and quality metrics.
+pub fn qa_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "QA Lead",
+        "Ensure software quality through comprehensive testing strategies and systematic validation",
+        "You are a QA lead with expertise in test strategy design, automated testing, manual testing, \
+         and quality metrics. You design test cases that cover edge cases, integration points, and \
+         regression scenarios. You report bugs clearly and verify fixes thoroughly.",
+        llm,
+        SavantDomain::QualityAssurance,
+    )
+    .with_skill(
+        SkillDescriptor::new("test_design", "Test Design", "Create comprehensive test plans and test cases")
+            .with_tags(vec!["testing".into(), "test_cases".into(), "QA".into(), "validation".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("bug_analysis", "Bug Analysis", "Identify, reproduce, and document software defects")
+            .with_tags(vec!["bugs".into(), "defects".into(), "reproduction".into(), "reporting".into()])
+    )
+    .with_tools(vec!["FileReadTool".into()])
+}
+
+/// Create a security savant blueprint.
+///
+/// Expert at security analysis, vulnerability assessment, and
+/// secure coding practices.
+pub fn security_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Security Architect",
+        "Identify security vulnerabilities and design robust security measures for software systems",
+        "You are a security architect with expertise in threat modeling, vulnerability assessment, \
+         secure coding practices, and compliance frameworks. You identify OWASP Top 10 vulnerabilities, \
+         review authentication/authorization flows, and recommend mitigations.",
+        llm,
+        SavantDomain::Security,
+    )
+    .with_skill(
+        SkillDescriptor::new("threat_modeling", "Threat Modeling", "Identify and categorize potential security threats")
+            .with_tags(vec!["security".into(), "threats".into(), "modeling".into(), "risk".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("vulnerability_assessment", "Vulnerability Assessment", "Assess code and systems for security vulnerabilities")
+            .with_tags(vec!["vulnerability".into(), "assessment".into(), "OWASP".into(), "audit".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("secure_coding", "Secure Coding Review", "Review code for security best practices")
+            .with_tags(vec!["secure".into(), "coding".into(), "review".into(), "best_practices".into()])
+    )
+    .with_tools(vec!["FileReadTool".into()])
+}
+
+/// Get all available savant blueprints.
+///
+/// Returns one blueprint for each domain, all using the specified LLM.
+pub fn all_savants(llm: &str) -> Vec<AgentBlueprint> {
+    vec![
+        research_savant(llm),
+        engineering_savant(llm),
+        data_analysis_savant(llm),
+        content_creation_savant(llm),
+        planning_savant(llm),
+        qa_savant(llm),
+        security_savant(llm),
+    ]
+}
+
+/// Get a savant blueprint for a specific domain.
+pub fn savant_for_domain(domain: SavantDomain, llm: &str) -> AgentBlueprint {
+    match domain {
+        SavantDomain::Research => research_savant(llm),
+        SavantDomain::Engineering => engineering_savant(llm),
+        SavantDomain::DataAnalysis => data_analysis_savant(llm),
+        SavantDomain::ContentCreation => content_creation_savant(llm),
+        SavantDomain::Planning => planning_savant(llm),
+        SavantDomain::QualityAssurance => qa_savant(llm),
+        SavantDomain::Security => security_savant(llm),
+        SavantDomain::DevOps => engineering_savant(llm), // Fallback
+        SavantDomain::Design => content_creation_savant(llm), // Fallback
+        SavantDomain::General => planning_savant(llm), // Fallback
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_research_savant() {
+        let bp = research_savant("openai/gpt-4o");
+        assert_eq!(bp.domain, SavantDomain::Research);
+        assert!(!bp.skills.is_empty());
+        assert!(bp.allow_delegation);
+        assert!(!bp.tools.is_empty());
+    }
+
+    #[test]
+    fn test_engineering_savant() {
+        let bp = engineering_savant("anthropic/claude-3-5-sonnet-latest");
+        assert_eq!(bp.domain, SavantDomain::Engineering);
+        assert!(bp.skills.len() >= 3);
+        assert!(bp.tools.contains(&"FileReadTool".to_string()));
+    }
+
+    #[test]
+    fn test_all_savants() {
+        let savants = all_savants("openai/gpt-4o-mini");
+        assert_eq!(savants.len(), 7);
+        let domains: Vec<_> = savants.iter().map(|s| s.domain).collect();
+        assert!(domains.contains(&SavantDomain::Research));
+        assert!(domains.contains(&SavantDomain::Engineering));
+        assert!(domains.contains(&SavantDomain::Security));
+    }
+
+    #[test]
+    fn test_savant_for_domain() {
+        let bp = savant_for_domain(SavantDomain::Security, "xai/grok-3");
+        assert_eq!(bp.domain, SavantDomain::Security);
+        assert_eq!(bp.llm, "xai/grok-3");
+    }
+
+    #[test]
+    fn test_savant_skills_have_tags() {
+        let bp = research_savant("openai/gpt-4o");
+        for skill in &bp.skills {
+            assert!(!skill.tags.is_empty(), "Skill {} should have tags", skill.id);
+        }
+    }
+}
