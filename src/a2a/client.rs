@@ -219,17 +219,38 @@ impl A2AClient {
 
     /// Retrieve the agent card from the remote agent.
     ///
-    /// Fetches `/.well-known/agent.json` from the agent endpoint.
+    /// Fetches `/.well-known/agent.json` from the agent endpoint via HTTP GET.
     pub async fn get_agent_card(&mut self) -> Result<AgentCard, anyhow::Error> {
-        // TODO: Implement actual HTTP request to fetch agent card.
-        // For now, return an error indicating this is not yet implemented.
-        anyhow::bail!(
-            "A2A client get_agent_card not yet implemented for endpoint: {}",
-            self.endpoint
-        )
+        let url = format!("{}/.well-known/agent.json", self.endpoint.trim_end_matches('/'));
+        log::debug!("Fetching agent card from: {}", url);
+
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(self.timeout))
+            .build()?;
+
+        let mut req = client.get(&url).header("Accept", "application/json");
+
+        if let Some(ref auth) = self.auth {
+            let mut headers = HashMap::new();
+            auth.apply_auth(&mut headers).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+            for (k, v) in &headers {
+                req = req.header(k.as_str(), v.as_str());
+            }
+        }
+
+        let resp = req.send().await?;
+        if !resp.status().is_success() {
+            anyhow::bail!("Failed to fetch agent card from {}: HTTP {}", url, resp.status());
+        }
+
+        let card: AgentCard = resp.json().await?;
+        self.agent_card = Some(card.clone());
+        Ok(card)
     }
 
     /// Send a message to the remote agent and get a response.
+    ///
+    /// Posts a JSON-RPC `message/send` request to the agent endpoint.
     ///
     /// # Arguments
     ///
@@ -242,33 +263,157 @@ impl A2AClient {
         context_id: Option<&str>,
         task_id: Option<&str>,
     ) -> Result<TaskStateResult, anyhow::Error> {
-        // TODO: Implement actual A2A message sending via the configured transport.
-        anyhow::bail!(
-            "A2A client send_message not yet implemented for endpoint: {}",
-            self.endpoint
-        )
+        let url = format!("{}/a2a", self.endpoint.trim_end_matches('/'));
+        log::debug!("Sending A2A message to: {}", url);
+
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(self.timeout))
+            .build()?;
+
+        let mut params = serde_json::json!({ "message": message });
+        if let Some(cid) = context_id {
+            params["context_id"] = Value::String(cid.to_string());
+        }
+        if let Some(tid) = task_id {
+            params["task_id"] = Value::String(tid.to_string());
+        }
+
+        let rpc_body = serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "message/send",
+            "id": uuid::Uuid::new_v4().to_string(),
+            "params": params,
+        });
+
+        let mut req = client.post(&url)
+            .header("Content-Type", "application/json")
+            .json(&rpc_body);
+
+        if let Some(ref auth) = self.auth {
+            let mut headers = HashMap::new();
+            auth.apply_auth(&mut headers).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+            for (k, v) in &headers {
+                req = req.header(k.as_str(), v.as_str());
+            }
+        }
+
+        let resp = req.send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            anyhow::bail!("A2A send_message failed: HTTP {} — {}", status, body);
+        }
+
+        let rpc_resp: Value = resp.json().await?;
+
+        if let Some(error) = rpc_resp.get("error") {
+            return Ok(TaskStateResult {
+                success: false,
+                result: None,
+                error: Some(error.to_string()),
+                history: vec![message],
+            });
+        }
+
+        let result_val = rpc_resp.get("result").cloned().unwrap_or_default();
+        let state_str = result_val.get("status")
+            .and_then(|s| s.get("state"))
+            .and_then(|s| s.as_str())
+            .unwrap_or("unknown");
+
+        let result_text = result_val.get("artifacts")
+            .and_then(|a| a.as_array())
+            .and_then(|arr| arr.first())
+            .and_then(|a| a.get("parts"))
+            .and_then(|p| p.as_array())
+            .and_then(|arr| arr.first())
+            .and_then(|p| p.get("text"))
+            .and_then(|t| t.as_str())
+            .map(|s| s.to_string());
+
+        Ok(TaskStateResult {
+            success: state_str == "completed",
+            result: result_text,
+            error: if state_str == "failed" {
+                Some(format!("Task failed with state: {}", state_str))
+            } else {
+                None
+            },
+            history: vec![message],
+        })
     }
 
-    /// Send a message and wait for the task to complete using the configured
-    /// update mechanism (polling, streaming, or push notifications).
+    /// Send a message and wait for the task to complete using polling.
+    ///
+    /// Sends the initial message, then polls for status updates until
+    /// the task reaches a terminal state (completed, failed, canceled).
     pub async fn send_and_wait(
         &self,
         message: A2AMessage,
         context_id: Option<&str>,
     ) -> Result<TaskStateResult, anyhow::Error> {
-        // TODO: Implement send + wait using the update config.
-        anyhow::bail!(
-            "A2A client send_and_wait not yet implemented for endpoint: {}",
-            self.endpoint
-        )
+        let initial = self.send_message(message, context_id, None).await?;
+        if initial.success || initial.error.is_some() {
+            return Ok(initial);
+        }
+
+        let max_polls = (self.timeout / 2).max(5);
+        for _ in 0..max_polls {
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            let poll_msg = A2AMessage {
+                role: "user".to_string(),
+                parts: vec![PartsDict { text: "status".to_string(), metadata: None }],
+                metadata: None,
+            };
+            let result = self.send_message(poll_msg, context_id, None).await?;
+            if result.success || result.error.is_some() {
+                return Ok(result);
+            }
+        }
+
+        Ok(TaskStateResult {
+            success: false,
+            result: None,
+            error: Some("Polling timed out waiting for task completion".to_string()),
+            history: Vec::new(),
+        })
     }
 
-    /// Cancel a running task.
+    /// Cancel a running task via JSON-RPC `tasks/cancel`.
     pub async fn cancel_task(&self, task_id: &str) -> Result<(), anyhow::Error> {
-        // TODO: Implement task cancellation.
-        anyhow::bail!(
-            "A2A client cancel_task not yet implemented for task: {}",
-            task_id
-        )
+        let url = format!("{}/a2a", self.endpoint.trim_end_matches('/'));
+        log::debug!("Cancelling A2A task {} at: {}", task_id, url);
+
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(self.timeout))
+            .build()?;
+
+        let rpc_body = serde_json::json!({
+            "jsonrpc": "2.0",
+            "method": "tasks/cancel",
+            "id": uuid::Uuid::new_v4().to_string(),
+            "params": { "task_id": task_id },
+        });
+
+        let mut req = client.post(&url)
+            .header("Content-Type", "application/json")
+            .json(&rpc_body);
+
+        if let Some(ref auth) = self.auth {
+            let mut headers = HashMap::new();
+            auth.apply_auth(&mut headers).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+            for (k, v) in &headers {
+                req = req.header(k.as_str(), v.as_str());
+            }
+        }
+
+        let resp = req.send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            anyhow::bail!("A2A cancel_task failed: HTTP {} — {}", status, body);
+        }
+
+        Ok(())
     }
 }

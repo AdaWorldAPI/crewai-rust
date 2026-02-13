@@ -41,12 +41,22 @@
 //! ```
 
 pub mod card_builder;
+pub mod delegation;
 pub mod orchestrator;
 pub mod savants;
+pub mod skill_engine;
+pub mod spawner;
 pub mod types;
 
 // Re-exports for convenience.
-pub use orchestrator::{MetaOrchestrator, OrchestratorConfig, OrchestrationResult};
+pub use delegation::{
+    AgentFeedback, CapabilityUpdate, CapabilityUpdateTrigger, DelegationDispatch,
+    DelegationRequest, DelegationResponse, DelegationResult, OrchestrationEvent,
+    SkillAdjustment, SkillAdjustmentType, TaskOutcome,
+};
+pub use orchestrator::{MetaOrchestrator, OrchestratorConfig, OrchestrationResult, PoolStats};
+pub use skill_engine::{SkillEngine, SkillEngineConfig};
+pub use spawner::{DecomposedTask, DecompositionPlan, SpawnerAgent};
 pub use types::{
     AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain,
     SkillDescriptor, SpawnedAgentState, TaskPriority,
