@@ -16,6 +16,7 @@ pub mod envelope;
 pub mod event_recorder;
 pub mod pg_store;
 pub mod bridge;
+#[cfg(feature = "wire_protocol")]
 pub mod wire_bridge;
 
 pub use types::*;
