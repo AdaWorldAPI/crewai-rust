@@ -9,6 +9,7 @@
 pub mod agent_tools;
 pub mod base_tool;
 pub mod cache_tools;
+pub mod chess;
 pub mod mcp_native_tool;
 pub mod mcp_tool_wrapper;
 pub mod structured_tool;

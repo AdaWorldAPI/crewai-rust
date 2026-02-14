@@ -155,6 +155,11 @@ impl UnifiedStep {
     pub fn is_n8n(&self) -> bool {
         self.step_type.starts_with("n8n.")
     }
+
+    /// Returns true if this step should be routed to the chess engine.
+    pub fn is_chess(&self) -> bool {
+        self.step_type.starts_with("chess.")
+    }
 }
 
 // ============================================================================
@@ -382,6 +387,12 @@ mod tests {
 
         let n8n = UnifiedStep::new("e1", "n8n.set", "Set", 2);
         assert!(n8n.is_n8n());
+
+        let chess = UnifiedStep::new("e1", "chess.evaluate", "Evaluate Position", 3);
+        assert!(chess.is_chess());
+        assert!(!chess.is_crew());
+        assert!(!chess.is_ladybug());
+        assert!(!chess.is_n8n());
     }
 
     #[test]

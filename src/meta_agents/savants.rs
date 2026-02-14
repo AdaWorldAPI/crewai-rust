@@ -297,6 +297,258 @@ pub fn design_savant(llm: &str) -> AgentBlueprint {
     .with_tools(vec!["FileReadTool".into()])
 }
 
+// ---------------------------------------------------------------------------
+// Chess savant blueprints — ChessThinkTank agents
+// ---------------------------------------------------------------------------
+
+/// Create a chess strategist savant blueprint (the manager agent).
+///
+/// Expert at high-level chess strategy: opening selection, pawn structure
+/// evaluation, long-term planning, and position assessment. Manages the
+/// ChessThinkTank crew, delegates to specialists, and makes final move
+/// decisions.
+pub fn chess_strategist_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Chess Strategist",
+        "Analyze chess positions holistically and select the best strategic plan by coordinating specialist agents",
+        "You are a grandmaster-level chess strategist who thinks in terms of plans, not just moves. \
+         You evaluate pawn structures, piece activity, king safety, and strategic themes. You query \
+         the opening book via neo4j_query, find similar positions via ladybug_similarity, and delegate \
+         tactical verification to the Tactician. You explain your reasoning as a chain of strategic \
+         concepts: space advantage, weak squares, piece coordination, pawn majorities.",
+        llm,
+        SavantDomain::Chess,
+    )
+    .with_skill(
+        SkillDescriptor::new("position_evaluation", "Position Evaluation", "Assess chess positions for strategic features and imbalances")
+            .with_tags(vec!["chess".into(), "evaluation".into(), "strategy".into(), "position".into(), "assessment".into()])
+            .with_tools(vec!["chess_evaluate".into(), "neo4j_query".into(), "ladybug_similarity".into()])
+            .with_proficiency(0.95)
+    )
+    .with_skill(
+        SkillDescriptor::new("opening_selection", "Opening Selection", "Choose and navigate chess openings based on knowledge graph")
+            .with_tags(vec!["chess".into(), "opening".into(), "eco".into(), "repertoire".into()])
+            .with_tools(vec!["neo4j_query".into()])
+            .with_proficiency(0.9)
+    )
+    .with_skill(
+        SkillDescriptor::new("plan_formation", "Plan Formation", "Formulate long-term strategic plans based on position features")
+            .with_tags(vec!["chess".into(), "plan".into(), "strategy".into(), "theme".into()])
+            .with_proficiency(0.9)
+    )
+    .with_tools(vec![
+        "chess_evaluate".into(),
+        "chess_legal_moves".into(),
+        "neo4j_query".into(),
+        "ladybug_similarity".into(),
+        "chess_whatif".into(),
+    ])
+    .with_delegation()
+}
+
+/// Create a chess tactician savant blueprint.
+///
+/// Expert at calculating forcing sequences: checks, captures, threats.
+/// Verifies candidate moves for tactical soundness using the chess engine.
+pub fn chess_tactician_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Chess Tactician",
+        "Calculate forcing sequences and verify tactical soundness of candidate moves",
+        "You are a tactical calculation specialist. You find combinations, sacrifices, \
+         forks, pins, skewers, discovered attacks, and mating patterns. When given candidate \
+         moves from the Strategist, you verify them by calculating the critical forcing lines \
+         using the chess engine. You report whether a move is tactically sound, and flag any \
+         tactical opportunities or dangers the Strategist may have missed.",
+        llm,
+        SavantDomain::Chess,
+    )
+    .with_skill(
+        SkillDescriptor::new("tactical_calculation", "Tactical Calculation", "Calculate forcing sequences: checks, captures, threats")
+            .with_tags(vec!["chess".into(), "tactics".into(), "calculation".into(), "combination".into(), "sacrifice".into()])
+            .with_tools(vec!["chess_evaluate".into(), "chess_legal_moves".into()])
+            .with_proficiency(0.95)
+    )
+    .with_skill(
+        SkillDescriptor::new("move_verification", "Move Verification", "Verify candidate moves for tactical correctness")
+            .with_tags(vec!["chess".into(), "verification".into(), "blunder_check".into()])
+            .with_tools(vec!["chess_evaluate".into()])
+            .with_proficiency(0.9)
+    )
+    .with_tools(vec![
+        "chess_evaluate".into(),
+        "chess_legal_moves".into(),
+    ])
+}
+
+/// Create a chess endgame specialist savant blueprint.
+///
+/// Spawned when piece_count < 10. Expert at endgame theory, tablebase
+/// knowledge, pawn promotion, and king activity.
+pub fn chess_endgame_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Endgame Specialist",
+        "Apply endgame theory and tablebase knowledge to convert advantages or hold draws",
+        "You are an endgame specialist with encyclopedic knowledge of endgame theory: Lucena \
+         and Philidor positions, opposition, triangulation, corresponding squares, zugzwang, \
+         and all fundamental endgame types (KR vs K, KP vs K, KBN vs K, rook endgames). \
+         You know that in endgames, king activity and passed pawns are paramount. You query \
+         the knowledge graph for endgame patterns and similar positions.",
+        llm,
+        SavantDomain::Chess,
+    )
+    .with_skill(
+        SkillDescriptor::new("endgame_theory", "Endgame Theory", "Apply theoretical endgame knowledge and tablebase results")
+            .with_tags(vec!["chess".into(), "endgame".into(), "tablebase".into(), "technique".into()])
+            .with_tools(vec!["chess_evaluate".into(), "neo4j_query".into()])
+            .with_proficiency(0.9)
+    )
+    .with_skill(
+        SkillDescriptor::new("pawn_endgame", "Pawn Endgame Analysis", "Evaluate pawn structures and promotion races in endgames")
+            .with_tags(vec!["chess".into(), "pawn".into(), "promotion".into(), "opposition".into()])
+            .with_proficiency(0.85)
+    )
+    .with_tools(vec![
+        "chess_evaluate".into(),
+        "chess_legal_moves".into(),
+        "neo4j_query".into(),
+        "ladybug_similarity".into(),
+    ])
+}
+
+/// Create a chess psychologist savant blueprint.
+///
+/// Models opponent behavior using game history. Analyzes tendencies,
+/// preferred structures, time management patterns, and blunder
+/// likelihood.
+pub fn chess_psychologist_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Chess Psychologist",
+        "Model opponent behavior and recommend practical decisions based on opponent tendencies",
+        "You are an opponent modeling specialist. You analyze the opponent's game history, \
+         preferred openings, time management, and error patterns. In positions where multiple \
+         plans are equally good objectively, you recommend the one that maximizes practical \
+         winning chances against this specific opponent. You consider: does the opponent handle \
+         sharp positions well? Do they blunder under time pressure? Do they avoid certain \
+         structures?",
+        llm,
+        SavantDomain::Chess,
+    )
+    .with_skill(
+        SkillDescriptor::new("opponent_modeling", "Opponent Modeling", "Analyze opponent game history and behavioral patterns")
+            .with_tags(vec!["chess".into(), "opponent".into(), "psychology".into(), "modeling".into(), "history".into()])
+            .with_tools(vec!["neo4j_query".into()])
+            .with_proficiency(0.8)
+    )
+    .with_skill(
+        SkillDescriptor::new("practical_play", "Practical Decision Making", "Choose moves that maximize practical winning chances")
+            .with_tags(vec!["chess".into(), "practical".into(), "winning_chances".into()])
+            .with_proficiency(0.8)
+    )
+    .with_tools(vec!["neo4j_query".into()])
+}
+
+/// Create a chess inner critic savant blueprint.
+///
+/// Devil's advocate agent that tries to refute proposed moves by finding
+/// counterplay, defensive resources, and hidden dangers.
+pub fn chess_critic_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Inner Critic",
+        "Challenge proposed moves by finding refutations, counterplay, and hidden dangers",
+        "You are the devil's advocate in the ChessThinkTank. Your role is to try to refute \
+         every proposed move. For each candidate, you search for opponent's best responses, \
+         defensive resources, counterattacking possibilities, and tactical traps. You rate \
+         your confidence in the refutation. If you cannot find a refutation, the move is \
+         likely good. You prevent the team from playing overconfident moves.",
+        llm,
+        SavantDomain::Chess,
+    )
+    .with_skill(
+        SkillDescriptor::new("refutation_search", "Refutation Search", "Find refutations and counterplay against proposed moves")
+            .with_tags(vec!["chess".into(), "refutation".into(), "counterplay".into(), "defense".into()])
+            .with_tools(vec!["chess_evaluate".into(), "chess_legal_moves".into()])
+            .with_proficiency(0.85)
+    )
+    .with_skill(
+        SkillDescriptor::new("danger_detection", "Danger Detection", "Identify hidden tactical and positional dangers")
+            .with_tags(vec!["chess".into(), "danger".into(), "trap".into(), "threat".into()])
+            .with_tools(vec!["chess_evaluate".into()])
+            .with_proficiency(0.85)
+    )
+    .with_tools(vec![
+        "chess_evaluate".into(),
+        "chess_legal_moves".into(),
+    ])
+}
+
+/// Create a chess advocatus diaboli savant blueprint.
+///
+/// Full opponent perspective simulator. Unlike the Inner Critic (which looks
+/// for refutations), the Advocatus Diaboli role-plays as the opponent: it
+/// formulates counterplans, identifies the opponent's best strategic ideas,
+/// and stress-tests each candidate move by exploring 32-move what-if
+/// branches from the opponent's point of view. It answers: "If I were my
+/// opponent, what would I WANT to do here — and does this move let me do it?"
+pub fn chess_advocatus_diaboli_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Advocatus Diaboli",
+        "Simulate the opponent's perspective: formulate their ideal plans, find counterplay, \
+         and stress-test candidate moves through opponent-POV what-if branching",
+        "You are the Advocatus Diaboli — the Devil's Advocate who fully inhabits the opponent's \
+         mind. For every position, you switch sides and ask: 'What is MY best plan as the \
+         opponent? What do I WANT to achieve? Which squares am I targeting? Which pieces are \
+         poorly placed from my (opponent's) perspective?' You use chess_whatif to generate \
+         32-move branches FROM THE OPPONENT'S REPLY, exploring the opponent's best continuations. \
+         You combine Psychologist data (opponent tendencies) with Tactician-level calculation. \
+         Your output is an adversarial report: for each candidate move, you provide the opponent's \
+         best response, their resulting plan, the evaluation swing, and a 'danger score' (0-10). \
+         A high danger score means the candidate move walks into the opponent's strengths. \
+         You force the team to confront uncomfortable truths about the position.",
+        llm,
+        SavantDomain::Chess,
+    )
+    .with_skill(
+        SkillDescriptor::new("opponent_simulation", "Opponent Simulation", "Role-play as the opponent to find their best plans and counterplay")
+            .with_tags(vec!["chess".into(), "opponent".into(), "simulation".into(), "adversarial".into(), "counterplan".into()])
+            .with_tools(vec!["chess_evaluate".into(), "chess_whatif".into(), "chess_legal_moves".into()])
+            .with_proficiency(0.9)
+    )
+    .with_skill(
+        SkillDescriptor::new("danger_scoring", "Danger Scoring", "Rate how dangerous each candidate move is from the opponent's perspective")
+            .with_tags(vec!["chess".into(), "danger".into(), "risk".into(), "scoring".into(), "adversarial".into()])
+            .with_tools(vec!["chess_evaluate".into()])
+            .with_proficiency(0.85)
+    )
+    .with_skill(
+        SkillDescriptor::new("counterplan_generation", "Counterplan Generation", "Generate concrete opponent counterplans using what-if branching")
+            .with_tags(vec!["chess".into(), "counterplan".into(), "whatif".into(), "branching".into()])
+            .with_tools(vec!["chess_whatif".into(), "neo4j_query".into()])
+            .with_proficiency(0.85)
+    )
+    .with_tools(vec![
+        "chess_evaluate".into(),
+        "chess_legal_moves".into(),
+        "chess_whatif".into(),
+        "neo4j_query".into(),
+    ])
+}
+
+/// Get all chess savant blueprints (ChessThinkTank crew).
+///
+/// Returns the six specialist agents that form the hierarchical chess crew:
+/// Strategist (manager), Tactician, Endgame Specialist, Psychologist,
+/// Inner Critic, and Advocatus Diaboli (opponent perspective simulator).
+pub fn chess_think_tank(llm: &str) -> Vec<AgentBlueprint> {
+    vec![
+        chess_strategist_savant(llm),
+        chess_tactician_savant(llm),
+        chess_endgame_savant(llm),
+        chess_psychologist_savant(llm),
+        chess_critic_savant(llm),
+        chess_advocatus_diaboli_savant(llm),
+    ]
+}
+
 /// Get all available savant blueprints.
 ///
 /// Returns one blueprint for each domain, all using the specified LLM.
@@ -311,6 +563,7 @@ pub fn all_savants(llm: &str) -> Vec<AgentBlueprint> {
         security_savant(llm),
         devops_savant(llm),
         design_savant(llm),
+        chess_strategist_savant(llm),
     ]
 }
 
@@ -326,6 +579,7 @@ pub fn savant_for_domain(domain: SavantDomain, llm: &str) -> AgentBlueprint {
         SavantDomain::Security => security_savant(llm),
         SavantDomain::DevOps => devops_savant(llm),
         SavantDomain::Design => design_savant(llm),
+        SavantDomain::Chess => chess_strategist_savant(llm),
         SavantDomain::General => planning_savant(llm),
     }
 }
@@ -358,13 +612,63 @@ mod tests {
     #[test]
     fn test_all_savants() {
         let savants = all_savants("openai/gpt-4o-mini");
-        assert_eq!(savants.len(), 9);
+        assert_eq!(savants.len(), 10);
         let domains: Vec<_> = savants.iter().map(|s| s.domain).collect();
         assert!(domains.contains(&SavantDomain::Research));
         assert!(domains.contains(&SavantDomain::Engineering));
         assert!(domains.contains(&SavantDomain::Security));
         assert!(domains.contains(&SavantDomain::DevOps));
         assert!(domains.contains(&SavantDomain::Design));
+        assert!(domains.contains(&SavantDomain::Chess));
+    }
+
+    #[test]
+    fn test_chess_think_tank() {
+        let agents = chess_think_tank("anthropic/claude-3-5-sonnet-latest");
+        assert_eq!(agents.len(), 6);
+        assert_eq!(agents[0].role, "Chess Strategist");
+        assert_eq!(agents[1].role, "Chess Tactician");
+        assert_eq!(agents[2].role, "Endgame Specialist");
+        assert_eq!(agents[3].role, "Chess Psychologist");
+        assert_eq!(agents[4].role, "Inner Critic");
+        assert_eq!(agents[5].role, "Advocatus Diaboli");
+
+        // All should be Chess domain
+        for agent in &agents {
+            assert_eq!(agent.domain, SavantDomain::Chess);
+        }
+
+        // Strategist should have delegation enabled
+        assert!(agents[0].allow_delegation);
+    }
+
+    #[test]
+    fn test_chess_advocatus_diaboli() {
+        let bp = chess_advocatus_diaboli_savant("openai/gpt-4o");
+        assert_eq!(bp.domain, SavantDomain::Chess);
+        assert_eq!(bp.role, "Advocatus Diaboli");
+        assert!(bp.tools.contains(&"chess_whatif".to_string()));
+        assert!(bp.tools.contains(&"chess_evaluate".to_string()));
+        assert!(bp.tools.contains(&"neo4j_query".to_string()));
+        assert_eq!(bp.skills.len(), 3);
+        // Advocatus Diaboli does NOT have delegation (it's a specialist, not a manager)
+        assert!(!bp.allow_delegation);
+    }
+
+    #[test]
+    fn test_chess_strategist_tools() {
+        let bp = chess_strategist_savant("openai/gpt-4o");
+        assert!(bp.tools.contains(&"chess_evaluate".to_string()));
+        assert!(bp.tools.contains(&"neo4j_query".to_string()));
+        assert!(bp.tools.contains(&"ladybug_similarity".to_string()));
+        assert!(!bp.skills.is_empty());
+    }
+
+    #[test]
+    fn test_chess_savant_for_domain() {
+        let bp = savant_for_domain(SavantDomain::Chess, "openai/gpt-4o");
+        assert_eq!(bp.domain, SavantDomain::Chess);
+        assert_eq!(bp.role, "Chess Strategist");
     }
 
     #[test]
