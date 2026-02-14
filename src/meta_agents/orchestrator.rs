@@ -1233,7 +1233,7 @@ mod tests {
     fn test_orchestrator_with_default_savants() {
         let config = OrchestratorConfig::default();
         let orch = MetaOrchestrator::with_default_savants(config);
-        assert_eq!(orch.blueprints.len(), 9); // 9 domain savants (all domains)
+        assert_eq!(orch.blueprints.len(), 10); // 10 domain savants (all domains)
     }
 
     #[test]
