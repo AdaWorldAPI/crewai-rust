@@ -12,7 +12,7 @@
 //!   id: "soc:incident_response"
 //!   version: "1.0.0"
 //!   description: "SOC Level 2 analyst"
-//!   thinking_style: [0.9, 0.2, 0.8, 0.5, 0.7, 0.95, 0.6]
+//!   thinking_style: [0.9, 0.2, 0.8, 0.5, 0.7, 0.95, 0.6, 0.85, 0.9, 0.75]
 //!   domain: security
 //!   agent:
 //!     role: "SOC Analyst"
@@ -70,14 +70,31 @@ pub struct ModuleInner {
     pub description: String,
 
     // --- Cognitive Profile ---
-    /// 7-axis thinking style vector:
-    /// `[analytical, creative, systematic, intuitive, collaborative, critical, adaptive]`
+    /// 10-axis thinking style vector aligned with the ladybug-rs 10-layer
+    /// cognitive stack:
+    ///
+    /// ```text
+    /// [0] recognition     — pattern matching, fingerprint encoding      (L1)
+    /// [1] resonance       — field binding, similarity search             (L2)
+    /// [2] appraisal       — gestalt formation, hypothesis, evaluation    (L3)
+    /// [3] routing         — branch selection, fan-out, template dispatch (L4)
+    /// [4] execution       — active manipulation, synthesis, production   (L5)
+    /// [5] delegation      — cognitive fan-out, multi-agent dispatch      (L6)
+    /// [6] contingency     — cross-branch, things could be otherwise     (L7)
+    /// [7] integration     — evidence merge, learning from outcomes       (L8)
+    /// [8] validation      — NARS revision, Brier calibration, sieve     (L9)
+    /// [9] crystallization — what survives becomes the system             (L10)
+    /// ```
     ///
     /// Each axis ranges from 0.0 (low) to 1.0 (high).
-    pub thinking_style: [f32; 7],
+    pub thinking_style: [f32; 10],
 
     /// Savant domain this module's agent belongs to.
     pub domain: SavantDomain,
+
+    /// Persona profile — volition, inner-loop, self-modification bounds.
+    #[serde(default)]
+    pub persona: Option<PersonaProfile>,
 
     /// Cognitive gating configuration — when the agent should HOLD or BLOCK.
     #[serde(default)]
@@ -106,6 +123,66 @@ pub struct ModuleInner {
     /// Skills the agent starts with (maps to `SkillDescriptor`).
     #[serde(default)]
     pub skills: Vec<SkillDescriptor>,
+
+    // --- Extensibility ---
+    /// Opaque key-value store for domain-specific or plugin-specific properties.
+    ///
+    /// Anything that doesn't fit the typed schema goes here. Modules can stash
+    /// arbitrary YAML values and retrieve them at runtime.
+    #[serde(default)]
+    pub custom_properties: HashMap<String, serde_yaml::Value>,
+}
+
+// ============================================================================
+// Persona & Self-Modification Bounds
+// ============================================================================
+
+/// Self-modification bounds for an agent's cognitive profile.
+///
+/// Controls how much an agent is allowed to alter its own thinking style,
+/// persona, or internal state during a session.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum SelfModifyBounds {
+    /// No self-modification permitted — read-only cognitive profile.
+    #[default]
+    None,
+    /// Constrained self-modification — may tune thinking_style axes within ±0.1
+    /// per step, subject to `max_self_modify_steps`.
+    Constrained,
+    /// Open self-modification — full rewrite of thinking_style and persona
+    /// within a session (still gated by RBAC impact gates in n8n-rs).
+    Open,
+}
+
+/// A persona profile describing the agent's volitional and affective baseline.
+///
+/// This goes beyond the thinking style vector (which modulates *how* the agent
+/// processes) to describe *who* the agent is: its drives, its inner voice, and
+/// its emotional equilibrium.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PersonaProfile {
+    /// 5-axis volition vector: `[curiosity, autonomy, persistence, caution, empathy]`.
+    ///
+    /// Each axis 0.0–1.0. Drives the agent's initiative and risk appetite.
+    pub volition_axes: [f32; 5],
+
+    /// Whether the agent runs an inner-loop (self-reflection between steps).
+    ///
+    /// When true, the runtime invokes the `InnerThoughtHook` after each action
+    /// to let the agent observe and optionally modify its own thinking style.
+    #[serde(default)]
+    pub inner_loop: bool,
+
+    /// How much can the agent self-modify during a session?
+    #[serde(default)]
+    pub self_modify: SelfModifyBounds,
+
+    /// 8-channel affect baseline: `[joy, trust, fear, surprise, sadness, disgust, anger, anticipation]`.
+    ///
+    /// Plutchik's wheel mapped to 0.0–1.0. `None` means emotionally neutral.
+    #[serde(default)]
+    pub affect_baseline: Option<[f32; 8]>,
 }
 
 // ============================================================================
@@ -132,6 +209,19 @@ pub struct ModuleAgentConfig {
     /// Cross-module delegation targets (module IDs).
     #[serde(default)]
     pub delegation_targets: Vec<String>,
+    /// Enable inner-loop self-reflection between agent steps.
+    ///
+    /// When true (and `PersonaProfile::inner_loop` is also true), the runtime
+    /// calls `InnerThoughtHook` after each step, allowing the agent to observe
+    /// its own state and optionally adjust its thinking style.
+    #[serde(default)]
+    pub enable_inner_loop: bool,
+    /// Maximum self-modification steps per session.
+    ///
+    /// Caps how many times the inner loop can rewrite the thinking style.
+    /// `None` means unlimited (still subject to `SelfModifyBounds`).
+    #[serde(default)]
+    pub max_self_modify_steps: Option<u32>,
 }
 
 fn default_max_iter() -> i32 {
@@ -339,7 +429,7 @@ module:
   id: "test:minimal"
   version: "0.1.0"
   description: "Minimal test module"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "Test Agent"
@@ -355,12 +445,16 @@ module:
         assert_eq!(def.module.id, "test:minimal");
         assert_eq!(def.module.version, "0.1.0");
         assert_eq!(def.module.domain, SavantDomain::General);
-        assert_eq!(def.module.thinking_style.len(), 7);
+        assert_eq!(def.module.thinking_style.len(), 10);
         assert_eq!(def.module.agent.role, "Test Agent");
         assert_eq!(def.module.agent.max_iter, 25); // default
         assert!(def.module.interfaces.is_empty());
         assert!(def.module.skills.is_empty());
         assert!(def.module.collapse_gate.is_none());
+        assert!(def.module.persona.is_none());
+        assert!(def.module.custom_properties.is_empty());
+        assert!(!def.module.agent.enable_inner_loop);
+        assert!(def.module.agent.max_self_modify_steps.is_none());
     }
 
     #[test]
@@ -375,9 +469,9 @@ module:
     }
 
     #[test]
-    fn test_thinking_style_seven_elements() {
+    fn test_thinking_style_ten_elements() {
         let def = ModuleDef::from_yaml(minimal_yaml()).unwrap();
-        assert_eq!(def.module.thinking_style.len(), 7);
+        assert_eq!(def.module.thinking_style.len(), 10);
         for &val in &def.module.thinking_style {
             assert!(val >= 0.0 && val <= 1.0);
         }
@@ -408,7 +502,7 @@ module:
   id: "test:security"
   version: "0.1.0"
   description: "Security module"
-  thinking_style: [0.9, 0.2, 0.8, 0.5, 0.7, 0.95, 0.6]
+  thinking_style: [0.9, 0.2, 0.8, 0.5, 0.7, 0.95, 0.6, 0.85, 0.9, 0.75]
   domain: security
   agent:
     role: "Analyst"
@@ -432,7 +526,7 @@ module:
   id: "test:{}"
   version: "0.1.0"
   description: "Test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: {}
   agent:
     role: "R"
@@ -455,7 +549,7 @@ module:
   id: "test:gate"
   version: "0.1.0"
   description: "Gate test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   collapse_gate:
     block_patterns:
@@ -480,7 +574,7 @@ module:
   id: "test:iface"
   version: "0.1.0"
   description: "Interface test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: dev_ops
   agent:
     role: "Admin"
@@ -522,7 +616,7 @@ module:
   id: "test:knowledge"
   version: "0.1.0"
   description: "Knowledge test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: research
   agent:
     role: "R"
@@ -577,7 +671,7 @@ module:
   id: "test:policy"
   version: "0.1.0"
   description: "Policy test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: security
   agent:
     role: "R"
@@ -616,7 +710,7 @@ module:
   id: "test:skills"
   version: "0.1.0"
   description: "Skills test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: engineering
   agent:
     role: "Dev"
@@ -649,7 +743,7 @@ module:
   id: "test:deleg"
   version: "0.1.0"
   description: "Delegation test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "R"
@@ -673,7 +767,7 @@ module:
   id: "test:override"
   version: "0.1.0"
   description: "Override test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "R"
@@ -708,7 +802,7 @@ module:
   id: "soc:incident_response"
   version: "1.0.0"
   description: "SOC Level 2 incident response and threat correlation"
-  thinking_style: [0.9, 0.2, 0.8, 0.5, 0.7, 0.95, 0.6]
+  thinking_style: [0.9, 0.2, 0.8, 0.5, 0.7, 0.95, 0.6, 0.85, 0.9, 0.75]
   domain: security
   collapse_gate:
     min_confidence: 0.7
