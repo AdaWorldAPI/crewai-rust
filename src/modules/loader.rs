@@ -38,7 +38,7 @@ pub struct ModuleInstance {
     /// Cognitive gate (if configured).
     pub gate: Option<CognitiveGate>,
     /// Thinking style vector (copied for quick access).
-    pub thinking_style: [f32; 7],
+    pub thinking_style: [f32; 10],
 }
 
 // ============================================================================
@@ -341,7 +341,7 @@ module:
   id: "test:loader"
   version: "1.0.0"
   description: "Loader test module"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "Test Agent"
@@ -369,7 +369,7 @@ module:
   id: "test:iface"
   version: "1.0.0"
   description: "Interface test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: dev_ops
   agent:
     role: "Admin"
@@ -410,7 +410,7 @@ module:
   id: "test:gate"
   version: "1.0.0"
   description: "Gate test"
-  thinking_style: [0.9, 0.1, 0.8, 0.3, 0.5, 0.9, 0.4]
+  thinking_style: [0.9, 0.1, 0.8, 0.3, 0.5, 0.9, 0.4, 0.85, 0.9, 0.7]
   domain: security
   collapse_gate:
     min_confidence: 0.8
@@ -438,7 +438,7 @@ module:
   id: "test:rbac"
   version: "1.0.0"
   description: "RBAC test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "R"
@@ -466,7 +466,7 @@ module:
   id: "test:ovr"
   version: "1.0.0"
   description: "Override test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "R"
@@ -519,7 +519,7 @@ module:
   id: "test:bad_ts"
   version: "1.0.0"
   description: "Bad thinking style"
-  thinking_style: [0.5, 1.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 1.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "R"
@@ -542,7 +542,7 @@ module:
   id: "test:dir_mod"
   version: "1.0.0"
   description: "Directory module"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "R"
@@ -582,7 +582,7 @@ module:
   id: "test:cap_reg"
   version: "1.0.0"
   description: "Cap registration test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: engineering
   agent:
     role: "Dev"
@@ -622,7 +622,7 @@ module:
   id: "test:skills"
   version: "1.0.0"
   description: "Skills test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: engineering
   agent:
     role: "Dev"

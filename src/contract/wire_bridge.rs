@@ -132,7 +132,7 @@ pub fn pack_agent_result(
     agent_id: &str,
     output: &str,
     confidence: f64,
-    thinking_style: Option<&[f32; 7]>,
+    thinking_style: Option<&[f32; 10]>,
 ) -> CogPacket {
     let content_hash = {
         use std::hash::{Hash, Hasher};
@@ -159,20 +159,24 @@ pub fn pack_agent_result(
     pkt.set_layer(4); // L5 Execution (0-indexed = 4)
     pkt.set_truth_value(&TruthValue::new(1.0, confidence as f32));
 
-    // Pack thinking style as field modulation
+    // Pack thinking style as field modulation (10-layer cognitive stack)
     if let Some(style) = thinking_style {
-        // style[0] = analytical → resonance_threshold
+        // style[0] = recognition → resonance_threshold
         pkt.set_resonance_threshold(style[0]);
-        // style[1] = creative → exploration
+        // style[1] = resonance → exploration
         pkt.set_exploration(style[1]);
-        // style[2] = systematic → depth_bias
+        // style[2] = appraisal → depth_bias
         pkt.set_depth_bias(style[2]);
-        // style[4] = collaborative → fan_out (scaled)
+        // style[4] = execution → fan_out (scaled)
         pkt.set_fan_out((style[4] * 20.0) as u8);
-        // style[5] = critical → noise_tolerance (inverted)
+        // style[5] = delegation → noise_tolerance (inverted)
         pkt.set_noise_tolerance(1.0 - style[5]);
-        // style[6] = adaptive → speed_bias
+        // style[6] = contingency → speed_bias
         pkt.set_speed_bias(style[6]);
+        // Pack satisfaction scores for all 10 layers
+        for (i, &s) in style.iter().enumerate().take(10) {
+            pkt.set_satisfaction(i as u8, s);
+        }
     }
 
     pkt.update_checksum();
@@ -257,7 +261,7 @@ mod tests {
 
     #[test]
     fn test_pack_agent_result() {
-        let style = [0.9, 0.2, 0.8, 0.5, 0.7, 0.95, 0.6];
+        let style = [0.9, 0.2, 0.8, 0.5, 0.7, 0.95, 0.6, 0.85, 0.9, 0.75];
         let pkt = pack_agent_result("analyst-01", "Research complete", 0.92, Some(&style));
 
         assert!(pkt.is_response());

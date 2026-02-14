@@ -2,8 +2,8 @@ module:
   id: "soc:incident_response"
   version: "1.0.0"
   description: "SOC Level 2 incident response agent for triaging, correlating, and responding to security incidents using JIRA ticketing, CloudWatch monitoring, and MCP knowledge integration"
-  thinking_style: [0.9, 0.3, 0.8, 0.5, 0.7, 0.95, 0.6]
-  #                analytical, creative, systematic, intuitive, collaborative, critical, adaptive
+  thinking_style: [0.9, 0.3, 0.8, 0.5, 0.7, 0.95, 0.6, 0.85, 0.9, 0.75]
+  #                recognition, resonance, appraisal, routing, execution, delegation, contingency, integration, validation, crystallization
   domain: security
 
   collapse_gate:

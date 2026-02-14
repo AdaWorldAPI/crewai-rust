@@ -2,8 +2,8 @@ module:
   id: "coding:agent"
   version: "1.0.0"
   description: "Software development agent for writing, reviewing, and refactoring code across Rust and TypeScript projects using Cursor IDE integration and n8n CI/CD automation workflows"
-  thinking_style: [0.7, 0.8, 0.6, 0.5, 0.7, 0.75, 0.9]
-  #                analytical, creative, systematic, intuitive, collaborative, critical, adaptive
+  thinking_style: [0.7, 0.8, 0.6, 0.5, 0.7, 0.75, 0.9, 0.8, 0.7, 0.85]
+  #                recognition, resonance, appraisal, routing, execution, delegation, contingency, integration, validation, crystallization
   domain: engineering
 
   collapse_gate:

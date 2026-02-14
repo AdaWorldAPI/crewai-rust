@@ -62,6 +62,53 @@ pub enum GateDecision {
 }
 
 // ============================================================================
+// Agent State & Inner Thought Hook
+// ============================================================================
+
+/// Runtime snapshot of an agent's cognitive state.
+///
+/// Passed to `InnerThoughtHook` between steps so the agent can introspect
+/// and optionally self-modify its thinking style.
+#[derive(Debug, Clone)]
+pub struct AgentState {
+    /// Current thinking style vector (may have been modified by previous hooks).
+    pub current_thinking_style: [f32; 10],
+    /// Persona profile (if configured).
+    pub persona: Option<super::module_def::PersonaProfile>,
+    /// Custom properties from the module definition.
+    pub custom_properties: std::collections::HashMap<String, serde_yaml::Value>,
+    /// Number of steps completed so far in this session.
+    pub step_count: u32,
+    /// Current confidence level (0.0–1.0).
+    pub confidence: f64,
+    /// Whether the last action succeeded.
+    pub last_action_succeeded: bool,
+}
+
+/// Inner thought hook — self-reflection callback between agent steps.
+///
+/// The runtime calls this after each step when `enable_inner_loop` is true.
+/// The hook receives the current `AgentState` and may return a modified
+/// thinking style vector.  If `None` is returned, the style is unchanged.
+///
+/// # Example (conceptual)
+///
+/// ```ignore
+/// let hook: InnerThoughtHook = Box::new(|state| {
+///     if !state.last_action_succeeded && state.confidence < 0.5 {
+///         let mut ts = state.current_thinking_style;
+///         ts[6] += 0.1; // boost contingency
+///         ts[8] += 0.1; // boost validation
+///         Some(ts)
+///     } else {
+///         None
+///     }
+/// });
+/// ```
+pub type InnerThoughtHook =
+    Box<dyn Fn(&AgentState) -> Option<[f32; 10]> + Send + Sync>;
+
+// ============================================================================
 // ModuleRuntime
 // ============================================================================
 
@@ -81,7 +128,7 @@ pub struct ModuleRuntime {
     /// Cognitive gates keyed by agent ID.
     gates: HashMap<String, CognitiveGate>,
     /// Thinking style vectors keyed by agent ID.
-    thinking_styles: HashMap<String, [f32; 7]>,
+    thinking_styles: HashMap<String, [f32; 10]>,
     /// Resonance configs keyed by agent ID.
     resonance_configs: HashMap<String, ResonanceConfig>,
     /// Active module instances keyed by module ID.
@@ -270,7 +317,7 @@ impl ModuleRuntime {
     ///
     /// Used by ladybug enrichment to apply cognitive profiles to data
     /// processing.
-    pub fn thinking_style(&self, agent_id: &str) -> Option<&[f32; 7]> {
+    pub fn thinking_style(&self, agent_id: &str) -> Option<&[f32; 10]> {
         self.thinking_styles.get(agent_id)
     }
 
@@ -421,7 +468,7 @@ module:
   id: "test:runtime"
   version: "1.0.0"
   description: "Runtime test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "Test Agent"
@@ -439,7 +486,7 @@ module:
   id: "test:gated"
   version: "1.0.0"
   description: "Gated test"
-  thinking_style: [0.9, 0.1, 0.8, 0.3, 0.5, 0.95, 0.4]
+  thinking_style: [0.9, 0.1, 0.8, 0.3, 0.5, 0.95, 0.4, 0.85, 0.9, 0.7]
   domain: security
   collapse_gate:
     min_confidence: 0.8
@@ -585,7 +632,7 @@ module:
   id: "test:security"
   version: "1.0.0"
   description: "Security module"
-  thinking_style: [0.9, 0.1, 0.8, 0.3, 0.5, 0.95, 0.4]
+  thinking_style: [0.9, 0.1, 0.8, 0.3, 0.5, 0.95, 0.4, 0.85, 0.9, 0.7]
   domain: security
   agent:
     role: "Security Analyst"
@@ -644,7 +691,7 @@ module:
   id: "test:resonance"
   version: "1.0.0"
   description: "Resonance test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "R"
@@ -675,7 +722,7 @@ module:
   id: "test:rbac_mod"
   version: "1.0.0"
   description: "RBAC test"
-  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+  thinking_style: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
   domain: general
   agent:
     role: "R"
@@ -717,7 +764,7 @@ module:
   id: "soc:analyst"
   version: "1.0.0"
   description: "SOC analyst"
-  thinking_style: [0.9, 0.1, 0.8, 0.5, 0.7, 0.95, 0.6]
+  thinking_style: [0.9, 0.1, 0.8, 0.5, 0.7, 0.95, 0.6, 0.85, 0.9, 0.75]
   domain: security
   agent:
     role: "SOC Analyst"
@@ -734,7 +781,7 @@ module:
   id: "coding:agent"
   version: "1.0.0"
   description: "Coding agent"
-  thinking_style: [0.6, 0.8, 0.7, 0.4, 0.3, 0.7, 0.9]
+  thinking_style: [0.6, 0.8, 0.7, 0.4, 0.3, 0.7, 0.9, 0.65, 0.6, 0.8]
   domain: engineering
   agent:
     role: "Developer"
@@ -769,7 +816,7 @@ module:
   id: "integration:test"
   version: "1.0.0"
   description: "Full integration test"
-  thinking_style: [0.8, 0.3, 0.9, 0.2, 0.6, 0.85, 0.5]
+  thinking_style: [0.8, 0.3, 0.9, 0.2, 0.6, 0.85, 0.5, 0.8, 0.85, 0.7]
   domain: dev_ops
   collapse_gate:
     min_confidence: 0.75

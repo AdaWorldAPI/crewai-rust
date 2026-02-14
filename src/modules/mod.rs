@@ -38,7 +38,10 @@ pub use error::ModuleError;
 pub use loader::{ModuleInstance, ModuleLoader};
 pub use module_def::{
     CollapseGateConfig, InterfaceAuth, KnowledgeSource, ModuleAgentConfig, ModuleDef,
-    ModuleInner, ModuleInterface, ModulePolicy, ToolOverride, ToolPolicy,
+    ModuleInner, ModuleInterface, ModulePolicy, PersonaProfile, SelfModifyBounds, ToolOverride,
+    ToolPolicy,
 };
 pub use openapi_parser::{parse_openapi_file, parse_openapi_spec};
-pub use runtime::{CognitiveGate, GateDecision, ModuleRuntime, ResonanceConfig};
+pub use runtime::{
+    AgentState, CognitiveGate, GateDecision, InnerThoughtHook, ModuleRuntime, ResonanceConfig,
+};
