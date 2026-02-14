@@ -160,6 +160,8 @@ pub enum SavantDomain {
     DevOps,
     /// Design and UX.
     Design,
+    /// Chess analysis and game strategy.
+    Chess,
     /// General-purpose (no specific domain).
     General,
 }
@@ -176,6 +178,7 @@ impl std::fmt::Display for SavantDomain {
             Self::Security => write!(f, "security"),
             Self::DevOps => write!(f, "devops"),
             Self::Design => write!(f, "design"),
+            Self::Chess => write!(f, "chess"),
             Self::General => write!(f, "general"),
         }
     }
