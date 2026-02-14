@@ -451,7 +451,7 @@ mod tests {
     #[test]
     fn test_spawner_creation() {
         let spawner = SpawnerAgent::new("openai/gpt-4o-mini");
-        assert_eq!(spawner.blueprints.len(), 10); // 10 domain savants (all domains)
+        assert_eq!(spawner.blueprints.len(), 10); // 10 domain savants (all domains + chess)
         assert!(!spawner.domain_keywords.is_empty());
     }
 
