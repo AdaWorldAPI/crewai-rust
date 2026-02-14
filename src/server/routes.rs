@@ -187,6 +187,10 @@ async fn execute_handler(
                     confidence,
                     epoch: chrono::Utc::now().timestamp_millis(),
                     version: Some(crate::VERSION.to_string()),
+                    dominant_layer: Some(5), // L5 Execution — agent produced output
+                    layer_activations: None,
+                    nars_frequency: None,
+                    calibration_error: None,
                 },
             };
 
@@ -231,6 +235,10 @@ async fn execute_handler(
                     confidence: 0.0,
                     epoch: chrono::Utc::now().timestamp_millis(),
                     version: Some(crate::VERSION.to_string()),
+                    dominant_layer: None,
+                    layer_activations: None,
+                    nars_frequency: None,
+                    calibration_error: None,
                 },
             };
 

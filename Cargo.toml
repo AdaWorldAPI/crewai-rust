@@ -75,7 +75,7 @@ base64 = "0.22"
 serde_yaml = "0.9"
 
 # Shared substrate types (LadybugDB contract)
-ladybug-contract = { git = "https://github.com/AdaWorldAPI/ladybug-rs", branch = "claude/check-module-status-MlttF" }
+ladybug-contract = { path = "../ladybug-rs/crates/ladybug-contract" }
 
 [features]
 default = []
