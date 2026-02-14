@@ -188,6 +188,17 @@ pub struct PersonaProfile {
     pub affect_baseline: Option<[f32; 8]>,
 }
 
+impl Default for PersonaProfile {
+    fn default() -> Self {
+        Self {
+            volition_axes: [0.5; 5],
+            inner_loop: false,
+            self_modify: SelfModifyBounds::default(),
+            affect_baseline: None,
+        }
+    }
+}
+
 // ============================================================================
 // Agent configuration
 // ============================================================================

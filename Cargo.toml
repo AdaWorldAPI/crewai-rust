@@ -80,6 +80,7 @@ ladybug-contract = { path = "../ladybug-rs/crates/ladybug-contract" }
 [features]
 default = []
 postgres = ["sqlx"]
+wire_protocol = []  # Enable when ladybug-contract gains the wire module
 
 [[bin]]
 name = "server"
