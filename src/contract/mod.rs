@@ -16,6 +16,7 @@ pub mod envelope;
 pub mod event_recorder;
 pub mod pg_store;
 pub mod bridge;
+pub mod wire_bridge;
 
 pub use types::*;
 pub use envelope::{from_task_output, from_memory, from_crew_callback, to_task_input};
