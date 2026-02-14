@@ -74,12 +74,13 @@ base64 = "0.22"
 # YAML parsing (for capability definitions and agent cards)
 serde_yaml = "0.9"
 
-# Shared substrate types (LadybugDB contract)
-ladybug-contract = { path = "../ladybug-rs/crates/ladybug-contract" }
+# Shared substrate types (LadybugDB contract) — optional for standalone mode
+ladybug-contract = { path = "../ladybug-rs/crates/ladybug-contract", optional = true }
 
 [features]
 default = []
 postgres = ["sqlx"]
+ladybug = ["dep:ladybug-contract"]
 wire_protocol = []  # Enable when ladybug-contract gains the wire module
 
 [[bin]]
