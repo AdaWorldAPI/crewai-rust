@@ -16,6 +16,13 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    # Checkout ladybug-rs as sibling — required for ladybug-contract path dependency
+    - uses: actions/checkout@v4
+      with:
+        repository: AdaWorldAPI/ladybug-rs
+        path: ../ladybug-rs
+
     - name: Build
       run: cargo build --verbose
     - name: Run tests
