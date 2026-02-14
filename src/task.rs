@@ -317,9 +317,28 @@ impl Task {
         let (result, messages) = if let Some(ref executor) = self.agent_executor {
             executor(&task_prompt, context, &tool_names)?
         } else {
-            // Fallback: return placeholder if no executor configured
-            log::warn!("No agent_executor configured for task, returning placeholder");
-            (format!("[Task execution placeholder for: {}]", self.description), Vec::new())
+            // Fallback: use LLM directly when no executor is configured
+            log::warn!("No agent_executor configured for task, using direct LLM call");
+            let llm = crate::llm::LLM::new(&format!("openai/gpt-4o-mini"));
+            let mut messages = Vec::new();
+            let mut sys_msg = HashMap::new();
+            sys_msg.insert("role".to_string(), "system".to_string());
+            sys_msg.insert("content".to_string(), format!(
+                "You are an AI assistant working as {}. Complete the following task.",
+                agent_role
+            ));
+            messages.push(sys_msg);
+            let mut user_msg = HashMap::new();
+            user_msg.insert("role".to_string(), "user".to_string());
+            user_msg.insert("content".to_string(), task_prompt.clone());
+            messages.push(user_msg);
+            match llm.call(&messages, None) {
+                Ok(response) => (response, Vec::new()),
+                Err(e) => {
+                    log::error!("Direct LLM call failed: {}", e);
+                    (format!("[LLM call failed: {}]", e), Vec::new())
+                }
+            }
         };
 
         let task_output = TaskOutput {

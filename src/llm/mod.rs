@@ -12,6 +12,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
+use crate::llms::base_llm::BaseLLM;
+use crate::llms::providers::openai::OpenAICompletion;
+use crate::llms::providers::xai::XAICompletion;
+
 /// Minimum context window size.
 pub const MIN_CONTEXT: i64 = 1024;
 
@@ -502,6 +506,7 @@ impl LLM {
                 "azure" | "azure_openai" => return "azure".to_string(),
                 "google" | "gemini" => return "gemini".to_string(),
                 "bedrock" | "aws" => return "bedrock".to_string(),
+                "xai" | "grok" => return "xai".to_string(),
                 _ => {}
             }
         }
@@ -522,6 +527,9 @@ impl LLM {
         }
         if model_lower.starts_with("mistral") {
             return "mistral".to_string();
+        }
+        if model_lower.starts_with("grok-") {
+            return "xai".to_string();
         }
 
         // Default to openai
@@ -550,15 +558,58 @@ impl LLM {
         messages: &[HashMap<String, String>],
         tools: Option<&[Value]>,
     ) -> Result<String, String> {
+        let provider = self.infer_provider();
         log::debug!(
             "LLM.call: model={}, provider={}, {} messages, {} tools",
             self.model,
-            self.infer_provider(),
+            provider,
             messages.len(),
             tools.map_or(0, |t| t.len())
         );
-        // Stub: in the full implementation, routes to the appropriate provider.
-        Err("LLM.call() is not yet implemented -- requires provider integration".to_string())
+
+        // Convert HashMap<String, String> → Vec<LLMMessage> (HashMap<String, Value>)
+        let llm_messages: Vec<HashMap<String, Value>> = messages
+            .iter()
+            .map(|m| {
+                m.iter()
+                    .map(|(k, v)| (k.clone(), Value::String(v.clone())))
+                    .collect()
+            })
+            .collect();
+
+        let tools_vec = tools.map(|t| t.to_vec());
+
+        let result = match provider.as_str() {
+            "openai" => {
+                let completion = OpenAICompletion::new(
+                    &self.model,
+                    self.api_key.clone(),
+                    self.api_base.clone(),
+                );
+                completion
+                    .call(llm_messages, tools_vec, None)
+                    .map_err(|e| e.to_string())
+            }
+            "xai" => {
+                let completion = XAICompletion::new(
+                    &self.model,
+                    self.api_key.clone(),
+                    self.api_base.clone(),
+                );
+                completion
+                    .call(llm_messages, tools_vec, None)
+                    .map_err(|e| e.to_string())
+            }
+            other => {
+                return Err(format!(
+                    "Provider '{}' not yet wired. Supported: openai, xai",
+                    other
+                ));
+            }
+        }?;
+
+        // Extract text content from provider response Value
+        Self::extract_text_from_response(&result)
     }
 
     /// Async version of call.
@@ -569,8 +620,91 @@ impl LLM {
         messages: &[HashMap<String, String>],
         tools: Option<&[Value]>,
     ) -> Result<String, String> {
-        // For now, delegate to sync call.
-        self.call(messages, tools)
+        let provider = self.infer_provider();
+        log::debug!(
+            "LLM.acall: model={}, provider={}, {} messages, {} tools",
+            self.model,
+            provider,
+            messages.len(),
+            tools.map_or(0, |t| t.len())
+        );
+
+        // Convert HashMap<String, String> → Vec<LLMMessage> (HashMap<String, Value>)
+        let llm_messages: Vec<HashMap<String, Value>> = messages
+            .iter()
+            .map(|m| {
+                m.iter()
+                    .map(|(k, v)| (k.clone(), Value::String(v.clone())))
+                    .collect()
+            })
+            .collect();
+
+        let tools_vec = tools.map(|t| t.to_vec());
+
+        let result = match provider.as_str() {
+            "openai" => {
+                let completion = OpenAICompletion::new(
+                    &self.model,
+                    self.api_key.clone(),
+                    self.api_base.clone(),
+                );
+                completion
+                    .acall(llm_messages, tools_vec, None)
+                    .await
+                    .map_err(|e| e.to_string())
+            }
+            "xai" => {
+                let completion = XAICompletion::new(
+                    &self.model,
+                    self.api_key.clone(),
+                    self.api_base.clone(),
+                );
+                completion
+                    .acall(llm_messages, tools_vec, None)
+                    .await
+                    .map_err(|e| e.to_string())
+            }
+            other => {
+                return Err(format!(
+                    "Provider '{}' not yet wired. Supported: openai, xai",
+                    other
+                ));
+            }
+        }?;
+
+        Self::extract_text_from_response(&result)
+    }
+
+    /// Extract the text content from a provider response Value.
+    ///
+    /// Providers return a serde_json::Value that may be a plain string,
+    /// an object with choices[0].message.content (OpenAI format), or
+    /// an object with tool_calls.
+    fn extract_text_from_response(response: &Value) -> Result<String, String> {
+        // If it's already a string, return it directly
+        if let Some(s) = response.as_str() {
+            return Ok(s.to_string());
+        }
+        // Try OpenAI chat completions format: choices[0].message.content
+        if let Some(content) = response
+            .get("choices")
+            .and_then(|c| c.get(0))
+            .and_then(|c| c.get("message"))
+            .and_then(|m| m.get("content"))
+            .and_then(|c| c.as_str())
+        {
+            return Ok(content.to_string());
+        }
+        // Try direct content field
+        if let Some(content) = response.get("content").and_then(|c| c.as_str()) {
+            return Ok(content.to_string());
+        }
+        // Try tool_calls — return them as JSON for the agent to process
+        if let Some(tool_calls) = response.get("tool_calls") {
+            return Ok(tool_calls.to_string());
+        }
+        // Fallback: serialize the whole response
+        Ok(response.to_string())
     }
 
     // --- Capability queries ---
