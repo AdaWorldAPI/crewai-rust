@@ -30,6 +30,10 @@ pub fn from_task_output(
             confidence,
             epoch: Utc::now().timestamp_millis(),
             version: Some("1.0.0".to_string()),
+            dominant_layer: None,
+            layer_activations: None,
+            nars_frequency: None,
+            calibration_error: None,
         },
     }
 }
@@ -49,6 +53,10 @@ pub fn from_memory(memory_type: &str, content: &str, metadata: Value) -> DataEnv
             confidence: 1.0,
             epoch: Utc::now().timestamp_millis(),
             version: None,
+            dominant_layer: None,
+            layer_activations: None,
+            nars_frequency: None,
+            calibration_error: None,
         },
     }
 }
@@ -64,6 +72,10 @@ pub fn from_crew_callback(output: Value, source_step: &str, confidence: f64) -> 
             confidence,
             epoch: Utc::now().timestamp_millis(),
             version: None,
+            dominant_layer: None,
+            layer_activations: None,
+            nars_frequency: None,
+            calibration_error: None,
         },
     }
 }
