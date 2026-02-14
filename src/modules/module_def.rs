@@ -128,7 +128,10 @@ pub struct ModuleInner {
     /// Opaque key-value store for domain-specific or plugin-specific properties.
     ///
     /// Anything that doesn't fit the typed schema goes here. Modules can stash
-    /// arbitrary YAML values and retrieve them at runtime.
+    /// arbitrary YAML values and retrieve them at runtime.  This crate **never
+    /// parses** these values — they are transparent blobs.  Consumers (e.g.
+    /// downstream crates) fill this at runtime with identity, behavioral, or
+    /// content-specific data.
     #[serde(default)]
     pub custom_properties: HashMap<String, serde_yaml::Value>,
 }

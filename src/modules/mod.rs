@@ -41,6 +41,7 @@ pub use module_def::{
     ModuleInner, ModuleInterface, ModulePolicy, PersonaProfile, SelfModifyBounds, ToolOverride,
     ToolPolicy,
 };
+// PersonaProfile is re-exported from the persona module directly
 pub use openapi_parser::{parse_openapi_file, parse_openapi_spec};
 pub use runtime::{
     AgentState, CognitiveGate, GateDecision, InnerThoughtHook, ModuleRuntime, ResonanceConfig,

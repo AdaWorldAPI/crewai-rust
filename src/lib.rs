@@ -31,6 +31,7 @@ pub mod mcp;
 pub mod memory;
 pub mod meta_agents;
 pub mod modules;
+pub mod persona;
 pub mod policy;
 pub mod process;
 pub mod project;
