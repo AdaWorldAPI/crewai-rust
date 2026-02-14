@@ -21,7 +21,10 @@ pub use tools::{
     chess_evaluate_tool,
     chess_legal_moves_tool,
     chess_whatif_tool,
+    chess_vsa_encode_tool,
     neo4j_query_tool,
     ladybug_similarity_tool,
+    nars_reason_tool,
+    thinking_style_tool,
     all_chess_tools,
 };

@@ -77,6 +77,14 @@ serde_yaml = "0.9"
 # Shared substrate types (LadybugDB contract) — optional for standalone mode
 ladybug-contract = { path = "../ladybug-rs/crates/ladybug-contract", optional = true }
 
+# Chess stack: stonksfish engine + ladybug fingerprinting + chess crate
+stonksfish = { path = "../stonksfish" }
+ladybug = { path = "../ladybug-rs" }
+chess = "3.2.0"
+
+# Neo4j-rs: property graph with Cypher + chess procedures
+neo4j-rs = { path = "../neo4j-rs" }
+
 [features]
 default = []
 postgres = ["sqlx"]
