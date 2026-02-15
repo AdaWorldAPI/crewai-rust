@@ -299,8 +299,10 @@ pub fn design_savant(llm: &str) -> AgentBlueprint {
 
 // ---------------------------------------------------------------------------
 // Chess savant blueprints — ChessThinkTank agents
+// (gated behind `chess` feature — no stonksfish/ladybug/neo4j-rs deps needed)
 // ---------------------------------------------------------------------------
 
+#[cfg(feature = "chess")]
 /// Create a chess strategist savant blueprint (the manager agent).
 ///
 /// Expert at high-level chess strategy: opening selection, pawn structure
@@ -346,6 +348,7 @@ pub fn chess_strategist_savant(llm: &str) -> AgentBlueprint {
     .with_delegation()
 }
 
+#[cfg(feature = "chess")]
 /// Create a chess tactician savant blueprint.
 ///
 /// Expert at calculating forcing sequences: checks, captures, threats.
@@ -380,6 +383,7 @@ pub fn chess_tactician_savant(llm: &str) -> AgentBlueprint {
     ])
 }
 
+#[cfg(feature = "chess")]
 /// Create a chess endgame specialist savant blueprint.
 ///
 /// Spawned when piece_count < 10. Expert at endgame theory, tablebase
@@ -415,6 +419,7 @@ pub fn chess_endgame_savant(llm: &str) -> AgentBlueprint {
     ])
 }
 
+#[cfg(feature = "chess")]
 /// Create a chess psychologist savant blueprint.
 ///
 /// Models opponent behavior using game history. Analyzes tendencies,
@@ -447,6 +452,7 @@ pub fn chess_psychologist_savant(llm: &str) -> AgentBlueprint {
     .with_tools(vec!["neo4j_query".into()])
 }
 
+#[cfg(feature = "chess")]
 /// Create a chess inner critic savant blueprint.
 ///
 /// Devil's advocate agent that tries to refute proposed moves by finding
@@ -481,6 +487,7 @@ pub fn chess_critic_savant(llm: &str) -> AgentBlueprint {
     ])
 }
 
+#[cfg(feature = "chess")]
 /// Create a chess advocatus diaboli savant blueprint.
 ///
 /// Full opponent perspective simulator. Unlike the Inner Critic (which looks
@@ -533,6 +540,7 @@ pub fn chess_advocatus_diaboli_savant(llm: &str) -> AgentBlueprint {
     ])
 }
 
+#[cfg(feature = "chess")]
 /// Get all chess savant blueprints (ChessThinkTank crew).
 ///
 /// Returns the six specialist agents that form the hierarchical chess crew:
@@ -553,7 +561,7 @@ pub fn chess_think_tank(llm: &str) -> Vec<AgentBlueprint> {
 ///
 /// Returns one blueprint for each domain, all using the specified LLM.
 pub fn all_savants(llm: &str) -> Vec<AgentBlueprint> {
-    vec![
+    let mut savants = vec![
         research_savant(llm),
         engineering_savant(llm),
         data_analysis_savant(llm),
@@ -563,8 +571,10 @@ pub fn all_savants(llm: &str) -> Vec<AgentBlueprint> {
         security_savant(llm),
         devops_savant(llm),
         design_savant(llm),
-        chess_strategist_savant(llm),
-    ]
+    ];
+    #[cfg(feature = "chess")]
+    savants.push(chess_strategist_savant(llm));
+    savants
 }
 
 /// Get a savant blueprint for a specific domain.
@@ -579,7 +589,10 @@ pub fn savant_for_domain(domain: SavantDomain, llm: &str) -> AgentBlueprint {
         SavantDomain::Security => security_savant(llm),
         SavantDomain::DevOps => devops_savant(llm),
         SavantDomain::Design => design_savant(llm),
+        #[cfg(feature = "chess")]
         SavantDomain::Chess => chess_strategist_savant(llm),
+        #[cfg(not(feature = "chess"))]
+        SavantDomain::Chess => planning_savant(llm),
         SavantDomain::General => planning_savant(llm),
     }
 }
@@ -612,16 +625,19 @@ mod tests {
     #[test]
     fn test_all_savants() {
         let savants = all_savants("openai/gpt-4o-mini");
+        #[cfg(feature = "chess")]
         assert_eq!(savants.len(), 10);
+        #[cfg(not(feature = "chess"))]
+        assert_eq!(savants.len(), 9);
         let domains: Vec<_> = savants.iter().map(|s| s.domain).collect();
         assert!(domains.contains(&SavantDomain::Research));
         assert!(domains.contains(&SavantDomain::Engineering));
         assert!(domains.contains(&SavantDomain::Security));
         assert!(domains.contains(&SavantDomain::DevOps));
         assert!(domains.contains(&SavantDomain::Design));
-        assert!(domains.contains(&SavantDomain::Chess));
     }
 
+    #[cfg(feature = "chess")]
     #[test]
     fn test_chess_think_tank() {
         let agents = chess_think_tank("anthropic/claude-3-5-sonnet-latest");
@@ -642,6 +658,7 @@ mod tests {
         assert!(agents[0].allow_delegation);
     }
 
+    #[cfg(feature = "chess")]
     #[test]
     fn test_chess_advocatus_diaboli() {
         let bp = chess_advocatus_diaboli_savant("openai/gpt-4o");
@@ -655,6 +672,7 @@ mod tests {
         assert!(!bp.allow_delegation);
     }
 
+    #[cfg(feature = "chess")]
     #[test]
     fn test_chess_strategist_tools() {
         let bp = chess_strategist_savant("openai/gpt-4o");
@@ -664,6 +682,7 @@ mod tests {
         assert!(!bp.skills.is_empty());
     }
 
+    #[cfg(feature = "chess")]
     #[test]
     fn test_chess_savant_for_domain() {
         let bp = savant_for_domain(SavantDomain::Chess, "openai/gpt-4o");
