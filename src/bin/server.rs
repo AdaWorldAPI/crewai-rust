@@ -67,6 +67,7 @@ async fn main() {
     tracing::info!("Endpoints:");
     tracing::info!("  GET  /health  — liveness probe");
     tracing::info!("  POST /execute — crew.* step delegation");
+    tracing::info!("  POST /chat    — substrate-driven chat (holy grail pipeline)");
 
     let listener = tokio::net::TcpListener::bind(&bind_addr)
         .await
