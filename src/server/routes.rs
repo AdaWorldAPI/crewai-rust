@@ -23,6 +23,7 @@ use serde_json::Value;
 use tower_http::cors::CorsLayer;
 
 use crate::agent::Agent;
+use crate::chat::handler::{chat_handler, ChatConfig};
 use crate::contract::envelope;
 use crate::contract::event_recorder::ContractRecorder;
 use crate::contract::types::{
@@ -38,6 +39,8 @@ pub struct AppState {
     pub recorder: Arc<RwLock<ContractRecorder>>,
     /// Module runtime for managing active modules.
     pub module_runtime: Arc<RwLock<ModuleRuntime>>,
+    /// Chat configuration (XAI keys, URLs, identity seed).
+    pub chat_config: Arc<ChatConfig>,
 }
 
 impl AppState {
@@ -45,6 +48,7 @@ impl AppState {
         Self {
             recorder: Arc::new(RwLock::new(ContractRecorder::new())),
             module_runtime: Arc::new(RwLock::new(ModuleRuntime::new("anthropic/claude-sonnet-4-20250514"))),
+            chat_config: Arc::new(ChatConfig::from_env()),
         }
     }
 }
@@ -57,6 +61,9 @@ impl Default for AppState {
 
 /// Build the axum router with all routes.
 pub fn app_router(state: AppState) -> Router {
+    // Chat routes use Arc<ChatConfig> as state
+    let chat_config = state.chat_config.clone();
+
     Router::new()
         .route("/health", get(health_handler))
         .route("/execute", post(execute_handler))
@@ -65,6 +72,11 @@ pub fn app_router(state: AppState) -> Router {
         .route("/modules/{id}/activate", post(activate_module_handler))
         .route("/modules/{id}/deactivate", post(deactivate_module_handler))
         .route("/modules/{id}/gate-check", post(gate_check_handler))
+        // Chat endpoint — the holy grail pipeline
+        .route(
+            "/chat",
+            post(chat_handler).with_state(chat_config),
+        )
         .layer(CorsLayer::permissive())
         .with_state(state)
 }

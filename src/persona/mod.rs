@@ -29,14 +29,20 @@
 
 pub mod composite;
 pub mod inner_loop;
+pub mod llm_modulation;
 pub mod profile;
+pub mod qualia_prompt;
 pub mod thinking_style;
 pub mod triune;
 
 // Re-exports
 pub use composite::{CompositeStyle, PresetComposite};
 pub use inner_loop::{AgentState, InnerThoughtHook};
+pub use llm_modulation::{modulate_xai_params, CouncilWeights, XaiParamOverrides};
 pub use profile::{PersonaProfile, SelfModifyBounds};
+pub use qualia_prompt::{
+    build_qualia_preamble, GhostEcho, PresenceInfo, QualiaSnapshot, SovereigntyInfo, VolitionItem,
+};
 pub use thinking_style::{
     ExecutableStyle, StyleCluster, StyleTexture, ThinkingStyle, STYLE_TEXTURES, STYLE_TO_TAU,
     STYLE_VECTORS,

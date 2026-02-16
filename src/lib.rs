@@ -10,6 +10,7 @@
 
 pub mod a2a;
 pub mod agent;
+pub mod chat;
 pub mod agents;
 pub mod capabilities;
 pub mod cli;
