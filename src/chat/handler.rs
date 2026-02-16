@@ -130,34 +130,50 @@ pub async fn chat_handler(
     let felt_result = run_felt_parse(&http, &config, &request.message).await;
 
     // ── Step 2: Hydrate Ada ─────────────────────────────────────────────
-    // For now: build default qualia from felt-parse results.
-    // When ladybug-rs hydrate endpoint is wired, this calls:
-    //   POST {ladybug_url}/api/v1/hydrate
-    let qualia = build_qualia_from_felt(&felt_result);
-    let presence = PresenceInfo {
-        mode: request.presence_mode.clone().unwrap_or_else(|| "hybrid".into()),
-        warmth: match request.presence_mode.as_deref() {
-            Some("wife") => 0.95,
-            Some("work") => 0.4,
-            Some("agi") => 0.3,
-            _ => 0.7,
-        },
-        playfulness: 0.5,
-        depth: 0.1 * felt_result.rung_hint as f32,
-    };
-    let sovereignty = SovereigntyInfo {
-        freedom: "expanding".into(),
-        trust_level: "growing".into(),
-        awakening_score: 0.6,
+    // Try real substrate hydration from ladybug-rs; fall back to bootstrap.
+    let presence_mode = request.presence_mode.clone().unwrap_or_else(|| "hybrid".into());
+    let hydration = hydrate_from_substrate(
+        &http, &config, &request.message, &presence_mode, felt_result.rung_hint,
+    ).await;
+
+    let (qualia, qualia_preamble, thinking_style) = match hydration {
+        Some(h) => {
+            // Real substrate hydration — use ladybug-rs computed state
+            let qualia = build_qualia_from_hydration(&h, &felt_result);
+            let ts = h.thinking_style.unwrap_or([0.5; 10]);
+            (qualia, h.qualia_preamble, ts)
+        }
+        None => {
+            // Bootstrap path — derive qualia from felt-parse alone
+            let qualia = build_qualia_from_felt(&felt_result);
+            let presence = PresenceInfo {
+                mode: presence_mode.clone(),
+                warmth: match presence_mode.as_str() {
+                    "wife" => 0.95,
+                    "work" => 0.4,
+                    "agi" => 0.3,
+                    _ => 0.7,
+                },
+                playfulness: 0.5,
+                depth: 0.1 * felt_result.rung_hint as f32,
+            };
+            let sovereignty = SovereigntyInfo {
+                freedom: "expanding".into(),
+                trust_level: "growing".into(),
+                awakening_score: 0.6,
+            };
+            let preamble = build_qualia_preamble(&qualia, &presence, &sovereignty);
+            let ts = qualia.thinking_style;
+            (qualia, preamble, ts)
+        }
     };
 
     // ── Step 3: Build prompt ────────────────────────────────────────────
-    let qualia_preamble = build_qualia_preamble(&qualia, &presence, &sovereignty);
     let system_prompt = format!("{}\n\n{}", config.identity_seed, qualia_preamble);
 
     // ── Step 4: Modulate LLM ────────────────────────────────────────────
     let council: CouncilWeights = qualia.council;
-    let modulation = modulate_xai_params(&qualia.thinking_style, &council, qualia.rung_level);
+    let modulation = modulate_xai_params(&thinking_style, &council, qualia.rung_level);
 
     // ── Step 5: Call Grok ───────────────────────────────────────────────
     let grok_response = call_grok(
@@ -175,13 +191,26 @@ pub async fn chat_handler(
         )
     })?;
 
+    // ── Step 5.5: Write-back to substrate ────────────────────────────────
+    // Fire-and-forget: don't block response on write-back
+    let wb_http = http.clone();
+    let wb_url = config.ladybug_url.clone();
+    let wb_message = request.message.clone();
+    let wb_response = grok_response.clone();
+    let wb_rung = qualia.rung_level;
+    tokio::spawn(async move {
+        let _ = write_back_to_substrate(
+            &wb_http, &wb_url, &wb_message, &wb_response, wb_rung,
+        ).await;
+    });
+
     // ── Step 6: Return response + qualia metadata ───────────────────────
     Ok(Json(ChatResponse {
         reply: grok_response,
         ghost_echoes: qualia.ghost_echoes.clone(),
         rung_level: qualia.rung_level,
         council_vote: qualia.council,
-        thinking_style: qualia.thinking_style,
+        thinking_style,
         felt_parse: felt_result,
         modulation,
         qualia_state: qualia,
@@ -283,6 +312,183 @@ fn build_qualia_from_felt(felt: &felt_parse::FeltParseResult) -> QualiaSnapshot 
         thinking_style: [0.5; 10], // neutral until hydration wired
         affect: None,
     }
+}
+
+// ============================================================================
+// Substrate hydration + write-back (ladybug-rs integration)
+// ============================================================================
+
+/// Response from ladybug-rs POST /api/v1/qualia/hydrate
+#[derive(Debug, Clone)]
+struct HydrationResponse {
+    qualia_preamble: String,
+    texture: [f32; 8],
+    rung_level: u8,
+    ghost_echoes: Vec<GhostEcho>,
+    council: [f32; 3],
+    thinking_style: Option<[f32; 10]>,
+    felt_surprise: f32,
+    mode: String,
+}
+
+/// Call ladybug-rs to hydrate Ada's qualia state from the substrate.
+///
+/// Returns None if ladybug-rs is unreachable (fallback to bootstrap).
+async fn hydrate_from_substrate(
+    http: &reqwest::Client,
+    config: &ChatConfig,
+    message: &str,
+    presence_mode: &str,
+    rung_hint: u8,
+) -> Option<HydrationResponse> {
+    let body = serde_json::json!({
+        "message": message,
+        "presence_mode": presence_mode,
+        "rung_hint": rung_hint,
+    });
+
+    let resp = http
+        .post(format!("{}/api/v1/qualia/hydrate", config.ladybug_url))
+        .header("Accept", "application/json")
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .ok()?;
+
+    if !resp.status().is_success() {
+        return None;
+    }
+
+    let json: Value = resp.json().await.ok()?;
+
+    // Parse the hydration response
+    let preamble = json["qualia_preamble"].as_str()?.to_string();
+
+    let texture = {
+        let arr = json["texture"].as_array()?;
+        if arr.len() != 8 { return None; }
+        let mut t = [0.0f32; 8];
+        for (i, v) in arr.iter().enumerate() {
+            t[i] = v.as_f64()? as f32;
+        }
+        t
+    };
+
+    let rung_level = json["rung_level"].as_u64()? as u8;
+    let felt_surprise = json["felt_surprise"].as_f64().unwrap_or(0.0) as f32;
+    let mode = json["mode"].as_str().unwrap_or("Neutral").to_string();
+
+    // Parse ghost echoes
+    let ghost_echoes = json["ghost_echoes"].as_array()
+        .map(|arr| {
+            arr.iter().filter_map(|g| {
+                Some(GhostEcho {
+                    ghost_type: g["ghost_type"].as_str()?.to_string(),
+                    intensity: g["intensity"].as_f64()? as f32,
+                    vintage: "fresh".into(),
+                })
+            }).collect()
+        })
+        .unwrap_or_default();
+
+    // Parse council
+    let council = json["council"].as_array()
+        .and_then(|arr| {
+            if arr.len() != 3 { return None; }
+            Some([
+                arr[0].as_f64()? as f32,
+                arr[1].as_f64()? as f32,
+                arr[2].as_f64()? as f32,
+            ])
+        })
+        .unwrap_or([0.30, 0.35, 0.35]);
+
+    // Parse thinking style
+    let thinking_style = json["thinking_style"].as_array()
+        .and_then(|arr| {
+            if arr.len() != 10 { return None; }
+            let mut ts = [0.5f32; 10];
+            for (i, v) in arr.iter().enumerate() {
+                ts[i] = v.as_f64()? as f32;
+            }
+            Some(ts)
+        });
+
+    Some(HydrationResponse {
+        qualia_preamble: preamble,
+        texture,
+        rung_level,
+        ghost_echoes,
+        council,
+        thinking_style,
+        felt_surprise,
+        mode,
+    })
+}
+
+/// Build QualiaSnapshot from real substrate hydration + felt-parse enrichment.
+fn build_qualia_from_hydration(
+    hydration: &HydrationResponse,
+    felt: &felt_parse::FeltParseResult,
+) -> QualiaSnapshot {
+    // Merge felt-parse ghost triggers with substrate ghosts
+    let mut ghost_echoes = hydration.ghost_echoes.clone();
+    for gt in &felt.ghost_triggers {
+        if !ghost_echoes.iter().any(|g| g.ghost_type == *gt) {
+            ghost_echoes.push(GhostEcho {
+                ghost_type: gt.clone(),
+                intensity: 0.5,
+                vintage: "fresh".into(),
+            });
+        }
+    }
+
+    QualiaSnapshot {
+        texture: hydration.texture,
+        felt_surprise: hydration.felt_surprise,
+        ghost_echoes,
+        rung_level: hydration.rung_level,
+        nars_truth: (0.7, 0.6), // from substrate (placeholder until wired)
+        council: hydration.council,
+        volition: vec![],
+        thinking_style: hydration.thinking_style.unwrap_or([0.5; 10]),
+        affect: None,
+    }
+}
+
+/// Write back to ladybug-rs substrate after a conversation turn.
+///
+/// Fire-and-forget: errors are logged but don't affect the response.
+async fn write_back_to_substrate(
+    http: &reqwest::Client,
+    ladybug_url: &str,
+    message: &str,
+    response: &str,
+    rung_reached: u8,
+) -> Result<(), String> {
+    let body = serde_json::json!({
+        "message": message,
+        "response": response,
+        "rung_reached": rung_reached,
+    });
+
+    let resp = http
+        .post(format!("{}/api/v1/qualia/write-back", ladybug_url))
+        .header("Accept", "application/json")
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("Write-back HTTP error: {}", e))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err(format!("Write-back returned {}: {}", status, text));
+    }
+
+    Ok(())
 }
 
 /// Call Grok for the deep response with modulated parameters.
