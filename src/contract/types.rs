@@ -160,6 +160,23 @@ impl UnifiedStep {
     pub fn is_chess(&self) -> bool {
         self.step_type.starts_with("chess.")
     }
+
+    /// Returns true if this step should be routed to openclaw-rs.
+    ///
+    /// OpenClaw step types use the `oc.*` prefix:
+    /// - `oc.channel.receive` — inbound message from a channel
+    /// - `oc.channel.send`    — outbound message to a channel
+    /// - `oc.agent.think`     — agent LLM inference
+    /// - `oc.agent.tool`      — agent tool execution
+    /// - `oc.memory.store`    — store a memory entry
+    /// - `oc.memory.recall`   — recall memories
+    /// - `oc.hook.trigger`    — trigger a hook/automation
+    /// - `oc.skill.invoke`    — invoke a skill
+    /// - `oc.session.reset`   — reset a session
+    /// - `oc.browser.action`  — browser automation action
+    pub fn is_openclaw(&self) -> bool {
+        self.step_type.starts_with("oc.")
+    }
 }
 
 // ============================================================================
@@ -393,6 +410,19 @@ mod tests {
         assert!(!chess.is_crew());
         assert!(!chess.is_ladybug());
         assert!(!chess.is_n8n());
+
+        let oc_recv = UnifiedStep::new("e1", "oc.channel.receive", "Receive", 4);
+        assert!(oc_recv.is_openclaw());
+        assert!(!oc_recv.is_crew());
+        assert!(!oc_recv.is_n8n());
+        assert!(!oc_recv.is_ladybug());
+        assert!(!oc_recv.is_chess());
+
+        let oc_think = UnifiedStep::new("e1", "oc.agent.think", "Think", 5);
+        assert!(oc_think.is_openclaw());
+
+        let oc_mem = UnifiedStep::new("e1", "oc.memory.recall", "Recall", 6);
+        assert!(oc_mem.is_openclaw());
     }
 
     #[test]

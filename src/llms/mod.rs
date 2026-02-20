@@ -12,8 +12,10 @@
 pub mod base_llm;
 pub mod hooks;
 pub mod providers;
+pub mod streaming;
 pub mod third_party;
 
 // Re-exports for convenience
 pub use base_llm::{BaseLLM, BaseLLMState, LLMCallType, LLMMessage, TokenUsage};
 pub use hooks::BaseInterceptor;
+pub use streaming::{StreamingLLM, StreamReceiver, StreamChunk, StreamAccumulator};
