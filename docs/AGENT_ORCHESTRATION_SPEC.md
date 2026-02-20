@@ -373,7 +373,7 @@ module:
     role: "{proposed_role}"
     goal: "Specialized agent spawned for {task_description}"
     backstory: "Spawned by resonance discovery. Source domains: {domains}."
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 25
     allow_delegation: false
     enable_inner_loop: true

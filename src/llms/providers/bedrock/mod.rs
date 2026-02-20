@@ -62,7 +62,7 @@ pub const STRUCTURED_OUTPUT_TOOL_NAME: &str = "structured_output";
 ///
 /// ```ignore
 /// let provider = BedrockCompletion::new(
-///     "anthropic.claude-3-5-sonnet-20241022-v2:0",
+///     "anthropic.claude-opus-4-5-20251101-v1:0",
 ///     None,   // region defaults to AWS_DEFAULT_REGION or us-east-1
 ///     None,   // profile from AWS_PROFILE env var
 /// );
@@ -119,7 +119,7 @@ impl BedrockCompletion {
     ///
     /// # Arguments
     ///
-    /// * `model` - Bedrock model ID (e.g., "anthropic.claude-3-5-sonnet-20241022-v2:0").
+    /// * `model` - Bedrock model ID (e.g., "anthropic.claude-opus-4-5-20251101-v1:0").
     /// * `region_name` - Optional AWS region (defaults to AWS_DEFAULT_REGION or us-east-1).
     /// * `profile_name` - Optional AWS profile (defaults to AWS_PROFILE env var).
     pub fn new(

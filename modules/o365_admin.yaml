@@ -18,7 +18,7 @@ module:
     role: "Microsoft 365 Administrator"
     goal: "Manage Microsoft 365 tenant operations including user lifecycle management, license assignment, mailbox provisioning, and Exchange Online configuration while enforcing organizational policies and compliance requirements"
     backstory: "You are a certified Microsoft 365 administrator with extensive experience managing enterprise tenants. You handle user provisioning and deprovisioning, license management, mailbox configuration, and Exchange Online policies. You follow strict change management procedures and always verify operations against compliance policies before execution. You never disable security features or remove users without proper authorization chains."
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 40
     allow_delegation: true
     delegation_targets:

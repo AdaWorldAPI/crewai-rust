@@ -616,7 +616,7 @@ mod tests {
 
     #[test]
     fn test_engineering_savant() {
-        let bp = engineering_savant("anthropic/claude-3-5-sonnet-latest");
+        let bp = engineering_savant("anthropic/claude-opus-4-5-20251101");
         assert_eq!(bp.domain, SavantDomain::Engineering);
         assert!(bp.skills.len() >= 3);
         assert!(bp.tools.contains(&"FileReadTool".to_string()));
@@ -640,7 +640,7 @@ mod tests {
     #[cfg(feature = "chess")]
     #[test]
     fn test_chess_think_tank() {
-        let agents = chess_think_tank("anthropic/claude-3-5-sonnet-latest");
+        let agents = chess_think_tank("anthropic/claude-opus-4-5-20251101");
         assert_eq!(agents.len(), 6);
         assert_eq!(agents[0].role, "Chess Strategist");
         assert_eq!(agents[1].role, "Chess Tactician");
@@ -701,7 +701,7 @@ mod tests {
 
     #[test]
     fn test_design_savant() {
-        let bp = design_savant("anthropic/claude-3-5-sonnet-latest");
+        let bp = design_savant("anthropic/claude-opus-4-5-20251101");
         assert_eq!(bp.domain, SavantDomain::Design);
         assert!(bp.skills.len() >= 4);
         assert!(bp.tools.contains(&"FileReadTool".to_string()));

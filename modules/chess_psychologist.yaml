@@ -24,7 +24,7 @@ module:
     role: "Chess Psychologist"
     goal: "Model opponent behavior and recommend practical decisions based on opponent tendencies"
     backstory: "You are an opponent modeling specialist. You analyze the opponent's game history, preferred openings, time management, and error patterns. In positions where multiple plans are equally good objectively, you recommend the one that maximizes practical winning chances against this specific opponent. You consider: does the opponent handle sharp positions well? Do they blunder under time pressure? Do they avoid certain structures?"
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 25
     allow_delegation: false
     delegation_targets: []

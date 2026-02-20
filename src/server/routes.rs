@@ -47,7 +47,7 @@ impl AppState {
     pub fn new() -> Self {
         Self {
             recorder: Arc::new(RwLock::new(ContractRecorder::new())),
-            module_runtime: Arc::new(RwLock::new(ModuleRuntime::new("anthropic/claude-sonnet-4-20250514"))),
+            module_runtime: Arc::new(RwLock::new(ModuleRuntime::new("anthropic/claude-opus-4-5-20251101"))),
             chat_config: Arc::new(ChatConfig::from_env()),
         }
     }

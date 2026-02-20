@@ -559,9 +559,9 @@ mod tests {
 
     #[test]
     fn test_blueprint_for_domain() {
-        let spawner = SpawnerAgent::new("anthropic/claude-3-5-sonnet-latest");
+        let spawner = SpawnerAgent::new("anthropic/claude-opus-4-5-20251101");
         let bp = spawner.blueprint_for_domain(SavantDomain::Security);
         assert_eq!(bp.domain, SavantDomain::Security);
-        assert_eq!(bp.llm, "anthropic/claude-3-5-sonnet-latest");
+        assert_eq!(bp.llm, "anthropic/claude-opus-4-5-20251101");
     }
 }

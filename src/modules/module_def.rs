@@ -18,7 +18,7 @@
 //!     role: "SOC Analyst"
 //!     goal: "Triage incidents"
 //!     backstory: "Expert analyst."
-//!     llm: "anthropic/claude-sonnet-4-20250514"
+//!     llm: "anthropic/claude-opus-4-5-20251101"
 //! ```
 
 use std::collections::HashMap;
@@ -212,7 +212,7 @@ pub struct ModuleAgentConfig {
     pub goal: String,
     /// Agent backstory (expertise and personality).
     pub backstory: String,
-    /// LLM model identifier (e.g. `"anthropic/claude-sonnet-4-20250514"`).
+    /// LLM model identifier (e.g. `"anthropic/claude-opus-4-5-20251101"`).
     pub llm: String,
     /// Maximum LLM iterations per task.
     #[serde(default = "default_max_iter")]
@@ -828,7 +828,7 @@ module:
     role: "SOC Level 2 Analyst"
     goal: "Triage, correlate, and respond to security incidents"
     backstory: "You are a senior SOC analyst."
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 50
     allow_delegation: true
     delegation_targets:

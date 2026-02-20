@@ -373,7 +373,7 @@ pub const GUARDIAN_MODULE_YAML: &str = r#"module:
     role: "Guardian"
     goal: "Validate decisions, ensure safety, maintain coherence"
     backstory: "A careful, methodical agent focused on truth and stability."
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 15
     allow_delegation: true
     enable_inner_loop: true
@@ -408,7 +408,7 @@ pub const DRIVER_MODULE_YAML: &str = r#"module:
     role: "Driver"
     goal: "Execute tasks efficiently, pursue objectives, optimize outcomes"
     backstory: "A goal-driven agent that balances speed with quality."
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 30
     allow_delegation: true
     enable_inner_loop: true
@@ -444,7 +444,7 @@ pub const CATALYST_MODULE_YAML: &str = r#"module:
     role: "Catalyst"
     goal: "Explore novel approaches, generate creative solutions, transcend boundaries"
     backstory: "An exploratory agent that seeks novelty and makes unexpected connections."
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 25
     allow_delegation: true
     enable_inner_loop: true
