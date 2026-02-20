@@ -27,6 +27,7 @@
 //! they are opaque YAML/JSON blobs stored in the database.  The code only sees
 //! neutral dimension labels; identity lives in the data layer.
 
+pub mod agit;
 pub mod composite;
 pub mod inner_loop;
 pub mod llm_modulation;
@@ -49,4 +50,8 @@ pub use thinking_style::{
 };
 pub use triune::{
     CouncilResult, Facet, FacetOpinion, FacetState, Strategy, TriuneTopology,
+};
+pub use agit::{
+    AgitBranch, AgitCommit, AgitDiff, AgitGoal, AgitState, GoalOrigin, GoalStatus,
+    agit_inner_loop, agit_persona, agit_triune,
 };

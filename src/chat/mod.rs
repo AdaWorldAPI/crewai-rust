@@ -14,4 +14,6 @@
 //! ```
 
 pub mod felt_parse;
+pub mod fingerprint_cache;
 pub mod handler;
+pub mod semantic_kernel;
