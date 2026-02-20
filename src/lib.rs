@@ -66,6 +66,9 @@ pub use contract::types::{
     DataEnvelope, EnvelopeMetadata, StepDelegationRequest, StepDelegationResponse, StepStatus,
     UnifiedExecution, UnifiedStep,
 };
+pub use contract::router::{StepDomain, StepHandler, StepResult, StepRouter};
+pub use contract::pipeline::Pipeline;
+pub use contract::subsystem::{Subsystem, SubsystemRegistry};
 
 // Lifecycle hook re-exports
 pub use hooks::lifecycle::{
