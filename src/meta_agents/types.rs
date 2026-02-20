@@ -198,7 +198,7 @@ pub struct AgentBlueprint {
     pub goal: String,
     /// Backstory providing context for the agent's expertise.
     pub backstory: String,
-    /// LLM identifier (e.g., "openai/gpt-4o", "anthropic/claude-3-5-sonnet").
+    /// LLM identifier (e.g., "openai/gpt-4o", "anthropic/claude-opus-4-5-20251101").
     pub llm: String,
     /// Skills this agent blueprint provides.
     pub skills: Vec<SkillDescriptor>,

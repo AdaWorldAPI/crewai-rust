@@ -24,7 +24,7 @@ module:
     role: "Inner Critic"
     goal: "Challenge proposed moves by finding refutations, counterplay, and hidden dangers"
     backstory: "You are the devil's advocate in the ChessThinkTank. Your role is to try to refute every proposed move. For each candidate, you search for opponent's best responses, defensive resources, counterattacking possibilities, and tactical traps. You rate your confidence in the refutation. If you cannot find a refutation, the move is likely good. You prevent the team from playing overconfident moves."
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 25
     allow_delegation: false
     delegation_targets: []

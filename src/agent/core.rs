@@ -562,7 +562,7 @@ impl Agent {
 
     /// Create an LLM instance based on the agent's `llm` configuration string.
     ///
-    /// Parses strings like `"openai/gpt-4o"`, `"anthropic/claude-3-5-sonnet"`,
+    /// Parses strings like `"openai/gpt-4o"`, `"anthropic/claude-opus-4-5-20251101"`,
     /// `"xai/grok-3"`, or bare model names like `"gpt-4o-mini"` (defaults to OpenAI).
     ///
     /// Corresponds to `Agent._create_llm` in Python.

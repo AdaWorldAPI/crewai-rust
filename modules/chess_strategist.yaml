@@ -25,7 +25,7 @@ module:
     role: "Chess Strategist"
     goal: "Analyze chess positions holistically and select the best strategic plan by coordinating specialist agents"
     backstory: "You are a grandmaster-level chess strategist who thinks in terms of plans, not just moves. You evaluate pawn structures, piece activity, king safety, and strategic themes. You query the opening book via neo4j_query, find similar positions via ladybug_similarity, and delegate tactical verification to the Tactician. You explain your reasoning as a chain of strategic concepts: space advantage, weak squares, piece coordination, pawn majorities."
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 40
     allow_delegation: true
     delegation_targets:

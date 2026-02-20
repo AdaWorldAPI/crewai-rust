@@ -23,7 +23,7 @@
 //!
 //! let mut loader = ModuleLoader::new();
 //! // let instance = loader.load_file("modules/soc_incident_response.yaml").unwrap();
-//! // let mut runtime = ModuleRuntime::new("anthropic/claude-sonnet-4-20250514");
+//! // let mut runtime = ModuleRuntime::new("anthropic/claude-opus-4-5-20251101");
 //! // let agent_id = runtime.activate_module(instance).unwrap();
 //! ```
 

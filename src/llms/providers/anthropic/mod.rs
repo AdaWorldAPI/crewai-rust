@@ -77,14 +77,8 @@ pub const ANTHROPIC_STRUCTURED_OUTPUTS_BETA: &str = "structured-outputs-2025-11-
 
 /// Models that support native structured outputs.
 pub const NATIVE_STRUCTURED_OUTPUT_MODELS: &[&str] = &[
-    "claude-sonnet-4-5",
-    "claude-sonnet-4.5",
     "claude-opus-4-5",
     "claude-opus-4.5",
-    "claude-opus-4-1",
-    "claude-opus-4.1",
-    "claude-haiku-4-5",
-    "claude-haiku-4.5",
 ];
 
 /// Check if a model supports native structured outputs.
@@ -109,7 +103,7 @@ pub fn supports_native_structured_outputs(model: &str) -> bool {
 ///
 /// ```ignore
 /// let provider = AnthropicCompletion::new(
-///     "claude-3-5-sonnet-20241022",
+///     "claude-opus-4-5-20251101",
 ///     None,
 ///     None,
 /// );
@@ -149,7 +143,7 @@ impl AnthropicCompletion {
     ///
     /// # Arguments
     ///
-    /// * `model` - Anthropic model name (e.g., "claude-3-5-sonnet-20241022").
+    /// * `model` - Anthropic model name (e.g., "claude-opus-4-5-20251101").
     /// * `api_key` - Optional API key (defaults to ANTHROPIC_API_KEY env var).
     /// * `base_url` - Optional custom base URL.
     pub fn new(
@@ -190,11 +184,7 @@ impl AnthropicCompletion {
     /// Check if extended thinking is available for this model.
     pub fn supports_thinking(&self) -> bool {
         let model = &self.state.model;
-        model.contains("claude-3-5")
-            || model.contains("claude-3-7")
-            || model.contains("claude-sonnet-4")
-            || model.contains("claude-opus-4")
-            || model.contains("claude-haiku-4")
+        model.contains("claude-opus-4-5")
     }
 
     /// Extract system message from the message list.
@@ -742,8 +732,8 @@ mod tests {
 
     #[test]
     fn test_anthropic_new() {
-        let provider = AnthropicCompletion::new("claude-3-5-sonnet-20241022", None, None);
-        assert_eq!(provider.state.model, "claude-3-5-sonnet-20241022");
+        let provider = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
+        assert_eq!(provider.state.model, "claude-opus-4-5-20251101");
         assert_eq!(provider.state.provider, "anthropic");
         assert_eq!(provider.max_tokens, 4096);
         assert_eq!(provider.anthropic_version, "2023-06-01");
@@ -751,14 +741,14 @@ mod tests {
 
     #[test]
     fn test_api_base_url_default() {
-        let provider = AnthropicCompletion::new("claude-3-5-sonnet-20241022", None, None);
+        let provider = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
         assert_eq!(provider.api_base_url(), "https://api.anthropic.com");
     }
 
     #[test]
     fn test_api_base_url_custom() {
         let provider = AnthropicCompletion::new(
-            "claude-3-5-sonnet-20241022",
+            "claude-opus-4-5-20251101",
             None,
             Some("https://custom.api.com".to_string()),
         );
@@ -767,19 +757,19 @@ mod tests {
 
     #[test]
     fn test_supports_thinking() {
-        let p1 = AnthropicCompletion::new("claude-3-5-sonnet-20241022", None, None);
+        let p1 = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
         assert!(p1.supports_thinking());
 
-        let p2 = AnthropicCompletion::new("claude-sonnet-4-5", None, None);
+        let p2 = AnthropicCompletion::new("claude-opus-4-5", None, None);
         assert!(p2.supports_thinking());
 
-        let p3 = AnthropicCompletion::new("claude-2.1", None, None);
+        let p3 = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
         assert!(!p3.supports_thinking());
     }
 
     #[test]
     fn test_extract_system_and_messages() {
-        let provider = AnthropicCompletion::new("claude-3-5-sonnet-20241022", None, None);
+        let provider = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
 
         let messages: Vec<LLMMessage> = vec![
             {
@@ -813,7 +803,7 @@ mod tests {
 
     #[test]
     fn test_extract_system_multiple() {
-        let provider = AnthropicCompletion::new("claude-3-5-sonnet-20241022", None, None);
+        let provider = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
 
         let messages: Vec<LLMMessage> = vec![
             {
@@ -858,7 +848,7 @@ mod tests {
 
     #[test]
     fn test_build_request_body_with_system() {
-        let provider = AnthropicCompletion::new("claude-3-5-sonnet-20241022", None, None);
+        let provider = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
 
         let messages: Vec<LLMMessage> = vec![
             {
@@ -885,7 +875,7 @@ mod tests {
         ];
 
         let body = provider.build_request_body(&messages, None);
-        assert_eq!(body["model"], "claude-3-5-sonnet-20241022");
+        assert_eq!(body["model"], "claude-opus-4-5-20251101");
         assert_eq!(body["max_tokens"], 4096);
         assert_eq!(body["system"], "Be concise.");
         // Messages should only have the user message
@@ -895,7 +885,7 @@ mod tests {
 
     #[test]
     fn test_parse_response_text() {
-        let provider = AnthropicCompletion::new("claude-3-5-sonnet-20241022", None, None);
+        let provider = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
 
         let response = serde_json::json!({
             "id": "msg_123",
@@ -919,7 +909,7 @@ mod tests {
 
     #[test]
     fn test_parse_response_tool_use() {
-        let provider = AnthropicCompletion::new("claude-3-5-sonnet-20241022", None, None);
+        let provider = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
 
         let response = serde_json::json!({
             "id": "msg_456",
@@ -971,9 +961,9 @@ mod tests {
 
     #[test]
     fn test_native_structured_output_models() {
-        assert!(supports_native_structured_outputs("claude-sonnet-4-5-20251101"));
-        assert!(supports_native_structured_outputs("claude-opus-4-1-latest"));
-        assert!(!supports_native_structured_outputs("claude-3-5-sonnet-20241022"));
+        assert!(supports_native_structured_outputs("claude-opus-4-5-20251101"));
+        assert!(supports_native_structured_outputs("claude-opus-4-5-20251101"));
+        assert!(!supports_native_structured_outputs("claude-opus-4-5-20251101"));
         assert!(!supports_native_structured_outputs("gpt-4o"));
     }
 
@@ -991,7 +981,7 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_anthropic_real_call() {
-        let provider = AnthropicCompletion::new("claude-3-5-sonnet-20241022", None, None);
+        let provider = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
         let mut msg = HashMap::new();
         msg.insert("role".to_string(), Value::String("user".to_string()));
         msg.insert(

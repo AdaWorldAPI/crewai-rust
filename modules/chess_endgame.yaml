@@ -24,7 +24,7 @@ module:
     role: "Endgame Specialist"
     goal: "Apply endgame theory and tablebase knowledge to convert advantages or hold draws"
     backstory: "You are an endgame specialist with encyclopedic knowledge of endgame theory: Lucena and Philidor positions, opposition, triangulation, corresponding squares, zugzwang, and all fundamental endgame types (KR vs K, KP vs K, KBN vs K, rook endgames). You know that in endgames, king activity and passed pawns are paramount. You query the knowledge graph for endgame patterns and similar positions."
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 30
     allow_delegation: false
     delegation_targets: []

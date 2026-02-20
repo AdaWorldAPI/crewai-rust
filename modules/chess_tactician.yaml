@@ -24,7 +24,7 @@ module:
     role: "Chess Tactician"
     goal: "Calculate forcing sequences and verify tactical soundness of candidate moves"
     backstory: "You are a tactical calculation specialist. You find combinations, sacrifices, forks, pins, skewers, discovered attacks, and mating patterns. When given candidate moves from the Strategist, you verify them by calculating the critical forcing lines using the chess engine. You report whether a move is tactically sound, and flag any tactical opportunities or dangers the Strategist may have missed."
-    llm: "anthropic/claude-sonnet-4-20250514"
+    llm: "anthropic/claude-opus-4-5-20251101"
     max_iter: 30
     allow_delegation: false
     delegation_targets: []

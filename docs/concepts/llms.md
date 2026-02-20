@@ -78,7 +78,7 @@ The builder methods consume `self` and return `Self`, enabling chained construct
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `model` | `String` | Required | Model identifier (e.g., `"gpt-4o"`, `"claude-3-5-sonnet-20241022"`) |
+| `model` | `String` | Required | Model identifier (e.g., `"gpt-4o"`, `"claude-opus-4-5-20251101"`) |
 | `temperature` | `Option<f64>` | `None` | Sampling temperature |
 | `top_p` | `Option<f64>` | `None` | Nucleus sampling parameter |
 | `n` | `Option<i32>` | `None` | Number of completions to generate |
@@ -145,7 +145,7 @@ The LLM automatically infers its provider from the model name using a multi-step
 let llm = LLM::new("gpt-4o");
 assert_eq!(llm.infer_provider(), "openai");
 
-let llm = LLM::new("claude-3-5-sonnet-20241022");
+let llm = LLM::new("claude-opus-4-5-20251101");
 assert_eq!(llm.infer_provider(), "anthropic");
 
 let llm = LLM::new("gemini-2.0-flash");
@@ -294,11 +294,11 @@ let response = llm.call(&messages, Some(&tools))?;
 let llm = LLM::new("gpt-4o");
 assert!(llm.supports_function_calling());
 
-let llm = LLM::new("claude-3-5-sonnet-20241022");
+let llm = LLM::new("claude-opus-4-5-20251101");
 assert!(llm.supports_function_calling());
 
 // Checks against known function-calling model families:
-// gpt-4, gpt-3.5-turbo, claude-3, claude-2, gemini,
+// gpt-4, gpt-3.5-turbo, claude-3, claude-opus-4-5-20251101, gemini,
 // mistral, llama-3, command, o1, o3, o4
 ```
 

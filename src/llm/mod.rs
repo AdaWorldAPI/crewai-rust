@@ -99,13 +99,7 @@ pub fn llm_context_window_sizes() -> HashMap<&'static str, i64> {
     m.insert("us.amazon.nova-pro-v1:0", 300000);
     m.insert("us.amazon.nova-micro-v1:0", 128000);
     m.insert("us.amazon.nova-lite-v1:0", 300000);
-    m.insert("us.anthropic.claude-3-5-sonnet-20240620-v1:0", 200000);
-    m.insert("us.anthropic.claude-3-5-haiku-20241022-v1:0", 200000);
-    m.insert("us.anthropic.claude-3-5-sonnet-20241022-v2:0", 200000);
-    m.insert("us.anthropic.claude-3-7-sonnet-20250219-v1:0", 200000);
-    m.insert("us.anthropic.claude-3-sonnet-20240229-v1:0", 200000);
-    m.insert("us.anthropic.claude-3-opus-20240229-v1:0", 200000);
-    m.insert("us.anthropic.claude-3-haiku-20240307-v1:0", 200000);
+    m.insert("us.anthropic.claude-opus-4-5-20251101-v1:0", 200000);
     m.insert("us.meta.llama3-2-11b-instruct-v1:0", 128000);
     m.insert("us.meta.llama3-2-3b-instruct-v1:0", 131000);
     m.insert("us.meta.llama3-2-90b-instruct-v1:0", 128000);
@@ -114,28 +108,15 @@ pub fn llm_context_window_sizes() -> HashMap<&'static str, i64> {
     m.insert("us.meta.llama3-1-70b-instruct-v1:0", 128000);
     m.insert("us.meta.llama3-3-70b-instruct-v1:0", 128000);
     m.insert("us.meta.llama3-1-405b-instruct-v1:0", 128000);
-    m.insert("eu.anthropic.claude-3-5-sonnet-20240620-v1:0", 200000);
-    m.insert("eu.anthropic.claude-3-sonnet-20240229-v1:0", 200000);
-    m.insert("eu.anthropic.claude-3-haiku-20240307-v1:0", 200000);
+    m.insert("eu.anthropic.claude-opus-4-5-20251101-v1:0", 200000);
     m.insert("eu.meta.llama3-2-3b-instruct-v1:0", 131000);
     m.insert("eu.meta.llama3-2-1b-instruct-v1:0", 131000);
-    m.insert("apac.anthropic.claude-3-5-sonnet-20240620-v1:0", 200000);
-    m.insert("apac.anthropic.claude-3-5-sonnet-20241022-v2:0", 200000);
-    m.insert("apac.anthropic.claude-3-sonnet-20240229-v1:0", 200000);
-    m.insert("apac.anthropic.claude-3-haiku-20240307-v1:0", 200000);
+    m.insert("apac.anthropic.claude-opus-4-5-20251101-v1:0", 200000);
     m.insert("amazon.nova-pro-v1:0", 300000);
     m.insert("amazon.nova-micro-v1:0", 128000);
     m.insert("amazon.nova-lite-v1:0", 300000);
-    m.insert("anthropic.claude-3-5-sonnet-20240620-v1:0", 200000);
-    m.insert("anthropic.claude-3-5-haiku-20241022-v1:0", 200000);
-    m.insert("anthropic.claude-3-5-sonnet-20241022-v2:0", 200000);
-    m.insert("anthropic.claude-3-7-sonnet-20250219-v1:0", 200000);
-    m.insert("anthropic.claude-3-sonnet-20240229-v1:0", 200000);
-    m.insert("anthropic.claude-3-opus-20240229-v1:0", 200000);
-    m.insert("anthropic.claude-3-haiku-20240307-v1:0", 200000);
-    m.insert("anthropic.claude-v2:1", 200000);
-    m.insert("anthropic.claude-v2", 100000);
-    m.insert("anthropic.claude-instant-v1", 100000);
+    m.insert("anthropic.claude-opus-4-5-20251101-v1:0", 200000);
+    m.insert("anthropic.claude-opus-4-5-20251101", 200000);
     m.insert("meta.llama3-1-405b-instruct-v1:0", 128000);
     m.insert("meta.llama3-1-70b-instruct-v1:0", 128000);
     m.insert("meta.llama3-1-8b-instruct-v1:0", 128000);
@@ -229,7 +210,7 @@ pub struct ResponseFormat {
 /// are included. Methods are simplified stubs.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LLM {
-    /// Model identifier (e.g., "gpt-4", "claude-3-5-sonnet-20241022").
+    /// Model identifier (e.g., "gpt-4", "claude-opus-4-5-20251101").
     pub model: String,
     /// Timeout for API calls in seconds.
     pub timeout: Option<f64>,
@@ -372,7 +353,7 @@ impl LLM {
     ///
     /// # Arguments
     ///
-    /// * `model` - Model identifier (e.g., "gpt-4o", "claude-3-5-sonnet-20241022").
+    /// * `model` - Model identifier (e.g., "gpt-4o", "claude-opus-4-5-20251101").
     pub fn new(model: impl Into<String>) -> Self {
         let model = model.into();
         let is_anthropic = Self::_is_anthropic_model(&model);
@@ -719,7 +700,7 @@ impl LLM {
             "gpt-4",
             "gpt-3.5-turbo",
             "claude-3",
-            "claude-2",
+            "claude-opus-4-5-20251101",
             "gemini",
             "mistral",
             "llama-3",
@@ -951,7 +932,7 @@ mod tests {
 
     #[test]
     fn test_llm_new_anthropic() {
-        let llm = LLM::new("claude-3-5-sonnet-20241022");
+        let llm = LLM::new("claude-opus-4-5-20251101");
         assert!(llm.is_anthropic);
     }
 
@@ -976,8 +957,8 @@ mod tests {
 
     #[test]
     fn test_is_anthropic_model() {
-        assert!(LLM::_is_anthropic_model("claude-3-5-sonnet-20241022"));
-        assert!(LLM::_is_anthropic_model("anthropic/claude-3-5-sonnet"));
+        assert!(LLM::_is_anthropic_model("claude-opus-4-5-20251101"));
+        assert!(LLM::_is_anthropic_model("anthropic/claude-opus-4-5-20251101"));
         assert!(LLM::_is_anthropic_model("claude/claude-3"));
         assert!(!LLM::_is_anthropic_model("gpt-4o"));
         assert!(!LLM::_is_anthropic_model("gemini-2.0-flash"));
@@ -1012,7 +993,7 @@ mod tests {
         let llm = LLM::new("gpt-4o");
         assert_eq!(llm.infer_provider(), "openai");
 
-        let llm = LLM::new("claude-3-5-sonnet-20241022");
+        let llm = LLM::new("claude-opus-4-5-20251101");
         assert_eq!(llm.infer_provider(), "anthropic");
 
         let llm = LLM::new("gemini-2.0-flash");
@@ -1029,7 +1010,7 @@ mod tests {
     fn test_matches_provider_pattern() {
         assert!(LLM::matches_provider_pattern("gpt-4o", "openai"));
         assert!(LLM::matches_provider_pattern("o3-mini", "openai"));
-        assert!(LLM::matches_provider_pattern("claude-3-5-sonnet", "anthropic"));
+        assert!(LLM::matches_provider_pattern("claude-opus-4-5-20251101", "anthropic"));
         assert!(LLM::matches_provider_pattern("gemini-2.0-flash", "gemini"));
         assert!(LLM::matches_provider_pattern("anthropic.claude-3", "bedrock"));
         assert!(!LLM::matches_provider_pattern("gpt-4o", "anthropic"));
@@ -1083,7 +1064,7 @@ mod tests {
     #[test]
     fn test_supports_function_calling() {
         assert!(LLM::new("gpt-4o").supports_function_calling());
-        assert!(LLM::new("claude-3-5-sonnet").supports_function_calling());
+        assert!(LLM::new("claude-opus-4-5-20251101").supports_function_calling());
         assert!(LLM::new("gemini-2.0-flash").supports_function_calling());
         assert!(LLM::new("o3-mini").supports_function_calling());
     }
