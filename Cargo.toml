@@ -21,8 +21,11 @@ uuid = { version = "1", features = ["v4", "v5", "serde"] }
 # Date/Time
 chrono = { version = "0.4", features = ["serde"] }
 
-# Crypto (MD5 hashing)
+# Crypto (MD5 hashing, HMAC-SHA256 for AWS SigV4)
 md-5 = "0.10"
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"
 
 # HTTP client
 reqwest = { version = "0.12", features = ["json", "stream"] }
@@ -52,6 +55,9 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 
 # Template rendering
 tera = "1"
+
+# Zero-copy byte buffers
+bytes = "1"
 
 # Thread-safe collections
 dashmap = "6"

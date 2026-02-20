@@ -10,6 +10,7 @@
 
 pub mod a2a;
 pub mod agent;
+pub mod blackboard;
 pub mod chat;
 pub mod agents;
 pub mod capabilities;
@@ -64,6 +65,19 @@ pub use tasks::task_output::TaskOutput;
 pub use contract::types::{
     DataEnvelope, EnvelopeMetadata, StepDelegationRequest, StepDelegationResponse, StepStatus,
     UnifiedExecution, UnifiedStep,
+};
+
+// Lifecycle hook re-exports
+pub use hooks::lifecycle::{
+    AgentHook, MemoryHook, StepHook, ModelHook,
+    HookRegistry, HookError, ToolAction, StepAction,
+};
+
+// Blackboard re-exports
+pub use blackboard::{
+    Blackboard, TypedSlot, Phase,
+    A2ARegistry, AgentPresence, AgentState,
+    BlackboardSlot, SlotMeta,
 };
 
 /// Library version matching Python crewai 1.9.3

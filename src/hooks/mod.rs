@@ -4,6 +4,14 @@
 //!
 //! Provides context structs and global hook registries for before/after
 //! interception of LLM calls and tool invocations.
+//!
+//! # Lifecycle Hooks
+//!
+//! The [`lifecycle`] submodule provides trait-based hooks for cross-system
+//! integration (openclaw-rs, n8n-rs, ladybug-rs). These are complementary
+//! to the callback-based global hooks below.
+
+pub mod lifecycle;
 
 use std::collections::HashMap;
 use std::sync::Mutex;
