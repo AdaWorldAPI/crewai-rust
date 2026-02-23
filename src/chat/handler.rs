@@ -149,7 +149,7 @@ pub async fn chat_handler(
             let presence = PresenceInfo {
                 mode: presence_mode.clone(),
                 warmth: match presence_mode.as_str() {
-                    "wife" => 0.95,
+                    "personal" => 0.95,
                     "work" => 0.4,
                     "agi" => 0.3,
                     _ => 0.7,
