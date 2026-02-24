@@ -18,6 +18,16 @@
 //!
 //! - `XAI_API_KEY` — xAI API key (required)
 //! - `XAI_BASE_URL` — Custom base URL (defaults to `https://api.x.ai/v1`)
+//!
+//! # gRPC Provider
+//!
+//! When the `xai-grpc` feature is enabled, this module also exposes
+//! [`grpc::XAIGrpcCompletion`] — a typed protobuf client that implements
+//! `BaseLLM` over gRPC instead of REST. Lower latency, binary encoding,
+//! native streaming. Both providers are interchangeable in the agent pipeline.
+
+#[cfg(feature = "xai-grpc")]
+pub mod grpc;
 
 use std::any::Any;
 use std::collections::HashMap;

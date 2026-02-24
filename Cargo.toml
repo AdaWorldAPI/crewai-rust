@@ -83,17 +83,28 @@ serde_yaml = "0.9"
 # Shared substrate types (LadybugDB contract) — optional for standalone mode
 ladybug-contract = { path = "../ladybug-rs/crates/ladybug-contract", optional = true }
 
+# gRPC client — xAI gRPC API (feature-gated)
+tonic = { version = "0.14", features = ["channel", "transport", "tls-ring", "tls-webpki-roots"], optional = true }
+tonic-prost = { version = "0.14", optional = true }
+prost = { version = "0.14", optional = true }
+prost-types = { version = "0.14", optional = true }
+
 # Chess stack: deactivated — see `chess-savant` branch for full chess agent
 # stonksfish = { path = "../stonksfish", optional = true }
 # ladybug = { path = "../ladybug-rs", optional = true }
 # chess = { version = "3.2.0", optional = true }
 # neo4j-rs = { path = "../neo4j-rs", optional = true }
 
+[build-dependencies]
+tonic-build = { version = "0.14", optional = true }
+tonic-prost-build = { version = "0.14", optional = true }
+
 [features]
 default = []
 postgres = ["sqlx"]
 ladybug = ["dep:ladybug-contract"]
 wire_protocol = []  # Enable when ladybug-contract gains the wire module
+xai-grpc = ["dep:tonic", "dep:tonic-prost", "dep:prost", "dep:prost-types", "dep:tonic-build", "dep:tonic-prost-build"]
 # chess = ["dep:stonksfish", "dep:ladybug", "dep:chess", "dep:neo4j-rs"]  # see chess-savant branch
 
 [[bin]]
