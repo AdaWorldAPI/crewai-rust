@@ -88,12 +88,6 @@ pub struct AwareChatResponse {
     pub felt_parse: felt_parse::FeltParseResult,
     /// XAI parameter overrides applied.
     pub modulation: XaiParamOverrides,
-    /// Fingerprint cache lookup result (similar previous turns).
-    pub cache_lookup: fingerprint_cache::CacheLookupResult,
-    /// AGIT commit hash for this turn.
-    pub agit_commit: Option<String>,
-    /// Active AGIT goals.
-    pub agit_goals: Vec<crate::persona::agit::AgitGoal>,
     /// Prompt cache statistics for this session.
     pub prompt_cache: CacheStats,
     /// Turn number in this session.
@@ -174,20 +168,12 @@ pub async fn chat_handler_awareness(
         }
     }
 
-    // ── Step 0: Fingerprint cache lookup (parallel with hydration) ────────
-    let cache_http = http.clone();
-    let cache_url = app.config.ladybug_url.clone();
-    let cache_msg = request.message.clone();
-    let cache_handle = tokio::spawn(async move {
-        fingerprint_cache::lookup(&cache_http, &cache_url, &cache_msg).await
-    });
-
     // ── Step 1: Hydrate Ada from substrate ────────────────────────────────
+    // Similarity search is handled natively by BindSpace Hamming search
+    // during hydration — no separate fingerprint cache layer needed.
     let hydration = hydrate_from_substrate(
         &http, &app.config, &request.message, &presence_mode, 3, // rung_hint from felt-parse inside session
     ).await;
-
-    let cache_result = cache_handle.await.unwrap_or_default();
 
     let (qualia, qualia_preamble, thinking_style) = match hydration {
         Some(h) => {
@@ -219,22 +205,13 @@ pub async fn chat_handler_awareness(
         }
     };
 
-    // ── Step 2: AGIT goals ──────────────────────────────────────────────
-    let mut agit = AgitState::new();
-    if presence_mode != "hybrid" {
-        agit.checkout(&presence_mode, &presence_mode);
-    }
-    agit.generate_goals(&qualia);
-
-    let cache_context = fingerprint_cache::build_cache_context(&cache_result.hits)
-        .unwrap_or_default();
-    let agit_context = agit.build_context();
-
-    // ── Step 3: Process through AwarenessSession ────────────────────────
+    // ── Step 2: Process through AwarenessSession ────────────────────────
     // This uses XAICompletion (REST) with:
     // - Cached system prompt prefix (frozen identity seed)
     // - Session history as context messages
     // - Modulated parameters from EMA-smoothed awareness state
+    // Note: AGIT versioning removed — LanceDB provides native versioning.
+    // Fingerprint cache removed — BindSpace Hamming search is the native path.
     let process_result = {
         let mut sessions = app.sessions.lock().await;
         let session = sessions.get_mut(&session_id).unwrap();
@@ -242,8 +219,8 @@ pub async fn chat_handler_awareness(
             &request.message,
             &qualia_preamble,
             &qualia,
-            &cache_context,
-            &agit_context,
+            "", // cache context — handled natively by BindSpace during hydration
+            "", // agit context — removed (LanceDB versioning)
         ).await
     };
 
@@ -254,36 +231,24 @@ pub async fn chat_handler_awareness(
         )
     })?;
 
-    // ── Step 4: AGIT commit ─────────────────────────────────────────────
-    let agit_commit = agit.commit(
-        &qualia,
-        &cache_result.fingerprint,
-        &request.message.chars().take(80).collect::<String>(),
-    );
-
-    // ── Step 5: Write-back + cache index (fire-and-forget) ──────────────
+    // ── Step 4: Write-back (fire-and-forget) ────────────────────────────
+    // BindSpace stores turns natively — no separate cache index step needed.
     let wb_http = http.clone();
     let wb_url = app.config.ladybug_url.clone();
     let wb_message = request.message.clone();
     let wb_response = result.reply.clone();
     let wb_rung = qualia.rung_level;
-    let wb_session = request.session_id.clone();
-    let wb_presence = presence_mode.clone();
     tokio::spawn(async move {
         let _ = write_back_to_substrate(
             &wb_http, &wb_url, &wb_message, &wb_response, wb_rung,
         ).await;
-        let _ = fingerprint_cache::index_turn(
-            &wb_http, &wb_url, &wb_message, &wb_response,
-            &wb_session, &wb_presence, wb_rung,
-        ).await;
     });
 
-    // ── Step 6: Get session stats + awareness write-back ────────────────
+    // ── Step 5: Get session stats + awareness write-back ────────────────
     let (prompt_cache, turn_number, cache_hit_ratio) = {
         let mut sessions = app.sessions.lock().await;
         let session = sessions.get_mut(&session_id).unwrap();
-        // Write awareness to blackboard (fire-and-forget)
+        // Write awareness to blackboard via native Blackboard TypedSlots
         session.write_back_awareness(0x0E).await;
         (
             session.cache_stats().clone(),
@@ -291,11 +256,6 @@ pub async fn chat_handler_awareness(
             session.cache_stats().hit_ratio(),
         )
     };
-
-    let active_goals: Vec<_> = agit.goals.iter()
-        .filter(|g| g.status == crate::persona::agit::GoalStatus::Active)
-        .cloned()
-        .collect();
 
     Ok(Json(AwareChatResponse {
         reply: result.reply,
@@ -305,9 +265,6 @@ pub async fn chat_handler_awareness(
         thinking_style,
         felt_parse: result.felt_parse,
         modulation: result.modulation,
-        cache_lookup: cache_result,
-        agit_commit: Some(agit_commit.hash),
-        agit_goals: active_goals,
         qualia_state: qualia,
         prompt_cache,
         turn_number,

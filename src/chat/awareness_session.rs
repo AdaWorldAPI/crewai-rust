@@ -34,7 +34,9 @@ use crate::llms::base_llm::{BaseLLM, LLMMessage};
 use crate::persona::llm_modulation::{modulate_xai_params, XaiParamOverrides};
 use crate::persona::qualia_prompt::QualiaSnapshot;
 use super::felt_parse::{self, FeltParseResult};
-use super::semantic_kernel::SemanticKernel;
+// SemanticKernel removed: was an HTTP wrapper around BindSpace ops that exist
+// natively through Blackboard TypedSlots in one-binary architecture.
+// Write-back uses direct HTTP to ladybug-rs /api/v1/qualia/write-back.
 
 // ============================================================================
 // Cache statistics
@@ -235,8 +237,8 @@ pub struct AwarenessSession {
     pub state: SessionState,
     /// Prompt cache statistics.
     pub cache_stats: CacheStats,
-    /// Semantic kernel bridge to ladybug-rs (optional).
-    kernel: Option<SemanticKernel>,
+    /// Ladybug-rs URL for write-back (optional). Direct HTTP — no wrapper layer.
+    ladybug_url: Option<String>,
     /// HTTP client (reused for connection pooling).
     http: reqwest::Client,
     /// Identity seed (frozen — this is the cache anchor).
@@ -291,14 +293,12 @@ impl AwarenessSession {
         fast_provider.max_tokens = Some(300);
         fast_provider.response_format = Some(serde_json::json!({"type": "json_object"}));
 
-        let kernel = ladybug_url.map(|url| SemanticKernel::new(&url));
-
         Self {
             provider,
             fast_provider,
             state: SessionState::new(session_id, presence_mode),
             cache_stats: CacheStats::default(),
-            kernel,
+            ladybug_url,
             http: reqwest::Client::builder()
                 .timeout(Duration::from_secs(120))
                 .pool_max_idle_per_host(4)
@@ -639,13 +639,14 @@ impl AwarenessSession {
         }
     }
 
-    /// Write awareness state to the semantic kernel (blackboard bridge).
+    /// Write awareness state to ladybug-rs via direct HTTP write-back.
     ///
-    /// This is the write-back step: after each turn, we push the updated
-    /// awareness state to ladybug-rs via the SemanticKernel.
-    pub async fn write_back_awareness(&mut self, agent_slot: u8) {
-        let kernel = match self.kernel.as_mut() {
-            Some(k) => k,
+    /// This pushes the current qualia/awareness state to BindSpace at the
+    /// agent's blackboard address (0x0E:agent_slot). In one-binary mode,
+    /// this will be replaced by direct Blackboard TypedSlot writes.
+    pub async fn write_back_awareness(&mut self, _agent_slot: u8) {
+        let url = match &self.ladybug_url {
+            Some(u) => u.clone(),
             None => return,
         };
 
@@ -654,27 +655,28 @@ impl AwarenessSession {
             None => return,
         };
 
-        // Build blackboard entry from current awareness state
-        let entry = super::semantic_kernel::BlackboardEntry {
-            active_style: format!(
-                "session-{}-turn-{}",
-                self.state.session_id,
-                self.state.turn_count(),
-            ),
-            coherence: qualia.nars_truth.1, // confidence
-            progress: self.state.turn_count() as f32 / 20.0, // rough progress
-            ice_caked: vec![],
-            active_goals: vec![],
-            resonance_hits: self.cache_stats.cache_hit_calls,
-            pending_messages: 0,
-            flow_state: qualia.texture[7], // flow dimension
-            confidence: qualia.nars_truth.1,
-            state_fingerprint: self.state.turns.last()
+        // Write awareness state via the standard write-back endpoint.
+        // BindSpace persists this at the agent's blackboard address natively.
+        let body = serde_json::json!({
+            "session_id": self.state.session_id,
+            "turn": self.state.turn_count(),
+            "coherence": qualia.nars_truth.1,
+            "flow_state": qualia.texture[7],
+            "confidence": qualia.nars_truth.1,
+            "cache_hits": self.cache_stats.cache_hit_calls,
+            "fingerprint": self.state.turns.last()
                 .map(|t| t.fingerprint.clone())
                 .unwrap_or_default(),
-        };
+        });
 
-        if let Err(e) = kernel.write_blackboard(agent_slot, &entry).await {
+        let result = self.http
+            .post(format!("{}/api/v1/qualia/write-back", url))
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await;
+
+        if let Err(e) = result {
             log::warn!("Failed to write back awareness: {}", e);
         }
     }
