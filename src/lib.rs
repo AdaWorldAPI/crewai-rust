@@ -12,6 +12,7 @@ pub mod a2a;
 pub mod agent;
 pub mod blackboard;
 pub mod chat;
+pub mod drivers;
 pub mod agents;
 pub mod capabilities;
 pub mod cli;
@@ -85,6 +86,14 @@ pub use blackboard::{
     Blackboard, TypedSlot, Phase,
     A2ARegistry, AgentPresence, AgentState,
     BlackboardSlot, SlotMeta,
+};
+
+// Driver re-exports (Blackboard-native awareness types)
+pub use drivers::{
+    AwarenessFrame, AwarenessMatch, AwarenessSummary,
+    NarsTruth, NarsRule, NarsAxisInference, NarsSemanticState,
+    CausalInference, SimilarityJudgment,
+    SpoTriple, ConversationPredicate,
 };
 
 /// Library version matching Python crewai 1.9.3

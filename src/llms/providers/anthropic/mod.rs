@@ -77,6 +77,8 @@ pub const ANTHROPIC_STRUCTURED_OUTPUTS_BETA: &str = "structured-outputs-2025-11-
 
 /// Models that support native structured outputs.
 pub const NATIVE_STRUCTURED_OUTPUT_MODELS: &[&str] = &[
+    "claude-opus-4-6",
+    "claude-opus-4.6",
     "claude-opus-4-5",
     "claude-opus-4.5",
 ];
@@ -184,7 +186,7 @@ impl AnthropicCompletion {
     /// Check if extended thinking is available for this model.
     pub fn supports_thinking(&self) -> bool {
         let model = &self.state.model;
-        model.contains("claude-opus-4-5")
+        model.contains("claude-opus-4-5") || model.contains("claude-opus-4-6")
     }
 
     /// Extract system message from the message list.
@@ -760,7 +762,7 @@ mod tests {
         let p1 = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
         assert!(p1.supports_thinking());
 
-        let p2 = AnthropicCompletion::new("claude-opus-4-5", None, None);
+        let p2 = AnthropicCompletion::new("claude-opus-4-6", None, None);
         assert!(p2.supports_thinking());
 
         let p3 = AnthropicCompletion::new("gpt-4o", None, None);
@@ -963,6 +965,8 @@ mod tests {
     fn test_native_structured_output_models() {
         assert!(supports_native_structured_outputs("claude-opus-4-5-20251101"));
         assert!(supports_native_structured_outputs("claude-opus-4.5"));
+        assert!(supports_native_structured_outputs("claude-opus-4-6"));
+        assert!(supports_native_structured_outputs("claude-opus-4.6"));
         assert!(!supports_native_structured_outputs("gpt-4o"));
     }
 
