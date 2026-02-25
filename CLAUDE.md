@@ -1,0 +1,291 @@
+# CLAUDE.md — crewai-rust
+
+> **Last Updated**: 2026-02-25
+> **Branch**: `claude/vsaclip-hamming-recognition-y0b94`
+> **Owner**: Jan Hübener (jahube)
+
+---
+
+## READ THIS FIRST — Architectural Law
+
+crewai-rust is the **agent framework**. It owns the **Blackboard** (the ONLY
+shared-state surface) and the **Drivers** (pure-function inference on
+Blackboard types). It does NOT own storage, does NOT own SIMD acceleration,
+does NOT talk to databases.
+
+**Read `/home/user/CLAUDE.md` §10–§16 for the full architectural contract.**
+
+---
+
+## 1. What crewai-rust Owns
+
+| Subsystem | Location | Responsibility |
+|-----------|----------|----------------|
+| **Blackboard** | `src/blackboard/` | Shared state: TypedSlots + JSON slots |
+| **Drivers** | `src/drivers/` | Pure-function NARS + SPO inference |
+| **Agents** | `src/agents/`, `src/meta_agents/` | Agent lifecycle, MetaOrchestrator |
+| **A2A** | `src/a2a/`, `src/blackboard/a2a.rs` | Agent discovery + registration |
+| **Chat** | `src/chat/` | Awareness session pipeline |
+| **LLM Providers** | `src/llms/` | Anthropic, xAI, OpenAI adapters |
+| **MCP** | `src/mcp/` | Model Context Protocol client |
+| **Persona** | `src/persona/` | Qualia, felt-parse, modulation |
+
+### What crewai-rust Does NOT Own
+
+- Storage (owned by BindSpace / ladybug-rs)
+- SIMD acceleration (owned by rustynum)
+- Graph database (owned by neo4j-rs)
+- Workflow orchestration (owned by n8n-rs)
+- Wire protocol types (owned by ladybug-contract, n8n-contract)
+
+---
+
+## 2. The Blackboard — Sacred Interface
+
+### Two Slot Types
+
+```rust
+// JSON/bytes slots — for cross-process or serialized data (MCP/REST boundary)
+bb.put("key", json!({...}), "source", "step_type");
+
+// TypedSlots — for in-process zero-serde data (PREFERRED)
+bb.put_typed("key", native_value, "source", "step_type");
+let val: &T = bb.get_typed::<T>("key").unwrap();
+```
+
+**Rule: TypedSlots for in-process. JSON slots ONLY at external boundaries.**
+
+### Canonical Slot Keys
+
+| Key | Type | Writer | Reader |
+|-----|------|--------|--------|
+| `awareness:frame` | `AwarenessFrame` | BindSpace hydration | NARS driver |
+| `awareness:nars` | `NarsSemanticState` | NARS driver | Prompt builder |
+| `awareness:nars_deltas` | `[f32; 32]` | NARS driver | WideMetaView |
+| `awareness:spo_triples` | `Vec<SpoTriple>` | SPO driver | BindSpace write-back |
+| `awareness:spo_inferred` | `Vec<SpoTriple>` | SPO driver | Prompt builder |
+
+### Step Type Convention
+
+```
+{system}.{action}
+
+awareness.hydrate    — BindSpace writes frame
+awareness.nars       — NARS driver produces state
+awareness.spo        — SPO driver produces triples
+oc.channel.receive   — External message inbound
+crew.agent.think     — Agent processing
+oc.channel.send      — External message outbound
+```
+
+### Phase Discipline
+
+Only ONE subsystem writes at a time. The trace records execution order:
+
+```
+>>phase:channel.receive
+  msg:0 (JSON)
+<<phase:channel.receive:5ms
+>>phase:awareness.hydrate
+  awareness:frame (TypedSlot)
+<<phase:awareness.hydrate:12ms
+>>phase:crew.agent.think
+  crew.agent.response:0 (TypedSlot)
+<<phase:crew.agent.think:450ms
+```
+
+### XOR Writethrough Copy Pattern (Borrow-Safe)
+
+When an agent needs to modify awareness state that's owned by BindSpace,
+it MUST NOT borrow-mut the original. Instead:
+
+```
+1. Agent reads AwarenessFrame from Blackboard (immutable borrow)
+2. Agent runs NARS inference → produces NarsSemanticState (new value)
+3. Agent runs SPO extraction → produces Vec<SpoTriple> (new value)
+4. CollapseGate decides: FLOW (commit) / HOLD (buffer) / BLOCK (ask)
+5. On FLOW: agent writes new TypedSlots to Blackboard (separate keys)
+6. BindSpace reads the new slots and XOR-deltas back to storage
+
+No borrow conflict: reads and writes use DIFFERENT slot keys.
+No ownership conflict: each phase owns its output slots exclusively.
+No copy: TypedSlots are Box<dyn Any>, moved not copied.
+```
+
+This is the fundamental pattern. Every agent follows it. The XOR delta
+at the BindSpace level means only changed words are written to storage
+(typically 1-2 words out of 256 per update).
+
+---
+
+## 3. The Drivers — Pure Function Inference
+
+### Architecture
+
+```
+src/drivers/
+├── mod.rs     — Architecture docs, re-exports
+├── nars.rs    — NARS truth values + AwarenessFrame + inference
+└── spo.rs     — SPO triples + conversation graph + NARS integration
+```
+
+### Design Principles
+
+1. **No IO** — Drivers never make HTTP calls, never touch the filesystem
+2. **No state** — All state lives in the Blackboard. Drivers are stateless
+3. **No async** — Drivers are synchronous pure functions
+4. **Protocol-agnostic** — Same types for TypedSlot (zero-serde) and JSON
+
+### NARS Driver (`drivers/nars.rs`)
+
+Core types:
+- `AwarenessFrame` — Blackboard-native type replacing deleted ResonanceSlot
+- `AwarenessMatch` — Single match from BindSpace awareness search
+- `NarsTruth` — NARS ⟨frequency, confidence⟩ truth value
+- `NarsSemanticState` — Full inference result with per-axis truths
+
+Core functions:
+- `nars_analyze(&frame, &axes) -> NarsSemanticState` — Main analysis
+- `nars_to_weight_deltas(&state) -> [f32; 32]` — WideMetaView weights
+- `build_nars_context(&state) -> Option<String>` — Prompt enrichment
+
+### SPO Driver (`drivers/spo.rs`)
+
+Core types:
+- `SpoTriple` — WideMetaView W128-W143 compatible triple
+- `ConversationPredicate` — 8-variant vocabulary (Asks..References)
+
+Core functions:
+- `extract_triples(...) -> Vec<SpoTriple>` — Turn → triples
+- `infer_triples(&triples) -> Vec<SpoTriple>` — Graph inference
+- `build_spo_context(&triples) -> Option<String>` — Prompt enrichment
+
+---
+
+## 4. Deleted Modules — Why and What Replaced Them
+
+These modules were removed in PR #34 / post-rebase refactoring. They
+violated the Driver Model by creating duplicate layers:
+
+| Deleted Module | Violation | Replacement |
+|----------------|-----------|-------------|
+| `fingerprint_cache` | Created HTTP-based similarity search instead of using BindSpace native Hamming | BindSpace does similarity search natively during hydration |
+| `semantic_kernel` | HTTP wrapper around BindSpace ops in same binary | Blackboard TypedSlots — same binary, zero-serde |
+| `agit` (AgitState) | Reinvented versioning on top of LanceDB's native versioning | LanceDB native version history |
+| `resonance_agent` | Depended on all 3 above | Replaced by `drivers/nars.rs` AwarenessFrame |
+
+**If you find yourself creating a module that wraps BindSpace in HTTP
+calls from within the same binary — STOP. That's a Law 1 violation
+(No Bridges). Use Blackboard TypedSlots instead.**
+
+---
+
+## 5. LLM Provider Model References
+
+### Anthropic
+
+```rust
+// Structured outputs
+NATIVE_STRUCTURED_OUTPUT_MODELS: ["claude-opus-4-6", "claude-opus-4.6",
+                                   "claude-opus-4-5", "claude-opus-4.5"]
+
+// Extended thinking
+supports_thinking(): model.contains("claude-opus-4-5") || model.contains("claude-opus-4-6")
+```
+
+**Rule: Never reference Sonnet in production code.**
+
+### xAI
+
+- Deep response: `grok-3` or `grok-3-mini`
+- Fast pre-pass (felt-parse): `grok-3-fast` with JSON mode
+- Prompt caching: frozen identity seed as cache anchor
+
+---
+
+## 6. Chat Pipeline — Awareness Session
+
+```
+User message
+  → Felt-parse (grok-3-fast, cached system prompt)
+  → Hydrate (BindSpace → AwarenessFrame → Blackboard)
+  → NARS inference (drivers/nars.rs → NarsSemanticState)
+  → SPO extraction (drivers/spo.rs → Vec<SpoTriple>)
+  → Build qualia-enriched system prompt
+  → Modulate XAI parameters from ThinkingStyle + Council
+  → Call Grok (deep response, prefix cached by xAI)
+  → Write-back (new TypedSlots → BindSpace XOR delta)
+  → Return response + qualia metadata
+```
+
+### Write-Back Architecture
+
+**In-process (one-binary, target)**:
+```rust
+// Agent writes new awareness to Blackboard
+bb.put_typed("awareness:nars", nars_state, "nars_driver", "awareness.nars");
+bb.put_typed("awareness:spo_triples", triples, "spo_driver", "awareness.spo");
+// BindSpace reads these TypedSlots and XOR-deltas to storage
+```
+
+**External (MCP/REST, current fallback)**:
+```rust
+// HTTP POST to ladybug-rs /api/v1/qualia/write-back
+// Same types, serialized as JSON at the boundary
+```
+
+Both paths produce the same result. The in-process path is zero-serde.
+
+---
+
+## 7. Testing
+
+```bash
+# Full test suite (582 tests)
+cargo test --lib
+
+# Driver tests only (34 tests)
+cargo test --lib drivers::
+
+# Anthropic provider tests (13 tests)
+cargo test --lib llms::providers::anthropic::
+
+# Blackboard tests
+cargo test --lib blackboard::
+```
+
+---
+
+## 8. Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/blackboard/view.rs` | **Blackboard** — THE shared state surface |
+| `src/blackboard/typed_slot.rs` | **TypedSlot** — zero-serde in-process |
+| `src/blackboard/a2a.rs` | **A2ARegistry** — agent discovery |
+| `src/drivers/mod.rs` | **Driver Model** — architecture docs |
+| `src/drivers/nars.rs` | **NARS** — evidence-based inference |
+| `src/drivers/spo.rs` | **SPO** — conversation graph |
+| `src/chat/handler.rs` | **Chat handler** — awareness pipeline |
+| `src/chat/awareness_session.rs` | **Session** — xAI REST + caching |
+| `src/meta_agents/orchestrator.rs` | **MetaOrchestrator** — agent coordination |
+| `src/llms/providers/anthropic/mod.rs` | **Anthropic** — Opus 4.5/4.6 |
+| `src/lib.rs` | **Root** — module tree + re-exports |
+
+---
+
+## 9. Anti-Patterns — DO NOT
+
+- **DO NOT** create HTTP wrappers around BindSpace from within the binary
+- **DO NOT** create "bridge" or "adapter" modules between subsystems
+- **DO NOT** import rustynum directly — it's behind BindSpace
+- **DO NOT** reference Sonnet models in production code
+- **DO NOT** delete archive crates — they are intentional frozen snapshots
+- **DO NOT** store agent state outside the Blackboard
+- **DO NOT** bypass CollapseGate for awareness write-back
+- **DO NOT** borrow-mut Blackboard across phase boundaries
+
+---
+
+*This document governs crewai-rust development. Read `/home/user/CLAUDE.md`
+for the cross-repo architectural contract.*
