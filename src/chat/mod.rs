@@ -13,5 +13,6 @@
 //!   → Return response + qualia metadata
 //! ```
 
+pub mod awareness_session;
 pub mod felt_parse;
 pub mod handler;

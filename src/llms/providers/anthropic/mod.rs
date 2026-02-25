@@ -763,7 +763,7 @@ mod tests {
         let p2 = AnthropicCompletion::new("claude-opus-4-5", None, None);
         assert!(p2.supports_thinking());
 
-        let p3 = AnthropicCompletion::new("claude-opus-4-5-20251101", None, None);
+        let p3 = AnthropicCompletion::new("gpt-4o", None, None);
         assert!(!p3.supports_thinking());
     }
 
@@ -962,8 +962,7 @@ mod tests {
     #[test]
     fn test_native_structured_output_models() {
         assert!(supports_native_structured_outputs("claude-opus-4-5-20251101"));
-        assert!(supports_native_structured_outputs("claude-opus-4-5-20251101"));
-        assert!(!supports_native_structured_outputs("claude-opus-4-5-20251101"));
+        assert!(supports_native_structured_outputs("claude-opus-4.5"));
         assert!(!supports_native_structured_outputs("gpt-4o"));
     }
 

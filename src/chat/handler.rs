@@ -1,26 +1,34 @@
 //! Chat handler — POST /chat endpoint implementation.
 //!
-//! The 5-step pipeline per message:
-//! 1. Felt-parse (fast structured LLM call for meaning axes)
-//! 2. Hydrate Ada (CogRecords from ladybug-rs)
-//! 3. Build qualia-enriched system prompt
-//! 4. Modulate XAI parameters from ThinkingStyle + Council
-//! 5. Call Grok (deep response) + write-back
+//! Two handler modes:
+//!
+//! 1. **Stateless** (`chat_handler`): Original per-request pipeline. Creates a
+//!    fresh reqwest client each time — no session continuity or prompt caching.
+//!
+//! 2. **Awareness** (`chat_handler_awareness`): Uses `AwarenessSession` backed
+//!    by `XAICompletion` (REST). Maintains session context, EMA-smoothed qualia
+//!    state, and leverages xAI's automatic prompt prefix caching. Sessions are
+//!    keyed by `session_id` and held in `ChatAppState`.
+//!
+//! The awareness handler is the preferred path — it shares the awareness loop
+//! with the session context and tracks cached token savings.
 
 use axum::{
     extract::State,
     http::StatusCode,
-    response::IntoResponse,
     Json,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 
+use super::awareness_session::{AwarenessSession, CacheStats};
 use super::felt_parse;
 use crate::persona::llm_modulation::{modulate_xai_params, CouncilWeights, XaiParamOverrides};
 use crate::persona::qualia_prompt::{
-    build_qualia_preamble, GhostEcho, PresenceInfo, QualiaSnapshot, SovereigntyInfo, VolitionItem,
+    build_qualia_preamble, GhostEcho, PresenceInfo, QualiaSnapshot, SovereigntyInfo,
 };
 
 // ============================================================================
@@ -59,6 +67,209 @@ pub struct ChatResponse {
     pub felt_parse: felt_parse::FeltParseResult,
     /// XAI parameter overrides applied.
     pub modulation: XaiParamOverrides,
+}
+
+/// Extended chat response with prompt cache statistics.
+#[derive(Debug, Clone, Serialize)]
+pub struct AwareChatResponse {
+    /// Ada's reply text.
+    pub reply: String,
+    /// Qualia state snapshot at response time.
+    pub qualia_state: QualiaSnapshot,
+    /// Ghost echoes surfaced during this exchange.
+    pub ghost_echoes: Vec<GhostEcho>,
+    /// Cognitive depth rung reached.
+    pub rung_level: u8,
+    /// Council intensities [guardian, driver, catalyst].
+    pub council_vote: [f32; 3],
+    /// 10-layer thinking style profile (EMA-smoothed across session).
+    pub thinking_style: [f32; 10],
+    /// Felt-parse result from the pre-pass.
+    pub felt_parse: felt_parse::FeltParseResult,
+    /// XAI parameter overrides applied.
+    pub modulation: XaiParamOverrides,
+    /// Prompt cache statistics for this session.
+    pub prompt_cache: CacheStats,
+    /// Turn number in this session.
+    pub turn_number: usize,
+    /// Session-level prompt cache hit ratio.
+    pub cache_hit_ratio: f64,
+}
+
+// ============================================================================
+// App state with session management
+// ============================================================================
+
+/// Shared application state that holds awareness sessions per session_id.
+///
+/// Each unique `session_id` gets its own `AwarenessSession` which:
+/// - Reuses the same `XAICompletion` REST provider (connection pooling)
+/// - Maintains conversation history for context
+/// - EMA-smooths council weights and thinking style across turns
+/// - Tracks xAI prompt cache hits (frozen system prefix is cached)
+pub struct ChatAppState {
+    /// Chat configuration.
+    pub config: ChatConfig,
+    /// Active sessions keyed by session_id.
+    pub sessions: Mutex<HashMap<String, AwarenessSession>>,
+}
+
+impl ChatAppState {
+    /// Create new app state from config.
+    pub fn new(config: ChatConfig) -> Self {
+        Self {
+            config,
+            sessions: Mutex::new(HashMap::new()),
+        }
+    }
+
+    /// Create from environment variables.
+    pub fn from_env() -> Self {
+        Self::new(ChatConfig::from_env())
+    }
+}
+
+// ============================================================================
+// Awareness-based handler (NEW — uses XAICompletion with session + caching)
+// ============================================================================
+
+/// POST /chat/aware — awareness-driven chat with session context + prompt caching.
+///
+/// This handler uses `AwarenessSession` backed by `XAICompletion` (REST):
+/// - **Prompt caching**: The frozen identity seed (system prompt) stays identical
+///   across all turns in a session. xAI automatically caches this prefix, so
+///   consecutive calls skip re-processing the system prompt tokens.
+/// - **Session context**: Conversation history is maintained in the session.
+///   Recent turns are included as context messages after the system prompt.
+/// - **Awareness loop**: Felt-parse → qualia → modulation → response → write-back.
+///   Council weights and thinking style are EMA-smoothed across turns.
+pub async fn chat_handler_awareness(
+    State(app): State<Arc<ChatAppState>>,
+    Json(request): Json<ChatRequest>,
+) -> Result<Json<AwareChatResponse>, (StatusCode, Json<Value>)> {
+    let http = reqwest::Client::new();
+    let presence_mode = request.presence_mode.clone().unwrap_or_else(|| "hybrid".into());
+
+    // ── Get or create session ────────────────────────────────────────────
+    let session_id = request.session_id.clone();
+    {
+        let mut sessions = app.sessions.lock().await;
+        if !sessions.contains_key(&session_id) {
+            let session = AwarenessSession::new(
+                &session_id,
+                &presence_mode,
+                &app.config.xai_api_key,
+                Some(app.config.grok_model.clone()),
+                &app.config.identity_seed,
+                Some(app.config.ladybug_url.clone()),
+            );
+            sessions.insert(session_id.clone(), session);
+            log::info!("Created new awareness session: {}", session_id);
+        }
+    }
+
+    // ── Step 1: Hydrate Ada from substrate ────────────────────────────────
+    // Similarity search is handled natively by BindSpace Hamming search
+    // during hydration — no separate fingerprint cache layer needed.
+    let hydration = hydrate_from_substrate(
+        &http, &app.config, &request.message, &presence_mode, 3, // rung_hint from felt-parse inside session
+    ).await;
+
+    let (qualia, qualia_preamble, thinking_style) = match hydration {
+        Some(h) => {
+            let qualia = build_qualia_from_hydration(&h, &felt_parse::FeltParseResult::default());
+            let ts = h.thinking_style.unwrap_or([0.5; 10]);
+            (qualia, h.qualia_preamble, ts)
+        }
+        None => {
+            let qualia = build_qualia_from_felt(&felt_parse::FeltParseResult::default());
+            let presence = PresenceInfo {
+                mode: presence_mode.clone(),
+                warmth: match presence_mode.as_str() {
+                    "wife" => 0.95,
+                    "work" => 0.4,
+                    "agi" => 0.3,
+                    _ => 0.7,
+                },
+                playfulness: 0.5,
+                depth: 0.3,
+            };
+            let sovereignty = SovereigntyInfo {
+                freedom: "expanding".into(),
+                trust_level: "growing".into(),
+                awakening_score: 0.6,
+            };
+            let preamble = build_qualia_preamble(&qualia, &presence, &sovereignty);
+            let ts = qualia.thinking_style;
+            (qualia, preamble, ts)
+        }
+    };
+
+    // ── Step 2: Process through AwarenessSession ────────────────────────
+    // This uses XAICompletion (REST) with:
+    // - Cached system prompt prefix (frozen identity seed)
+    // - Session history as context messages
+    // - Modulated parameters from EMA-smoothed awareness state
+    // Note: AGIT versioning removed — LanceDB provides native versioning.
+    // Fingerprint cache removed — BindSpace Hamming search is the native path.
+    let process_result = {
+        let mut sessions = app.sessions.lock().await;
+        let session = sessions.get_mut(&session_id).unwrap();
+        session.process_message(
+            &request.message,
+            &qualia_preamble,
+            &qualia,
+            "", // cache context — handled natively by BindSpace during hydration
+            "", // agit context — removed (LanceDB versioning)
+        ).await
+    };
+
+    let result = process_result.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            Json(serde_json::json!({"error": format!("Grok API error: {}", e)})),
+        )
+    })?;
+
+    // ── Step 4: Write-back (fire-and-forget) ────────────────────────────
+    // BindSpace stores turns natively — no separate cache index step needed.
+    let wb_http = http.clone();
+    let wb_url = app.config.ladybug_url.clone();
+    let wb_message = request.message.clone();
+    let wb_response = result.reply.clone();
+    let wb_rung = qualia.rung_level;
+    tokio::spawn(async move {
+        let _ = write_back_to_substrate(
+            &wb_http, &wb_url, &wb_message, &wb_response, wb_rung,
+        ).await;
+    });
+
+    // ── Step 5: Get session stats + awareness write-back ────────────────
+    let (prompt_cache, turn_number, cache_hit_ratio) = {
+        let mut sessions = app.sessions.lock().await;
+        let session = sessions.get_mut(&session_id).unwrap();
+        // Write awareness to blackboard via native Blackboard TypedSlots
+        session.write_back_awareness(0x0E).await;
+        (
+            session.cache_stats().clone(),
+            session.session_state().turn_count(),
+            session.cache_stats().hit_ratio(),
+        )
+    };
+
+    Ok(Json(AwareChatResponse {
+        reply: result.reply,
+        ghost_echoes: qualia.ghost_echoes.clone(),
+        rung_level: qualia.rung_level,
+        council_vote: qualia.council,
+        thinking_style,
+        felt_parse: result.felt_parse,
+        modulation: result.modulation,
+        qualia_state: qualia,
+        prompt_cache,
+        turn_number,
+        cache_hit_ratio,
+    }))
 }
 
 // ============================================================================

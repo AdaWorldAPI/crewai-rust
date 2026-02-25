@@ -18,6 +18,16 @@
 //!
 //! - `XAI_API_KEY` — xAI API key (required)
 //! - `XAI_BASE_URL` — Custom base URL (defaults to `https://api.x.ai/v1`)
+//!
+//! # gRPC Provider
+//!
+//! When the `xai-grpc` feature is enabled, this module also exposes
+//! [`grpc::XAIGrpcCompletion`] — a typed protobuf client that implements
+//! `BaseLLM` over gRPC instead of REST. Lower latency, binary encoding,
+//! native streaming. Both providers are interchangeable in the agent pipeline.
+
+#[cfg(feature = "xai-grpc")]
+pub mod grpc;
 
 use std::any::Any;
 use std::collections::HashMap;
@@ -247,14 +257,35 @@ impl XAICompletion {
 
         let final_content = self.state.apply_stop_words(content);
 
-        // Log token usage
+        // Log token usage (including cached prompt tokens from xAI prefix cache)
         if let Some(usage) = response.get("usage") {
+            let prompt = usage.get("prompt_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
+            let completion = usage.get("completion_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
+            let total = usage.get("total_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
+
+            // xAI reports cached tokens in prompt_tokens_details.cached_tokens
+            // or at top-level as cached_prompt_text_tokens
+            let cached = usage.get("prompt_tokens_details")
+                .and_then(|d| d.get("cached_tokens"))
+                .and_then(|v| v.as_i64())
+                .or_else(|| {
+                    usage.get("cached_prompt_text_tokens")
+                        .and_then(|v| v.as_i64())
+                })
+                .unwrap_or(0);
+
             log::debug!(
-                "xAI token usage: prompt={}, completion={}, total={}",
-                usage.get("prompt_tokens").and_then(|v| v.as_i64()).unwrap_or(0),
-                usage.get("completion_tokens").and_then(|v| v.as_i64()).unwrap_or(0),
-                usage.get("total_tokens").and_then(|v| v.as_i64()).unwrap_or(0),
+                "xAI token usage: prompt={}, cached={}, completion={}, total={}",
+                prompt, cached, completion, total,
             );
+
+            if cached > 0 {
+                log::info!(
+                    "xAI prompt cache hit: {}/{} tokens cached ({:.0}%)",
+                    cached, prompt,
+                    if prompt > 0 { cached as f64 / prompt as f64 * 100.0 } else { 0.0 },
+                );
+            }
         }
 
         Ok(Value::String(final_content))

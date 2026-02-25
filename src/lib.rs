@@ -48,6 +48,10 @@ pub mod translations;
 pub mod types;
 pub mod utilities;
 
+// xAI gRPC provider — typed protobuf client for Grok models
+#[cfg(feature = "xai-grpc")]
+pub mod xai_grpc;
+
 // Re-exports matching Python's __init__.py __all__
 pub use agent::Agent;
 pub use crew::Crew;
