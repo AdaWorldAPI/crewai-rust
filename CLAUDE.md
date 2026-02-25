@@ -6,14 +6,24 @@
 
 ---
 
-## READ THIS FIRST — Architectural Law
+## READ THIS FIRST — Role in the Four-Level Architecture
 
-crewai-rust is the **agent framework**. It owns the **Blackboard** (the ONLY
-shared-state surface) and the **Drivers** (pure-function inference on
-Blackboard types). It does NOT own storage, does NOT own SIMD acceleration,
+crewai-rust is **Level 4 — Composition** (behavioral orchestration).
+
+> **Canonical cross-repo architecture:** [ada-docs/architecture/FOUR_LEVEL_ARCHITECTURE.md](https://github.com/AdaWorldAPI/ada-docs/blob/main/architecture/FOUR_LEVEL_ARCHITECTURE.md)
+
+crewai-rust owns the **agent framework**: the **Blackboard** (the ONLY
+shared-state surface), the **Drivers** (pure-function inference on
+Blackboard types), and the **Persona** system (36 thinking styles in 6
+clusters, 23D cognitive space, τ (tau) addresses for JIT compilation).
+
+**Thinking styles are JIT workflows, not parameters.** "Einstein" or "Hegel"
+is a composed chain of reasoning operations compiled by jitson/Cranelift
+(n8n-rs), not a float vector. crewai-rust defines the styles; n8n-rs
+compiles and executes them.
+
+crewai-rust does NOT own storage, does NOT own SIMD acceleration,
 does NOT talk to databases.
-
-**Read `/home/user/CLAUDE.md` §10–§16 for the full architectural contract.**
 
 ---
 
@@ -287,5 +297,6 @@ cargo test --lib blackboard::
 
 ---
 
-*This document governs crewai-rust development. Read `/home/user/CLAUDE.md`
+*This document governs crewai-rust development. Read
+[ada-docs/architecture/FOUR_LEVEL_ARCHITECTURE.md](https://github.com/AdaWorldAPI/ada-docs/blob/main/architecture/FOUR_LEVEL_ARCHITECTURE.md)
 for the cross-repo architectural contract.*
