@@ -2,6 +2,7 @@
 name = "crewai"
 version = "1.9.3"
 edition = "2021"
+rust-version = "1.93"
 description = "A 1:1 Rust port of the crewAI Python framework for AI agent orchestration"
 license = "MIT"
 
