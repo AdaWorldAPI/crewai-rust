@@ -50,8 +50,10 @@ RUN git clone --depth 1 https://github.com/AdaWorldAPI/ladybug-rs vendor/ladybug
 COPY . .
 
 # --- Activate vendor deps in Cargo.toml ---
-# Uncomment the vendor path dependencies
-RUN sed -i 's/^# ladybug-vendor = /ladybug-vendor = /' Cargo.toml && \
+# Uncomment the vendor path dependencies (all are commented out in source)
+RUN sed -i 's/^# ladybug-contract = /ladybug-contract = /' Cargo.toml && \
+    sed -i 's/^# ladybug = /ladybug = /' Cargo.toml && \
+    sed -i 's/^# ladybug-vendor = /ladybug-vendor = /' Cargo.toml && \
     sed -i 's/^# n8n-core = /n8n-core = /' Cargo.toml && \
     sed -i 's/^# n8n-workflow = /n8n-workflow = /' Cargo.toml && \
     sed -i 's/^# n8n-hamming = /n8n-hamming = /' Cargo.toml && \
@@ -60,10 +62,6 @@ RUN sed -i 's/^# ladybug-vendor = /ladybug-vendor = /' Cargo.toml && \
     sed -i 's/^# vendor-n8n = /vendor-n8n = /' Cargo.toml && \
     sed -i 's/^# vendor-rustynum = /vendor-rustynum = /' Cargo.toml && \
     sed -i 's/^# full = /full = /' Cargo.toml
-
-# --- Resolve ladybug-contract path for vendored layout ---
-# In Docker, ladybug-contract is at vendor/ladybug-rs/crates/ladybug-contract
-RUN sed -i 's|path = "../ladybug-rs/crates/ladybug-contract"|path = "vendor/ladybug-rs/crates/ladybug-contract"|' Cargo.toml
 
 # --- Build optimized binary ---
 ARG FEATURES="ladybug"
