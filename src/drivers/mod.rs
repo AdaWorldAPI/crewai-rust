@@ -38,11 +38,16 @@
 //!    BindSpace and rustynum handle acceleration underneath. Drivers operate
 //!    on the semantic level.
 
+pub mod barrier_stack;
 pub mod markov_barrier;
 pub mod nars;
 pub mod spo;
 
 // Re-exports for ergonomic Blackboard access.
+pub use barrier_stack::{
+    BarrierStack, StackDecision, BlockingLayer, MulBlockReason, MulInput, Nudge,
+    LayerVerdicts, MulVerdict,
+};
 pub use markov_barrier::{
     MarkovBarrier, SemanticTransaction, XorBudget, GateDecision, CallMeta, BarrierStats,
 };
