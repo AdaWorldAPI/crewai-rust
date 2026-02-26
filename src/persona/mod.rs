@@ -29,6 +29,7 @@
 
 pub mod composite;
 pub mod inner_loop;
+pub mod jit_link;
 pub mod llm_modulation;
 pub mod profile;
 pub mod qualia_prompt;
@@ -38,6 +39,7 @@ pub mod triune;
 // Re-exports
 pub use composite::{CompositeStyle, PresetComposite};
 pub use inner_loop::{AgentState, InnerThoughtHook};
+pub use jit_link::{JitProfile, JitTemplate, JitScanParams};
 pub use llm_modulation::{modulate_xai_params, CouncilWeights, XaiParamOverrides};
 pub use profile::{PersonaProfile, SelfModifyBounds};
 pub use qualia_prompt::{

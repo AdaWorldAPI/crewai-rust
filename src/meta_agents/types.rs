@@ -162,6 +162,12 @@ pub enum SavantDomain {
     Design,
     /// Chess analysis and game strategy.
     Chess,
+    /// Programming awareness — code understanding, AST analysis, problem decomposition.
+    ProgrammingAwareness,
+    /// Meta-orchestration — A2A coordination, task routing, agent lifecycle.
+    MetaOrchestration,
+    /// Problem solving — structured reasoning, hypothesis generation, verification.
+    ProblemSolving,
     /// General-purpose (no specific domain).
     General,
 }
@@ -179,6 +185,9 @@ impl std::fmt::Display for SavantDomain {
             Self::DevOps => write!(f, "devops"),
             Self::Design => write!(f, "design"),
             Self::Chess => write!(f, "chess"),
+            Self::ProgrammingAwareness => write!(f, "programming_awareness"),
+            Self::MetaOrchestration => write!(f, "meta_orchestration"),
+            Self::ProblemSolving => write!(f, "problem_solving"),
             Self::General => write!(f, "general"),
         }
     }

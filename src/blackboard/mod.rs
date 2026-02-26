@@ -31,12 +31,14 @@
 //! Container fingerprints for cognitive addressing.
 
 pub mod a2a;
+pub mod bind_bridge;
 pub mod phase;
 pub mod slot;
 pub mod typed_slot;
 pub mod view;
 
 pub use a2a::{A2ARegistry, AgentPresence, AgentState};
+pub use bind_bridge::{BindBridge, BindProjection, SubstrateView, SubstrateMatch, StubSubstrate};
 pub use phase::Phase;
 pub use slot::{BlackboardSlot, SlotMeta};
 pub use typed_slot::TypedSlot;

@@ -38,10 +38,14 @@
 //!    BindSpace and rustynum handle acceleration underneath. Drivers operate
 //!    on the semantic level.
 
+pub mod markov_barrier;
 pub mod nars;
 pub mod spo;
 
 // Re-exports for ergonomic Blackboard access.
+pub use markov_barrier::{
+    MarkovBarrier, SemanticTransaction, XorBudget, GateDecision, CallMeta, BarrierStats,
+};
 pub use nars::{
     AwarenessFrame, AwarenessMatch, AwarenessSummary,
     NarsTruth, NarsRule, NarsAxisInference, NarsSemanticState,

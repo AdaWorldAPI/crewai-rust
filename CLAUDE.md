@@ -297,6 +297,101 @@ cargo test --lib blackboard::
 
 ---
 
+## 10. Single Binary Integration — BindSpace ↔ Blackboard
+
+### New Modules (2026-02-26)
+
+| Module | File | Purpose |
+|--------|------|---------|
+| **BindBridge** | `src/blackboard/bind_bridge.rs` | SubstrateView trait + BindSpace ↔ Blackboard bridge |
+| **JitLink** | `src/persona/jit_link.rs` | AgentCard → ThinkingStyle → JIT template (τ addresses) |
+| **MarkovBarrier** | `src/drivers/markov_barrier.rs` | Blood-brain barrier: XOR budget for external API calls |
+| **New Savant Domains** | `src/meta_agents/savants.rs` | ProgrammingAwareness, MetaOrchestration, ProblemSolving |
+
+### Architecture: Three-Tier Awareness Model
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    TIER 1: Core (zero-serde)                      │
+│                                                                    │
+│  BindSpace (ladybug-rs)  ◄──SubstrateView──►  Blackboard         │
+│  65K addresses, O(1)         trait impl         TypedSlots         │
+│  NARS truth in meta words    hydrate()          AwarenessFrame    │
+│  XOR delta writeback         writeback()        NarsSemanticState │
+│                                                                    │
+│  Triune inner dialogue: Guardian ↔ Driver ↔ Catalyst              │
+│  A2A as inner dialogue between three facets                       │
+└──────────────────────────────────────────────────────────────────┘
+         │ outbound (Driver facet)     ▲ inbound (Guardian facet)
+         ▼                             │
+┌──────────────────────────────────────────────────────────────────┐
+│               TIER 2: Blood-Brain Barrier                         │
+│                                                                    │
+│  MarkovBarrier: XOR budget gates state transitions                │
+│    - High confidence → small budget (settled knowledge resists)   │
+│    - Low confidence → large budget (uncertain = malleable)        │
+│    - Tensioned → medium budget (conflicts need care)              │
+│                                                                    │
+│  Two modes through the barrier:                                   │
+│    NSM mode: structured semantic primitives → direct addressing   │
+│              (universal grammar, bypasses BERT embedding)          │
+│    NL mode: natural language text → BERT re-embedding             │
+│              (token-space → fingerprint-space translation)         │
+│                                                                    │
+│  Semantic transactions, NOT raw byte gating                       │
+│  LLM is IN THE LOOP, NOT source of truth                         │
+└──────────────────────────────────────────────────────────────────┘
+         │ outbound (n8n-rs workflows)  ▲ inbound (BERT → fingerprint)
+         ▼                              │
+┌──────────────────────────────────────────────────────────────────┐
+│               TIER 3: External (stateless HTTP)                   │
+│                                                                    │
+│  xAI/Grok API, Anthropic, OpenAI                                 │
+│  Stateful orchestration via n8n-rs for outbound sequencing       │
+│  RAG + thinking context injected as system prompt                │
+│  Responses interpreted back through barrier via NARS revision    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### AgentCard → ThinkingStyle → JIT Template Pipeline
+
+```
+ModuleDef (YAML agent card)
+  │  thinking_style: [f32; 10]   ← 10-layer cognitive stack
+  │  persona: PersonaProfile      ← volition, affect, inner-loop
+  ▼
+JitProfile::from_module()
+  │  10-axis → cluster affinities → dominant ThinkingStyles
+  │  Each style → τ address + JitScanParams
+  ▼
+JitProfile { templates: Vec<JitTemplate> }
+  │  τ addresses → n8n-rs CompiledStyleRegistry
+  │  Cranelift compiles → native ScanKernels
+  ▼
+Agent executes with compiled thinking textures
+  │  Pre-compiled at startup, cached for process lifetime
+  │  Recompiled only on cognitive profile change
+```
+
+### Integration TODO
+
+| Task | Status |
+|------|--------|
+| SubstrateView trait + BindBridge | **Done** |
+| JitProfile (AgentCard → τ addresses) | **Done** |
+| MarkovBarrier (XOR budget) | **Done** |
+| ProgrammingAwareness / MetaOrchestration / ProblemSolving domains | **Done** |
+| ladybug-rs implements SubstrateView for BindSpace | Planned |
+| BERT embedding model for inbound barrier translation | Planned |
+| n8n-rs workflow orchestration for outbound API sequencing | Planned |
+| Wire JitProfile into ModuleRuntime activation | Planned |
+
+### Branch
+
+All work on: `claude/compare-rustynum-ndarray-5ePRn`
+
+---
+
 *This document governs crewai-rust development. Read
 [ada-docs/architecture/FOUR_LEVEL_ARCHITECTURE.md](https://github.com/AdaWorldAPI/ada-docs/blob/main/architecture/FOUR_LEVEL_ARCHITECTURE.md)
 for the cross-repo architectural contract.*

@@ -1234,9 +1234,9 @@ mod tests {
         let config = OrchestratorConfig::default();
         let orch = MetaOrchestrator::with_default_savants(config);
         #[cfg(feature = "chess")]
-        assert_eq!(orch.blueprints.len(), 10); // 10 domain savants (all domains + chess)
+        assert_eq!(orch.blueprints.len(), 13); // 13 domain savants (all domains + chess)
         #[cfg(not(feature = "chess"))]
-        assert_eq!(orch.blueprints.len(), 9); // 9 domain savants (chess gated)
+        assert_eq!(orch.blueprints.len(), 12); // 12 domain savants (chess gated)
     }
 
     #[test]
