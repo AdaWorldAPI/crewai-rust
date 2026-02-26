@@ -788,9 +788,9 @@ mod tests {
         let coord = SavantCoordinator::new("openai/gpt-4o-mini");
         assert!(coord.registry.is_empty());
         #[cfg(feature = "chess")]
-        assert_eq!(coord.blueprints.len(), 10); // All domains + chess
+        assert_eq!(coord.blueprints.len(), 13); // All domains + chess
         #[cfg(not(feature = "chess"))]
-        assert_eq!(coord.blueprints.len(), 9); // No chess
+        assert_eq!(coord.blueprints.len(), 12); // No chess
     }
 
     #[test]

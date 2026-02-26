@@ -81,8 +81,8 @@ base64 = "0.22"
 # YAML parsing (for capability definitions and agent cards)
 serde_yaml = "0.9"
 
-# Shared substrate types (LadybugDB contract) — optional for standalone mode
-ladybug-contract = { path = "../ladybug-rs/crates/ladybug-contract", optional = true }
+# Shared substrate types (LadybugDB contract) — activated by Docker sed
+# ladybug-contract = { path = "vendor/ladybug-rs/crates/ladybug-contract", optional = true }
 
 # gRPC client — xAI gRPC API (feature-gated)
 tonic = { version = "0.14", features = ["channel", "transport", "tls-ring", "tls-webpki-roots"], optional = true }
@@ -96,6 +96,15 @@ prost-types = { version = "0.14", optional = true }
 # chess = { version = "3.2.0", optional = true }
 # neo4j-rs = { path = "../neo4j-rs", optional = true }
 
+# Vendor: ladybug-rs (awareness substrate) — activated by Docker sed
+# ladybug-vendor = { package = "ladybug", path = "vendor/ladybug-rs", features = ["simd", "parallel"], optional = true }
+# Vendor: n8n-rs (workflow orchestration) — activated by Docker sed
+# n8n-core = { path = "vendor/n8n-rs/n8n-rust/crates/n8n-core", optional = true }
+# n8n-workflow = { path = "vendor/n8n-rs/n8n-rust/crates/n8n-workflow", optional = true }
+# n8n-hamming = { path = "vendor/n8n-rs/n8n-rust/crates/n8n-hamming", optional = true }
+# Vendor: rustynum (SIMD numerical library) — activated by Docker sed
+# rustynum-rs = { path = "vendor/rustynum/rustynum-rs", optional = true }
+
 [build-dependencies]
 tonic-build = { version = "0.14", optional = true }
 tonic-prost-build = { version = "0.14", optional = true }
@@ -103,10 +112,15 @@ tonic-prost-build = { version = "0.14", optional = true }
 [features]
 default = []
 postgres = ["sqlx"]
-ladybug = ["dep:ladybug-contract"]
+# ladybug = ["dep:ladybug-contract"]  # activated by Docker sed (requires ladybug-contract dep)
 wire_protocol = []  # Enable when ladybug-contract gains the wire module
 xai-grpc = ["dep:tonic", "dep:tonic-prost", "dep:prost", "dep:prost-types", "dep:tonic-build", "dep:tonic-prost-build"]
 # chess = ["dep:stonksfish", "dep:ladybug", "dep:chess", "dep:neo4j-rs"]  # see chess-savant branch
+# Vendor feature flags — activated by Docker sed
+# vendor-ladybug = ["dep:ladybug-vendor", "ladybug"]
+# vendor-n8n = ["dep:n8n-core", "dep:n8n-workflow", "dep:n8n-hamming"]
+# vendor-rustynum = ["dep:rustynum-rs"]
+# full = ["vendor-ladybug", "vendor-n8n", "vendor-rustynum", "xai-grpc"]
 
 [[bin]]
 name = "server"

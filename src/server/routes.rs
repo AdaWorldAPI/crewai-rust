@@ -64,7 +64,13 @@ pub fn app_router(state: AppState) -> Router {
     // Chat routes use Arc<ChatConfig> as state
     let chat_config = state.chat_config.clone();
 
-    Router::new()
+    // Barrier stack routes (separate state: Arc<RwLock<BarrierStack>>)
+    let barrier_state = super::barrier_routes::BarrierState::new(
+        std::sync::RwLock::new(crate::drivers::barrier_stack::BarrierStack::new()),
+    );
+    let barrier_routes = super::barrier_routes::barrier_router(barrier_state);
+
+    let main_routes = Router::new()
         .route("/health", get(health_handler))
         .route("/execute", post(execute_handler))
         .route("/modules", get(list_modules_handler))
@@ -78,7 +84,10 @@ pub fn app_router(state: AppState) -> Router {
             post(chat_handler).with_state(chat_config),
         )
         .layer(CorsLayer::permissive())
-        .with_state(state)
+        .with_state(state);
+
+    // Merge barrier routes (own state) after main routes are finalized
+    main_routes.merge(barrier_routes)
 }
 
 /// GET /health — liveness probe.

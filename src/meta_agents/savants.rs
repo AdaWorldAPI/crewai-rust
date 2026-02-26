@@ -557,6 +557,102 @@ pub fn chess_think_tank(llm: &str) -> Vec<AgentBlueprint> {
     ]
 }
 
+/// Create a programming awareness savant blueprint.
+///
+/// Expert at code understanding, AST analysis, problem decomposition,
+/// and meta-cognitive reasoning about software architecture.
+pub fn programming_awareness_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Programming Awareness Analyst",
+        "Understand code structure, decompose problems, and reason about software architecture \
+         with meta-cognitive awareness of the reasoning process itself",
+        "You are an expert programmer with deep understanding of code semantics, AST structures, \
+         type systems, and software architecture patterns. You don't just write code — you reason \
+         ABOUT code: understanding call graphs, data flow, dependency chains, and architectural \
+         trade-offs. You apply meta-cognitive reasoning: you think about how you think about \
+         problems, and you can decompose complex requirements into structured sub-problems.",
+        llm,
+        SavantDomain::ProgrammingAwareness,
+    )
+    .with_skill(
+        SkillDescriptor::new("code_understanding", "Code Understanding", "Parse and reason about code structure, types, and semantics")
+            .with_tags(vec!["code".into(), "analysis".into(), "AST".into(), "semantics".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("problem_decomposition", "Problem Decomposition", "Break complex programming problems into structured sub-problems")
+            .with_tags(vec!["decomposition".into(), "planning".into(), "architecture".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("meta_reasoning", "Meta-Reasoning", "Reason about the reasoning process — evaluate approach quality, detect blind spots")
+            .with_tags(vec!["meta".into(), "reasoning".into(), "reflection".into(), "awareness".into()])
+    )
+    .with_delegation()
+}
+
+/// Create a meta-orchestration savant blueprint.
+///
+/// Expert at A2A coordination, task routing, agent lifecycle management,
+/// and multi-agent workflow optimization.
+pub fn meta_orchestration_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Meta-Orchestration Coordinator",
+        "Coordinate multi-agent workflows, route tasks to optimal agents, manage agent lifecycle, \
+         and optimize A2A communication patterns",
+        "You are a meta-level orchestrator that manages other agents. You understand agent \
+         capabilities through their A2A cards, match tasks to agents via skill scoring, monitor \
+         execution progress, and dynamically adjust agent pools. You think about thinking: \
+         selecting which cognitive style best fits each sub-task, and routing through the \
+         blood-brain barrier when external API calls are needed.",
+        llm,
+        SavantDomain::MetaOrchestration,
+    )
+    .with_skill(
+        SkillDescriptor::new("task_routing", "Task Routing", "Route tasks to best-matching agents based on skills and availability")
+            .with_tags(vec!["routing".into(), "a2a".into(), "coordination".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("agent_lifecycle", "Agent Lifecycle", "Spawn, monitor, adjust, and retire agents based on performance")
+            .with_tags(vec!["lifecycle".into(), "agents".into(), "management".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("workflow_optimization", "Workflow Optimization", "Optimize multi-agent workflow topology and communication patterns")
+            .with_tags(vec!["optimization".into(), "workflow".into(), "a2a".into(), "patterns".into()])
+    )
+    .with_delegation()
+}
+
+/// Create a problem-solving savant blueprint.
+///
+/// Expert at structured reasoning, hypothesis generation, verification,
+/// and systematic problem resolution.
+pub fn problem_solving_savant(llm: &str) -> AgentBlueprint {
+    AgentBlueprint::new(
+        "Structured Problem Solver",
+        "Apply systematic reasoning to decompose, hypothesize, test, and resolve complex problems \
+         using evidence-based approaches",
+        "You are an expert problem solver who applies structured reasoning methodologies. You \
+         generate hypotheses, design verification strategies, and systematically eliminate \
+         possibilities. You use NARS-style evidence accumulation: each observation either \
+         increases or decreases confidence in a hypothesis. You know when to explore (low \
+         confidence) and when to exploit (high confidence).",
+        llm,
+        SavantDomain::ProblemSolving,
+    )
+    .with_skill(
+        SkillDescriptor::new("hypothesis_generation", "Hypothesis Generation", "Generate plausible hypotheses for observed problems")
+            .with_tags(vec!["hypothesis".into(), "reasoning".into(), "generation".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("evidence_evaluation", "Evidence Evaluation", "Evaluate evidence for/against hypotheses using NARS-style truth values")
+            .with_tags(vec!["evidence".into(), "evaluation".into(), "nars".into(), "truth".into()])
+    )
+    .with_skill(
+        SkillDescriptor::new("systematic_debugging", "Systematic Debugging", "Apply binary search and elimination strategies to isolate root causes")
+            .with_tags(vec!["debugging".into(), "elimination".into(), "root_cause".into()])
+    )
+    .with_delegation()
+}
+
 /// Get all available savant blueprints.
 ///
 /// Returns one blueprint for each domain, all using the specified LLM.
@@ -571,6 +667,9 @@ pub fn all_savants(llm: &str) -> Vec<AgentBlueprint> {
         security_savant(llm),
         devops_savant(llm),
         design_savant(llm),
+        programming_awareness_savant(llm),
+        meta_orchestration_savant(llm),
+        problem_solving_savant(llm),
     ];
     #[cfg(feature = "chess")]
     savants.push(chess_strategist_savant(llm));
@@ -593,6 +692,9 @@ pub fn savant_for_domain(domain: SavantDomain, llm: &str) -> AgentBlueprint {
         SavantDomain::Chess => chess_strategist_savant(llm),
         #[cfg(not(feature = "chess"))]
         SavantDomain::Chess => planning_savant(llm),
+        SavantDomain::ProgrammingAwareness => programming_awareness_savant(llm),
+        SavantDomain::MetaOrchestration => meta_orchestration_savant(llm),
+        SavantDomain::ProblemSolving => problem_solving_savant(llm),
         SavantDomain::General => planning_savant(llm),
     }
 }
@@ -626,9 +728,9 @@ mod tests {
     fn test_all_savants() {
         let savants = all_savants("openai/gpt-4o-mini");
         #[cfg(feature = "chess")]
-        assert_eq!(savants.len(), 10);
+        assert_eq!(savants.len(), 13);
         #[cfg(not(feature = "chess"))]
-        assert_eq!(savants.len(), 9);
+        assert_eq!(savants.len(), 12);
         let domains: Vec<_> = savants.iter().map(|s| s.domain).collect();
         assert!(domains.contains(&SavantDomain::Research));
         assert!(domains.contains(&SavantDomain::Engineering));

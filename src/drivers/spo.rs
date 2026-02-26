@@ -103,6 +103,59 @@ impl SpoTriple {
         let freq = if self.is_negated() { 0.0 } else { 1.0 };
         NarsTruth::new(freq, self.confidence())
     }
+
+    /// Project this SPO edge into a 3D vector: `[x, y, z]`.
+    ///
+    /// Maps the triple into a normalized 3D space for visualization and
+    /// spatial reasoning:
+    ///
+    /// - **x** = subject_dn hash folded to `[0.0, 1.0]` via golden-ratio fold
+    /// - **y** = predicate discriminant normalized over the vocabulary range
+    /// - **z** = object_dn hash folded to `[0.0, 1.0]` via golden-ratio fold
+    ///
+    /// Confidence modulates the magnitude: the returned vector is scaled
+    /// by `confidence` so low-confidence edges sit closer to the origin.
+    ///
+    /// ```text
+    /// edge_3d = confidence * [fold(S), norm(P), fold(O)]
+    /// ```
+    pub fn to_3d(&self) -> [f32; 3] {
+        let c = self.confidence();
+        [
+            c * hash_fold(self.subject_dn),
+            c * predicate_norm(self.predicate_hash),
+            c * hash_fold(self.object_dn),
+        ]
+    }
+
+    /// Euclidean distance to another triple in 3D projection space.
+    pub fn distance_3d(&self, other: &SpoTriple) -> f32 {
+        let a = self.to_3d();
+        let b = other.to_3d();
+        let dx = a[0] - b[0];
+        let dy = a[1] - b[1];
+        let dz = a[2] - b[2];
+        (dx * dx + dy * dy + dz * dz).sqrt()
+    }
+}
+
+/// Golden-ratio fold: maps a u32 hash to [0.0, 1.0] with good dispersion.
+///
+/// Uses the fractional part of `hash * φ⁻¹` where φ⁻¹ ≈ 0.618...
+/// This gives better spatial separation than simple division by u32::MAX.
+fn hash_fold(h: u32) -> f32 {
+    // φ⁻¹ in fixed-point: 0.6180339887... * 2^32 ≈ 2654435769
+    const PHI_INV: u32 = 2_654_435_769;
+    let folded = h.wrapping_mul(PHI_INV);
+    folded as f32 / u32::MAX as f32
+}
+
+/// Normalize predicate hash to [0.0, 1.0] over the known vocabulary.
+///
+/// Current vocabulary spans 0x0001..=0x0008 (8 predicates).
+fn predicate_norm(hash: u16) -> f32 {
+    const MAX_PRED: f32 = 8.0;
+    (hash as f32).clamp(0.0, MAX_PRED) / MAX_PRED
 }
 
 // ============================================================================
@@ -688,5 +741,91 @@ mod tests {
         assert_eq!(restored.subject_dn, t.subject_dn);
         assert_eq!(restored.predicate_hash, t.predicate_hash);
         assert_eq!(restored.object_dn, t.object_dn);
+    }
+
+    #[test]
+    fn test_to_3d_range() {
+        let t = SpoTriple::new(
+            entity_hash("user"),
+            ConversationPredicate::Asks.hash(),
+            entity_hash("architecture"),
+            0.8,
+        );
+        let v = t.to_3d();
+        for &c in &v {
+            assert!(c >= 0.0 && c <= 1.0, "3D component out of range: {}", c);
+        }
+    }
+
+    #[test]
+    fn test_to_3d_confidence_scales() {
+        let high = SpoTriple::new(100, 0x0001, 200, 1.0);
+        let low = SpoTriple::new(100, 0x0001, 200, 0.1);
+
+        let vh = high.to_3d();
+        let vl = low.to_3d();
+
+        // Low confidence → closer to origin (smaller magnitude)
+        let mag_h = (vh[0] * vh[0] + vh[1] * vh[1] + vh[2] * vh[2]).sqrt();
+        let mag_l = (vl[0] * vl[0] + vl[1] * vl[1] + vl[2] * vl[2]).sqrt();
+        assert!(mag_h > mag_l, "High-confidence should have larger magnitude");
+    }
+
+    #[test]
+    fn test_to_3d_different_subjects_separate() {
+        let a = SpoTriple::new(
+            entity_hash("user"),
+            ConversationPredicate::Asks.hash(),
+            entity_hash("topic"),
+            0.9,
+        );
+        let b = SpoTriple::new(
+            entity_hash("ada"),
+            ConversationPredicate::Asks.hash(),
+            entity_hash("topic"),
+            0.9,
+        );
+        // Same predicate + object, different subject → should differ in x
+        let va = a.to_3d();
+        let vb = b.to_3d();
+        assert!((va[0] - vb[0]).abs() > 0.01, "Different subjects should separate in x");
+        // y (predicate) and z (object) should be equal
+        assert!((va[1] - vb[1]).abs() < 0.01);
+        assert!((va[2] - vb[2]).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_distance_3d_self_zero() {
+        let t = SpoTriple::new(
+            entity_hash("user"),
+            ConversationPredicate::Explains.hash(),
+            entity_hash("topic"),
+            0.8,
+        );
+        assert!(t.distance_3d(&t) < 1e-6);
+    }
+
+    #[test]
+    fn test_distance_3d_symmetry() {
+        let a = SpoTriple::new(entity_hash("user"), 0x0001, entity_hash("topic_a"), 0.8);
+        let b = SpoTriple::new(entity_hash("ada"), 0x0005, entity_hash("topic_b"), 0.6);
+        let d1 = a.distance_3d(&b);
+        let d2 = b.distance_3d(&a);
+        assert!((d1 - d2).abs() < 1e-6, "Distance should be symmetric");
+    }
+
+    #[test]
+    fn test_hash_fold_dispersion() {
+        // Consecutive hashes should NOT produce consecutive folds (good dispersion)
+        let f1 = super::hash_fold(1);
+        let f2 = super::hash_fold(2);
+        let f3 = super::hash_fold(3);
+        // They should be spread out, not clustered
+        assert!((f1 - f2).abs() > 0.01);
+        assert!((f2 - f3).abs() > 0.01);
+        // All in [0, 1]
+        assert!(f1 >= 0.0 && f1 <= 1.0);
+        assert!(f2 >= 0.0 && f2 <= 1.0);
+        assert!(f3 >= 0.0 && f3 <= 1.0);
     }
 }
