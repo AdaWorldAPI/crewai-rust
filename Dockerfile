@@ -52,7 +52,7 @@ COPY . .
 # --- Activate vendor deps in Cargo.toml ---
 # Uncomment the vendor path dependencies (all are commented out in source)
 RUN sed -i 's/^# ladybug-contract = /ladybug-contract = /' Cargo.toml && \
-    sed -i 's/^# ladybug = /ladybug = /' Cargo.toml && \
+    sed -i 's/^# ladybug = \[/ladybug = [/' Cargo.toml && \
     sed -i 's/^# ladybug-vendor = /ladybug-vendor = /' Cargo.toml && \
     sed -i 's/^# n8n-core = /n8n-core = /' Cargo.toml && \
     sed -i 's/^# n8n-workflow = /n8n-workflow = /' Cargo.toml && \
