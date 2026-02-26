@@ -35,6 +35,7 @@ pub mod profile;
 pub mod qualia_prompt;
 pub mod thinking_style;
 pub mod triune;
+pub mod triune_dispatch;
 
 // Re-exports
 pub use composite::{CompositeStyle, PresetComposite};
@@ -51,4 +52,9 @@ pub use thinking_style::{
 };
 pub use triune::{
     CouncilResult, Facet, FacetOpinion, FacetState, Strategy, TriuneTopology,
+};
+pub use triune_dispatch::{
+    BarrierDecision, CollapseGate, TriuneDispatch,
+    facet_addr, facet_blackboard_addr, facet_channel_addr, facet_slot,
+    SLOT_GUARDIAN, SLOT_DRIVER, SLOT_CATALYST,
 };
