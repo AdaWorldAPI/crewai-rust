@@ -12,9 +12,13 @@
 //! - `GET  /barrier/topology`       — Triune facet intensities
 //! - `POST /barrier/feedback`       — Success/failure feedback
 //! - `GET  /barrier/stats`          — Markov barrier statistics
+//! - `GET  /.well-known/agent.json` — A2A agent card discovery
+//! - `POST /a2a`                    — A2A JSON-RPC 2.0 dispatcher
 
+pub mod a2a_routes;
 pub mod barrier_routes;
 pub mod routes;
 
+pub use a2a_routes::{a2a_router, A2AState};
 pub use barrier_routes::{barrier_router, BarrierState};
 pub use routes::{app_router, AppState};

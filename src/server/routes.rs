@@ -86,8 +86,12 @@ pub fn app_router(state: AppState) -> Router {
         .layer(CorsLayer::permissive())
         .with_state(state);
 
+    // A2A protocol routes (own state: task store)
+    let a2a_state = super::a2a_routes::A2AState::new();
+    let a2a_routes = super::a2a_routes::a2a_router(a2a_state);
+
     // Merge barrier routes (own state) after main routes are finalized
-    main_routes.merge(barrier_routes)
+    main_routes.merge(barrier_routes).merge(a2a_routes)
 }
 
 /// GET /health — liveness probe.
