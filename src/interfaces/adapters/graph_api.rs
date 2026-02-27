@@ -30,9 +30,7 @@ use async_trait::async_trait;
 use serde_json::Value;
 use std::collections::HashMap;
 
-use super::super::adapter::{
-    AdapterError, AdapterHealth, AdapterOperation, InterfaceAdapter,
-};
+use super::super::adapter::{AdapterError, AdapterHealth, AdapterOperation, InterfaceAdapter};
 use super::super::gateway::AdapterFactory;
 
 /// Microsoft Graph API adapter
@@ -75,10 +73,9 @@ impl GraphApiAdapter {
 
     /// Acquire an OAuth2 access token using client credentials flow
     async fn acquire_token(&mut self) -> Result<(), AdapterError> {
-        let client = self
-            .client
-            .as_ref()
-            .ok_or_else(|| AdapterError::ConnectionFailed("HTTP client not initialized".to_string()))?;
+        let client = self.client.as_ref().ok_or_else(|| {
+            AdapterError::ConnectionFailed("HTTP client not initialized".to_string())
+        })?;
 
         let token_url = format!(
             "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
@@ -125,7 +122,8 @@ impl GraphApiAdapter {
             .unwrap_or(3600);
 
         self.token_expires_at = Some(
-            std::time::Instant::now() + std::time::Duration::from_secs(expires_in.saturating_sub(60)),
+            std::time::Instant::now()
+                + std::time::Duration::from_secs(expires_in.saturating_sub(60)),
         );
 
         if self.access_token.is_none() {
@@ -258,9 +256,7 @@ impl InterfaceAdapter for GraphApiAdapter {
             .get("client_secret")
             .and_then(|v| v.as_str())
             .map(Self::resolve_env)
-            .ok_or_else(|| {
-                AdapterError::InvalidConfig("client_secret is required".to_string())
-            })?;
+            .ok_or_else(|| AdapterError::InvalidConfig("client_secret is required".to_string()))?;
 
         if let Some(scopes) = config.get("scopes").and_then(|v| v.as_array()) {
             self.scopes = scopes
@@ -307,12 +303,12 @@ impl InterfaceAdapter for GraphApiAdapter {
             }
 
             "read_message" | "mail_read" => {
-                let message_id = args
-                    .get("message_id")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| {
-                        AdapterError::InvalidConfig("message_id is required".to_string())
-                    })?;
+                let message_id =
+                    args.get("message_id")
+                        .and_then(|v| v.as_str())
+                        .ok_or_else(|| {
+                            AdapterError::InvalidConfig("message_id is required".to_string())
+                        })?;
                 let endpoint = format!("me/messages/{}", message_id);
                 self.graph_request("GET", &endpoint, None).await
             }
@@ -377,9 +373,7 @@ impl InterfaceAdapter for GraphApiAdapter {
             }
 
             // ── Teams operations ──
-            "list_teams" => {
-                self.graph_request("GET", "me/joinedTeams", None).await
-            }
+            "list_teams" => self.graph_request("GET", "me/joinedTeams", None).await,
 
             "list_channels" => {
                 let team_id = args
@@ -393,15 +387,18 @@ impl InterfaceAdapter for GraphApiAdapter {
             }
 
             "send_channel_message" => {
-                let team_id = args.get("team_id").and_then(|v| v.as_str()).ok_or_else(|| {
-                    AdapterError::InvalidConfig("team_id is required".to_string())
-                })?;
-                let channel_id = args
-                    .get("channel_id")
+                let team_id = args
+                    .get("team_id")
                     .and_then(|v| v.as_str())
                     .ok_or_else(|| {
-                        AdapterError::InvalidConfig("channel_id is required".to_string())
+                        AdapterError::InvalidConfig("team_id is required".to_string())
                     })?;
+                let channel_id =
+                    args.get("channel_id")
+                        .and_then(|v| v.as_str())
+                        .ok_or_else(|| {
+                            AdapterError::InvalidConfig("channel_id is required".to_string())
+                        })?;
                 let body = serde_json::json!({
                     "body": {
                         "content": args.get("message").and_then(|v| v.as_str()).unwrap_or("")
@@ -413,10 +410,7 @@ impl InterfaceAdapter for GraphApiAdapter {
 
             // ── User/Directory operations ──
             "get_user" => {
-                let user_id = args
-                    .get("user_id")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("me");
+                let user_id = args.get("user_id").and_then(|v| v.as_str()).unwrap_or("me");
                 let endpoint = format!("users/{}", user_id);
                 self.graph_request("GET", &endpoint, None).await
             }
@@ -429,10 +423,7 @@ impl InterfaceAdapter for GraphApiAdapter {
 
             // ── OneDrive operations ──
             "list_files" => {
-                let path = args
-                    .get("path")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("root");
+                let path = args.get("path").and_then(|v| v.as_str()).unwrap_or("root");
                 let endpoint = if path == "root" {
                     "me/drive/root/children".to_string()
                 } else {
@@ -443,10 +434,7 @@ impl InterfaceAdapter for GraphApiAdapter {
 
             // ── Generic Graph API call ──
             "graph_request" => {
-                let method = args
-                    .get("method")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("GET");
+                let method = args.get("method").and_then(|v| v.as_str()).unwrap_or("GET");
                 let endpoint = args
                     .get("endpoint")
                     .and_then(|v| v.as_str())

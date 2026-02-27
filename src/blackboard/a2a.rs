@@ -133,10 +133,7 @@ impl A2ARegistry {
 
     /// Find all agents in a given state.
     pub fn by_state(&self, state: AgentState) -> Vec<&AgentPresence> {
-        self.agents
-            .values()
-            .filter(|a| a.state == state)
-            .collect()
+        self.agents.values().filter(|a| a.state == state).collect()
     }
 
     /// Find all active agents.
@@ -176,7 +173,12 @@ mod tests {
     #[test]
     fn test_registry_register_and_get() {
         let mut reg = A2ARegistry::new();
-        reg.register("agent-1", "Researcher", "Research agent", vec!["search".into(), "summarize".into()]);
+        reg.register(
+            "agent-1",
+            "Researcher",
+            "Research agent",
+            vec!["search".into(), "summarize".into()],
+        );
 
         let agent = reg.get("agent-1").unwrap();
         assert_eq!(agent.name, "Researcher");
@@ -201,7 +203,12 @@ mod tests {
         let mut reg = A2ARegistry::new();
         reg.register("a1", "Researcher", "r", vec!["search".into()]);
         reg.register("a2", "Writer", "w", vec!["write".into()]);
-        reg.register("a3", "Analyst", "a", vec!["search".into(), "analyze".into()]);
+        reg.register(
+            "a3",
+            "Analyst",
+            "a",
+            vec!["search".into(), "analyze".into()],
+        );
 
         let searchers = reg.by_capability("search");
         assert_eq!(searchers.len(), 2);

@@ -169,9 +169,8 @@ impl KickoffTaskOutputsSQLiteStorage {
     /// Vector of HashMaps containing task output records, ordered by task_index.
     pub fn load(&self) -> Result<Vec<HashMap<String, Value>>, anyhow::Error> {
         let conn = Connection::open(&self.db_path)?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM latest_kickoff_task_outputs ORDER BY task_index",
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM latest_kickoff_task_outputs ORDER BY task_index")?;
 
         let rows = stmt.query_map([], |row| {
             let task_id: String = row.get(0)?;
@@ -194,12 +193,17 @@ impl KickoffTaskOutputsSQLiteStorage {
 
         let mut results = Vec::new();
         for row in rows {
-            let (task_id, expected_output, output_str, task_index, inputs_str, was_replayed, timestamp) =
-                row?;
-            let output: Value =
-                serde_json::from_str(&output_str).unwrap_or(Value::Null);
-            let inputs: Value =
-                serde_json::from_str(&inputs_str).unwrap_or(Value::Null);
+            let (
+                task_id,
+                expected_output,
+                output_str,
+                task_index,
+                inputs_str,
+                was_replayed,
+                timestamp,
+            ) = row?;
+            let output: Value = serde_json::from_str(&output_str).unwrap_or(Value::Null);
+            let inputs: Value = serde_json::from_str(&inputs_str).unwrap_or(Value::Null);
 
             let mut entry = HashMap::new();
             entry.insert("task_id".to_string(), Value::String(task_id));
@@ -208,10 +212,7 @@ impl KickoffTaskOutputsSQLiteStorage {
                 Value::String(expected_output),
             );
             entry.insert("output".to_string(), output);
-            entry.insert(
-                "task_index".to_string(),
-                serde_json::to_value(task_index)?,
-            );
+            entry.insert("task_index".to_string(), serde_json::to_value(task_index)?);
             entry.insert("inputs".to_string(), inputs);
             entry.insert("was_replayed".to_string(), Value::Bool(was_replayed));
             entry.insert("timestamp".to_string(), Value::String(timestamp));

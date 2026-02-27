@@ -35,8 +35,8 @@ pub struct Translations {
 impl Translations {
     /// Load the default English translations.
     pub fn load_default() -> Self {
-        let data = serde_json::from_str(EN_JSON)
-            .expect("Failed to parse embedded en.json translations");
+        let data =
+            serde_json::from_str(EN_JSON).expect("Failed to parse embedded en.json translations");
         Self { data }
     }
 

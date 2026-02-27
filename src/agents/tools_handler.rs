@@ -46,21 +46,14 @@ impl ToolsHandler {
     /// * `calling` - The tool calling instance describing which tool was called.
     /// * `output` - The string output from the tool execution.
     /// * `should_cache` - Whether to cache the tool output.
-    pub fn on_tool_use(
-        &mut self,
-        calling: &ToolCalling,
-        output: &str,
-        should_cache: bool,
-    ) {
+    pub fn on_tool_use(&mut self, calling: &ToolCalling, output: &str, should_cache: bool) {
         self.last_used_tool = Some(calling.clone());
 
         if let Some(ref mut cache) = self.cache {
             // Don't cache the cache tool itself
             if should_cache && calling.tool_name != "CacheTools" {
                 let input_str = match &calling.arguments {
-                    Some(args) => {
-                        serde_json::to_string(args).unwrap_or_default()
-                    }
+                    Some(args) => serde_json::to_string(args).unwrap_or_default(),
                     None => String::new(),
                 };
 

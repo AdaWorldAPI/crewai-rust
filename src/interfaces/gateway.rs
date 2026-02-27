@@ -65,7 +65,9 @@ impl InterfaceGateway {
         gw.register_factory(Box::new(super::adapters::rest_api::RestApiAdapterFactory));
         gw.register_factory(Box::new(super::adapters::rcon::RconAdapterFactory));
         gw.register_factory(Box::new(super::adapters::graph_api::GraphApiAdapterFactory));
-        gw.register_factory(Box::new(super::adapters::mcp_bridge::McpBridgeAdapterFactory));
+        gw.register_factory(Box::new(
+            super::adapters::mcp_bridge::McpBridgeAdapterFactory,
+        ));
         gw
     }
 
@@ -86,15 +88,12 @@ impl InterfaceGateway {
         let protocol_key = protocol_to_key(&capability.interface.protocol);
 
         // Find the factory for this protocol
-        let factory = self
-            .adapter_factories
-            .get(&protocol_key)
-            .ok_or_else(|| {
-                AdapterError::InvalidConfig(format!(
-                    "No adapter factory registered for protocol: {}",
-                    protocol_key
-                ))
-            })?;
+        let factory = self.adapter_factories.get(&protocol_key).ok_or_else(|| {
+            AdapterError::InvalidConfig(format!(
+                "No adapter factory registered for protocol: {}",
+                protocol_key
+            ))
+        })?;
 
         // Create and connect the adapter
         let mut adapter = factory.create();
@@ -140,11 +139,7 @@ impl InterfaceGateway {
     ///
     /// The tool name can be qualified ("minecraft:server_control::mc_execute")
     /// or unqualified ("mc_execute").
-    pub async fn invoke(
-        &mut self,
-        tool_name: &str,
-        args: &Value,
-    ) -> Result<Value, AdapterError> {
+    pub async fn invoke(&mut self, tool_name: &str, args: &Value) -> Result<Value, AdapterError> {
         // Find which capability owns this tool
         let capability_id = self
             .tool_routing
@@ -193,10 +188,7 @@ impl InterfaceGateway {
     }
 
     /// Disconnect a capability's adapter and unregister its tools.
-    pub async fn unbind_capability(
-        &mut self,
-        capability_id: &str,
-    ) -> Result<(), AdapterError> {
+    pub async fn unbind_capability(&mut self, capability_id: &str) -> Result<(), AdapterError> {
         if let Some(adapter) = self.active_adapters.remove(capability_id) {
             let mut adapter_guard = adapter.write().await;
             adapter_guard.disconnect().await?;

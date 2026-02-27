@@ -15,8 +15,11 @@ use serde_json::Value;
 use super::base_tool::ToolUsageLimitExceededError;
 
 /// Type alias for a structured tool function.
-pub type StructuredToolFn =
-    Arc<dyn Fn(HashMap<String, Value>) -> Result<Value, Box<dyn std::error::Error + Send + Sync>> + Send + Sync>;
+pub type StructuredToolFn = Arc<
+    dyn Fn(HashMap<String, Value>) -> Result<Value, Box<dyn std::error::Error + Send + Sync>>
+        + Send
+        + Sync,
+>;
 
 /// A structured tool that can operate on any number of inputs.
 ///

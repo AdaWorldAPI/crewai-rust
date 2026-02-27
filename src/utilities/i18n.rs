@@ -44,10 +44,8 @@ impl I18N {
                 serde_json::from_str(&content)
                     .unwrap_or_else(|_| panic!("Error decoding JSON from prompts file '{}'.", path))
             }
-            None => {
-                serde_json::from_str(EMBEDDED_EN_JSON)
-                    .expect("Error decoding embedded en.json translations.")
-            }
+            None => serde_json::from_str(EMBEDDED_EN_JSON)
+                .expect("Error decoding embedded en.json translations."),
         };
 
         // Convert the raw two-level JSON into our internal representation.
@@ -118,9 +116,7 @@ impl I18N {
     /// Useful for entries like `tools.add_image` that contain nested
     /// structured data rather than a single string.
     pub fn retrieve_value(&self, kind: &str, key: &str) -> Option<&Value> {
-        self.prompts
-            .get(kind)
-            .and_then(|section| section.get(key))
+        self.prompts.get(kind).and_then(|section| section.get(key))
     }
 }
 

@@ -93,12 +93,7 @@ pub struct SearchResult {
 
 impl SearchResult {
     /// Create a new SearchResult.
-    pub fn new(
-        id: String,
-        content: String,
-        metadata: HashMap<String, Value>,
-        score: f64,
-    ) -> Self {
+    pub fn new(id: String, content: String, metadata: HashMap<String, Value>, score: f64) -> Self {
         Self {
             id,
             content,

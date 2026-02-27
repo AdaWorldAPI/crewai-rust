@@ -79,9 +79,9 @@ impl LiteLLMBridge {
         base_url: Option<String>,
     ) -> Self {
         let model = model.into();
-        let proxy_base_url = base_url.clone().or_else(|| {
-            std::env::var("LITELLM_PROXY_URL").ok()
-        });
+        let proxy_base_url = base_url
+            .clone()
+            .or_else(|| std::env::var("LITELLM_PROXY_URL").ok());
 
         let mut state = BaseLLMState::new(&model);
         state.api_key = api_key;
@@ -144,10 +144,7 @@ impl BaseLLM for LiteLLMBridge {
             tools.as_ref().map(|t| t.len()),
         );
 
-        Err(
-            "LiteLLMBridge.call is a stub - LiteLLM proxy integration not yet implemented"
-                .into(),
-        )
+        Err("LiteLLMBridge.call is a stub - LiteLLM proxy integration not yet implemented".into())
     }
 
     async fn acall(

@@ -23,8 +23,8 @@ pub use self::flow::{Flow, FlowState};
 
 // Re-export decorator-style helpers.
 pub use self::flow_wrappers::{
-    and_, or_, FlowCondition, FlowConditionItem, FlowConditionType, FlowMethodMeta,
-    FlowMethodName, SimpleFlowCondition,
+    and_, or_, FlowCondition, FlowConditionItem, FlowConditionType, FlowMethodMeta, FlowMethodName,
+    SimpleFlowCondition,
 };
 
 // Re-export flow events.

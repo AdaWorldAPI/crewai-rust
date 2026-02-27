@@ -27,10 +27,7 @@ pub trait BaseAgentExecutorMixin: Send + Sync + fmt::Debug {
         // 1. Check if crew and task are set
         // 2. Check if the output is not a delegation action
         // 3. Save to crew._short_term_memory
-        log::debug!(
-            "create_short_term_memory: output_len={}",
-            output.text.len()
-        );
+        log::debug!("create_short_term_memory: output_len={}", output.text.len());
         Ok(())
     }
 
@@ -39,10 +36,7 @@ pub trait BaseAgentExecutorMixin: Send + Sync + fmt::Debug {
         &self,
         output: &AgentFinish,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        log::debug!(
-            "create_external_memory: output_len={}",
-            output.text.len()
-        );
+        log::debug!("create_external_memory: output_len={}", output.text.len());
         Ok(())
     }
 
@@ -54,10 +48,7 @@ pub trait BaseAgentExecutorMixin: Send + Sync + fmt::Debug {
         &self,
         output: &AgentFinish,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        log::debug!(
-            "create_long_term_memory: output_len={}",
-            output.text.len()
-        );
+        log::debug!("create_long_term_memory: output_len={}", output.text.len());
         Ok(())
     }
 
@@ -69,10 +60,7 @@ pub trait BaseAgentExecutorMixin: Send + Sync + fmt::Debug {
         &self,
         output: &AgentFinish,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        log::debug!(
-            "create_entity_memory: output_len={}",
-            output.text.len()
-        );
+        log::debug!("create_entity_memory: output_len={}", output.text.len());
         Ok(())
     }
 }

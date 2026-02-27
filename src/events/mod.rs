@@ -64,8 +64,7 @@ pub use handler_graph::CircularDependencyError;
 pub use types::agent_events::{
     AgentEvaluationCompletedEvent, AgentEvaluationFailedEvent, AgentEvaluationStartedEvent,
     AgentExecutionCompletedEvent, AgentExecutionErrorEvent, AgentExecutionStartedEvent,
-    LiteAgentExecutionCompletedEvent, LiteAgentExecutionErrorEvent,
-    LiteAgentExecutionStartedEvent,
+    LiteAgentExecutionCompletedEvent, LiteAgentExecutionErrorEvent, LiteAgentExecutionStartedEvent,
 };
 
 // Crew events

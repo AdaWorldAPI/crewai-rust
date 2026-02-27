@@ -103,12 +103,10 @@ impl TaskOutput {
     /// Returns an error if output format is not JSON.
     pub fn json(&self) -> Result<String, String> {
         if self.output_format != OutputFormat::JSON {
-            return Err(
-                "Invalid output format requested. \
+            return Err("Invalid output format requested. \
                  If you would like to access the JSON output, \
                  please make sure to set the output_json property for the task"
-                    .to_string(),
-            );
+                .to_string());
         }
 
         match &self.json_dict {

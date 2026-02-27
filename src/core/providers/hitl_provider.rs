@@ -53,11 +53,7 @@ pub trait HITLProvider: Send + Sync {
     /// # Returns
     ///
     /// The result value after incorporating human input.
-    async fn resume_with_input(
-        &self,
-        task_id: &str,
-        input: &str,
-    ) -> Result<Value, anyhow::Error>;
+    async fn resume_with_input(&self, task_id: &str, input: &str) -> Result<Value, anyhow::Error>;
 
     /// Check if HITL is enabled for this provider.
     fn is_enabled(&self) -> bool;
@@ -83,11 +79,7 @@ impl HITLProvider for ConsoleHITLProvider {
         Ok(input.trim().to_string())
     }
 
-    async fn resume_with_input(
-        &self,
-        _task_id: &str,
-        input: &str,
-    ) -> Result<Value, anyhow::Error> {
+    async fn resume_with_input(&self, _task_id: &str, input: &str) -> Result<Value, anyhow::Error> {
         Ok(Value::String(input.to_string()))
     }
 

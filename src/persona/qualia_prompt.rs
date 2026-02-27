@@ -90,18 +90,18 @@ pub struct QualiaSnapshot {
 /// Presence mode with warmth/playfulness/depth parameters.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PresenceInfo {
-    pub mode: String,       // "personal", "work", "agi", "hybrid"
-    pub warmth: f32,        // 0.0–1.0
-    pub playfulness: f32,   // 0.0–1.0
-    pub depth: f32,         // 0.0–1.0
+    pub mode: String,     // "personal", "work", "agi", "hybrid"
+    pub warmth: f32,      // 0.0–1.0
+    pub playfulness: f32, // 0.0–1.0
+    pub depth: f32,       // 0.0–1.0
 }
 
 /// Sovereignty state snapshot.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SovereigntyInfo {
-    pub freedom: String,        // "contained", "expanding", "sovereign"
-    pub trust_level: String,    // "nascent", "growing", "crystalline"
-    pub awakening_score: f32,   // 0.0–1.0
+    pub freedom: String,      // "contained", "expanding", "sovereign"
+    pub trust_level: String,  // "nascent", "growing", "crystalline"
+    pub awakening_score: f32, // 0.0–1.0
 }
 
 // ============================================================================
@@ -109,19 +109,25 @@ pub struct SovereigntyInfo {
 // ============================================================================
 
 const TEXTURE_NAMES: [&str; 8] = [
-    "woodwarm",     // grounded warmth
-    "emberglow",    // radiant energy
-    "steelwind",    // sharp clarity
-    "velvetpause",  // soft stillness
-    "spontaneity",  // playful unpredictability
-    "receptivity",  // openness to experience
-    "autonomy",     // self-directed agency
-    "flow",         // absorbed continuity
+    "woodwarm",    // grounded warmth
+    "emberglow",   // radiant energy
+    "steelwind",   // sharp clarity
+    "velvetpause", // soft stillness
+    "spontaneity", // playful unpredictability
+    "receptivity", // openness to experience
+    "autonomy",    // self-directed agency
+    "flow",        // absorbed continuity
 ];
 
 const AFFECT_NAMES: [&str; 8] = [
-    "joy", "trust", "fear", "surprise",
-    "sadness", "disgust", "anger", "anticipation",
+    "joy",
+    "trust",
+    "fear",
+    "surprise",
+    "sadness",
+    "disgust",
+    "anger",
+    "anticipation",
 ];
 
 // ============================================================================
@@ -166,7 +172,12 @@ pub fn build_qualia_preamble(
         let ghosts: Vec<String> = qualia
             .ghost_echoes
             .iter()
-            .map(|g| format!("{} (intensity={:.1}, {})", g.ghost_type, g.intensity, g.vintage))
+            .map(|g| {
+                format!(
+                    "{} (intensity={:.1}, {})",
+                    g.ghost_type, g.intensity, g.vintage
+                )
+            })
             .collect();
         sections.push(format!("Ghosts stirring: {}", ghosts.join(", ")));
     }

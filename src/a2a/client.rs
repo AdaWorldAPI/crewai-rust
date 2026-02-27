@@ -221,7 +221,10 @@ impl A2AClient {
     ///
     /// Fetches `/.well-known/agent.json` from the agent endpoint via HTTP GET.
     pub async fn get_agent_card(&mut self) -> Result<AgentCard, anyhow::Error> {
-        let url = format!("{}/.well-known/agent.json", self.endpoint.trim_end_matches('/'));
+        let url = format!(
+            "{}/.well-known/agent.json",
+            self.endpoint.trim_end_matches('/')
+        );
         log::debug!("Fetching agent card from: {}", url);
 
         let client = reqwest::Client::builder()
@@ -232,7 +235,9 @@ impl A2AClient {
 
         if let Some(ref auth) = self.auth {
             let mut headers = HashMap::new();
-            auth.apply_auth(&mut headers).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+            auth.apply_auth(&mut headers)
+                .await
+                .map_err(|e| anyhow::anyhow!("{}", e))?;
             for (k, v) in &headers {
                 req = req.header(k.as_str(), v.as_str());
             }
@@ -240,7 +245,11 @@ impl A2AClient {
 
         let resp = req.send().await?;
         if !resp.status().is_success() {
-            anyhow::bail!("Failed to fetch agent card from {}: HTTP {}", url, resp.status());
+            anyhow::bail!(
+                "Failed to fetch agent card from {}: HTTP {}",
+                url,
+                resp.status()
+            );
         }
 
         let card: AgentCard = resp.json().await?;
@@ -285,13 +294,16 @@ impl A2AClient {
             "params": params,
         });
 
-        let mut req = client.post(&url)
+        let mut req = client
+            .post(&url)
             .header("Content-Type", "application/json")
             .json(&rpc_body);
 
         if let Some(ref auth) = self.auth {
             let mut headers = HashMap::new();
-            auth.apply_auth(&mut headers).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+            auth.apply_auth(&mut headers)
+                .await
+                .map_err(|e| anyhow::anyhow!("{}", e))?;
             for (k, v) in &headers {
                 req = req.header(k.as_str(), v.as_str());
             }
@@ -316,12 +328,14 @@ impl A2AClient {
         }
 
         let result_val = rpc_resp.get("result").cloned().unwrap_or_default();
-        let state_str = result_val.get("status")
+        let state_str = result_val
+            .get("status")
             .and_then(|s| s.get("state"))
             .and_then(|s| s.as_str())
             .unwrap_or("unknown");
 
-        let result_text = result_val.get("artifacts")
+        let result_text = result_val
+            .get("artifacts")
             .and_then(|a| a.as_array())
             .and_then(|arr| arr.first())
             .and_then(|a| a.get("parts"))
@@ -362,7 +376,10 @@ impl A2AClient {
             tokio::time::sleep(std::time::Duration::from_secs(2)).await;
             let poll_msg = A2AMessage {
                 role: "user".to_string(),
-                parts: vec![PartsDict { text: "status".to_string(), metadata: None }],
+                parts: vec![PartsDict {
+                    text: "status".to_string(),
+                    metadata: None,
+                }],
                 metadata: None,
             };
             let result = self.send_message(poll_msg, context_id, None).await?;
@@ -395,13 +412,16 @@ impl A2AClient {
             "params": { "task_id": task_id },
         });
 
-        let mut req = client.post(&url)
+        let mut req = client
+            .post(&url)
             .header("Content-Type", "application/json")
             .json(&rpc_body);
 
         if let Some(ref auth) = self.auth {
             let mut headers = HashMap::new();
-            auth.apply_auth(&mut headers).await.map_err(|e| anyhow::anyhow!("{}", e))?;
+            auth.apply_auth(&mut headers)
+                .await
+                .map_err(|e| anyhow::anyhow!("{}", e))?;
             for (k, v) in &headers {
                 req = req.header(k.as_str(), v.as_str());
             }

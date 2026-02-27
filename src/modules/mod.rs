@@ -37,9 +37,8 @@ pub mod runtime;
 pub use error::ModuleError;
 pub use loader::{ModuleInstance, ModuleLoader};
 pub use module_def::{
-    CollapseGateConfig, InterfaceAuth, KnowledgeSource, ModuleAgentConfig, ModuleDef,
-    ModuleInner, ModuleInterface, ModulePolicy, PersonaProfile, SelfModifyBounds, ToolOverride,
-    ToolPolicy,
+    CollapseGateConfig, InterfaceAuth, KnowledgeSource, ModuleAgentConfig, ModuleDef, ModuleInner,
+    ModuleInterface, ModulePolicy, PersonaProfile, SelfModifyBounds, ToolOverride, ToolPolicy,
 };
 // PersonaProfile is re-exported from the persona module directly
 pub use openapi_parser::{parse_openapi_file, parse_openapi_spec};

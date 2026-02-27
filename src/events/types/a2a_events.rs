@@ -48,11 +48,7 @@ pub struct A2ADelegationStartedEvent {
 }
 
 impl A2ADelegationStartedEvent {
-    pub fn new(
-        endpoint: String,
-        task_description: String,
-        agent_id: String,
-    ) -> Self {
+    pub fn new(endpoint: String, task_description: String, agent_id: String) -> Self {
         let mut evt = Self {
             base: BaseEventData::new("a2a_delegation_started"),
             endpoint,

@@ -90,14 +90,14 @@ impl ReadFileTool {
             Some(f) => f,
             None => {
                 let available = files.keys().cloned().collect::<Vec<_>>().join(", ");
-                return format!("File '{}' not found. Available files: {}", file_name, available);
+                return format!(
+                    "File '{}' not found. Available files: {}",
+                    file_name, available
+                );
             }
         };
 
-        let filename = file_input
-            .filename
-            .as_deref()
-            .unwrap_or(file_name);
+        let filename = file_input.filename.as_deref().unwrap_or(file_name);
 
         let text_types = [
             "text/",

@@ -24,8 +24,7 @@ use tokio::sync::Mutex;
 use crate::llms::base_llm::{BaseLLM, BaseLLMState, LLMMessage};
 use crate::types::usage_metrics::UsageMetrics;
 use crate::xai_grpc::{
-    self, XaiGrpcClient, GetCompletionsRequest, Message, Content,
-    MessageRole, xai_api,
+    self, xai_api, Content, GetCompletionsRequest, Message, MessageRole, XaiGrpcClient,
 };
 
 // ---------------------------------------------------------------------------
@@ -88,10 +87,7 @@ impl XAIGrpcCompletion {
     }
 
     /// Create from an existing gRPC client (for sharing connections).
-    pub fn from_client(
-        model: impl Into<String>,
-        client: Arc<Mutex<XaiGrpcClient>>,
-    ) -> Self {
+    pub fn from_client(model: impl Into<String>, client: Arc<Mutex<XaiGrpcClient>>) -> Self {
         let mut state = BaseLLMState::new(model);
         state.provider = "xai-grpc".to_string();
 
@@ -105,9 +101,7 @@ impl XAIGrpcCompletion {
 
     /// Convert LLMMessage (HashMap) to protobuf Message.
     fn to_proto_message(msg: &LLMMessage) -> Message {
-        let role_str = msg.get("role")
-            .and_then(|v| v.as_str())
-            .unwrap_or("user");
+        let role_str = msg.get("role").and_then(|v| v.as_str()).unwrap_or("user");
 
         let role: i32 = match role_str {
             "system" => MessageRole::RoleSystem.into(),
@@ -117,7 +111,8 @@ impl XAIGrpcCompletion {
             _ => MessageRole::RoleUser.into(),
         };
 
-        let content_text = msg.get("content")
+        let content_text = msg
+            .get("content")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
@@ -204,9 +199,7 @@ impl BaseLLM for XAIGrpcCompletion {
         );
 
         // Convert messages to protobuf
-        let proto_messages: Vec<Message> = messages.iter()
-            .map(Self::to_proto_message)
-            .collect();
+        let proto_messages: Vec<Message> = messages.iter().map(Self::to_proto_message).collect();
 
         let temperature = self.state.temperature.map(|t| t as f32);
 
@@ -221,18 +214,21 @@ impl BaseLLM for XAIGrpcCompletion {
 
         // Call gRPC (needs &mut client)
         let mut client = self.client.lock().await;
-        let response = client.chat.get_completion(request).await
-            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
+        let response = client.chat.get_completion(request).await.map_err(
+            |e| -> Box<dyn std::error::Error + Send + Sync> {
                 Box::new(std::io::Error::new(
                     std::io::ErrorKind::Other,
                     format!("xAI gRPC error: {}", e),
                 ))
-            })?;
+            },
+        )?;
 
         let inner = response.into_inner();
 
         // Extract text content
-        let content = inner.outputs.first()
+        let content = inner
+            .outputs
+            .first()
             .and_then(|o| o.message.as_ref())
             .map(|m| m.content.clone())
             .unwrap_or_default();
@@ -287,7 +283,10 @@ mod tests {
     fn test_to_proto_message_system() {
         let mut msg = HashMap::new();
         msg.insert("role".to_string(), Value::String("system".to_string()));
-        msg.insert("content".to_string(), Value::String("You are helpful.".to_string()));
+        msg.insert(
+            "content".to_string(),
+            Value::String("You are helpful.".to_string()),
+        );
 
         let proto = XAIGrpcCompletion::to_proto_message(&msg);
         assert_eq!(proto.role, i32::from(MessageRole::RoleSystem));
@@ -320,15 +319,18 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_xai_grpc_provider_real() {
-        let api_key = std::env::var("XAI_API_KEY")
-            .expect("XAI_API_KEY required");
+        let api_key = std::env::var("XAI_API_KEY").expect("XAI_API_KEY required");
 
-        let provider = XAIGrpcCompletion::connect("grok-3-mini", &api_key).await
+        let provider = XAIGrpcCompletion::connect("grok-3-mini", &api_key)
+            .await
             .expect("Failed to connect");
 
         let mut msg = HashMap::new();
         msg.insert("role".to_string(), Value::String("user".to_string()));
-        msg.insert("content".to_string(), Value::String("Say hello in 3 words.".to_string()));
+        msg.insert(
+            "content".to_string(),
+            Value::String("Say hello in 3 words.".to_string()),
+        );
 
         let result = provider.acall(vec![msg], None, None).await;
         assert!(result.is_ok(), "Failed: {:?}", result.err());

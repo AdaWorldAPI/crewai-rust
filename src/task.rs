@@ -25,7 +25,15 @@ pub type TaskCallback = Box<dyn Fn(&TaskOutput) + Send + Sync>;
 /// Takes the task prompt and context, returns the agent's response.
 /// Parameters: (task_prompt, context, tools_names)
 /// Returns: Result<(raw_output, messages), error_message>
-pub type AgentExecutorFn = Box<dyn Fn(&str, Option<&str>, &[String]) -> Result<(String, Vec<crate::tasks::task_output::LLMMessage>), String> + Send + Sync>;
+pub type AgentExecutorFn = Box<
+    dyn Fn(
+            &str,
+            Option<&str>,
+            &[String],
+        ) -> Result<(String, Vec<crate::tasks::task_output::LLMMessage>), String>
+        + Send
+        + Sync,
+>;
 
 /// Represents a task to be executed.
 ///
@@ -272,7 +280,14 @@ impl Task {
     /// Set the agent executor callback.
     pub fn set_agent_executor<F>(&mut self, executor: F)
     where
-        F: Fn(&str, Option<&str>, &[String]) -> Result<(String, Vec<crate::tasks::task_output::LLMMessage>), String> + Send + Sync + 'static,
+        F: Fn(
+                &str,
+                Option<&str>,
+                &[String],
+            ) -> Result<(String, Vec<crate::tasks::task_output::LLMMessage>), String>
+            + Send
+            + Sync
+            + 'static,
     {
         self.agent_executor = Some(Box::new(executor));
     }
@@ -323,10 +338,13 @@ impl Task {
             let mut messages = Vec::new();
             let mut sys_msg = HashMap::new();
             sys_msg.insert("role".to_string(), "system".to_string());
-            sys_msg.insert("content".to_string(), format!(
-                "You are an AI assistant working as {}. Complete the following task.",
-                agent_role
-            ));
+            sys_msg.insert(
+                "content".to_string(),
+                format!(
+                    "You are an AI assistant working as {}. Complete the following task.",
+                    agent_role
+                ),
+            );
             messages.push(sys_msg);
             let mut user_msg = HashMap::new();
             user_msg.insert("role".to_string(), "user".to_string());
@@ -382,11 +400,7 @@ impl Task {
     ) -> tokio::task::JoinHandle<Result<TaskOutput, String>> {
         let mut task_clone = self.clone();
         tokio::spawn(async move {
-            task_clone.execute_sync(
-                agent.as_deref(),
-                context.as_deref(),
-                tools.as_deref(),
-            )
+            task_clone.execute_sync(agent.as_deref(), context.as_deref(), tools.as_deref())
         })
     }
 
@@ -397,10 +411,7 @@ impl Task {
     pub fn prompt(&self) -> String {
         let mut tasks_slices = vec![self.description.clone()];
 
-        let output = format!(
-            "Expected Output: {}",
-            self.expected_output
-        );
+        let output = format!("Expected Output: {}", self.expected_output);
         tasks_slices.push(output);
 
         if self.markdown {
@@ -439,9 +450,7 @@ Follow these guidelines:\n\
     /// Get the execution duration in seconds, if both start and end times are set.
     pub fn execution_duration(&self) -> Option<f64> {
         match (self.start_time, self.end_time) {
-            (Some(start), Some(end)) => {
-                Some((end - start).num_milliseconds() as f64 / 1000.0)
-            }
+            (Some(start), Some(end)) => Some((end - start).num_milliseconds() as f64 / 1000.0),
             _ => None,
         }
     }
@@ -500,10 +509,7 @@ Follow these guidelines:\n\
 
     /// Save task output to a file.
     pub fn save_file(&self, result: &str) -> Result<(), String> {
-        let output_file = self
-            .output_file
-            .as_ref()
-            .ok_or("output_file is not set")?;
+        let output_file = self.output_file.as_ref().ok_or("output_file is not set")?;
 
         let path = std::path::Path::new(output_file);
 

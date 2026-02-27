@@ -108,29 +108,23 @@ impl ToolCallHookContext {
 pub type BeforeLLMCallHook = Box<dyn Fn(&mut LLMCallHookContext) -> Option<bool> + Send + Sync>;
 
 /// After-LLM-call hook: receives context, returns replacement response or `None`.
-pub type AfterLLMCallHook =
-    Box<dyn Fn(&mut LLMCallHookContext) -> Option<String> + Send + Sync>;
+pub type AfterLLMCallHook = Box<dyn Fn(&mut LLMCallHookContext) -> Option<String> + Send + Sync>;
 
 /// Before-tool-call hook: receives context, returns `false` to block execution.
-pub type BeforeToolCallHook =
-    Box<dyn Fn(&mut ToolCallHookContext) -> Option<bool> + Send + Sync>;
+pub type BeforeToolCallHook = Box<dyn Fn(&mut ToolCallHookContext) -> Option<bool> + Send + Sync>;
 
 /// After-tool-call hook: receives context, returns replacement result or `None`.
-pub type AfterToolCallHook =
-    Box<dyn Fn(&mut ToolCallHookContext) -> Option<String> + Send + Sync>;
+pub type AfterToolCallHook = Box<dyn Fn(&mut ToolCallHookContext) -> Option<String> + Send + Sync>;
 
 // ---------------------------------------------------------------------------
 // Global hook registries
 // ---------------------------------------------------------------------------
 
-static BEFORE_LLM_HOOKS: Lazy<Mutex<Vec<BeforeLLMCallHook>>> =
-    Lazy::new(|| Mutex::new(Vec::new()));
-static AFTER_LLM_HOOKS: Lazy<Mutex<Vec<AfterLLMCallHook>>> =
-    Lazy::new(|| Mutex::new(Vec::new()));
+static BEFORE_LLM_HOOKS: Lazy<Mutex<Vec<BeforeLLMCallHook>>> = Lazy::new(|| Mutex::new(Vec::new()));
+static AFTER_LLM_HOOKS: Lazy<Mutex<Vec<AfterLLMCallHook>>> = Lazy::new(|| Mutex::new(Vec::new()));
 static BEFORE_TOOL_HOOKS: Lazy<Mutex<Vec<BeforeToolCallHook>>> =
     Lazy::new(|| Mutex::new(Vec::new()));
-static AFTER_TOOL_HOOKS: Lazy<Mutex<Vec<AfterToolCallHook>>> =
-    Lazy::new(|| Mutex::new(Vec::new()));
+static AFTER_TOOL_HOOKS: Lazy<Mutex<Vec<AfterToolCallHook>>> = Lazy::new(|| Mutex::new(Vec::new()));
 
 /// Register a global before-LLM-call hook.
 ///

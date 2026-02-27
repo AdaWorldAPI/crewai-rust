@@ -95,9 +95,7 @@ impl Mem0Storage {
 
     /// Sanitize an agent role to ensure valid directory names.
     fn sanitize_role(role: &str) -> String {
-        role.replace('\n', "")
-            .replace(' ', "_")
-            .replace('/', "_")
+        role.replace('\n', "").replace(' ', "_").replace('/', "_")
     }
 
     /// Extract the assistant message from text.
@@ -123,11 +121,7 @@ impl Mem0Storage {
 
 #[async_trait]
 impl Storage for Mem0Storage {
-    fn save(
-        &self,
-        value: &str,
-        metadata: &HashMap<String, Value>,
-    ) -> Result<(), anyhow::Error> {
+    fn save(&self, value: &str, metadata: &HashMap<String, Value>) -> Result<(), anyhow::Error> {
         // Placeholder: Mem0 integration requires the mem0 service
         log::warn!(
             "Mem0Storage save called but Mem0 integration is not yet implemented in Rust. \

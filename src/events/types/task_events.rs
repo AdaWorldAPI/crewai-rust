@@ -27,7 +27,11 @@ pub struct TaskStartedEvent {
 }
 
 impl TaskStartedEvent {
-    pub fn new(task_id: Option<String>, task_name: Option<String>, context: Option<String>) -> Self {
+    pub fn new(
+        task_id: Option<String>,
+        task_name: Option<String>,
+        context: Option<String>,
+    ) -> Self {
         let mut evt = Self {
             base: BaseEventData::new("task_started"),
             context,

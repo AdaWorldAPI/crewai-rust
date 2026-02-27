@@ -7,9 +7,7 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use serde_json::Value;
 
-use crate::rag::core::{
-    BaseClient, CollectionAddParams, CollectionParams, CollectionSearchParams,
-};
+use crate::rag::core::{BaseClient, CollectionAddParams, CollectionParams, CollectionSearchParams};
 use crate::rag::types::{BaseRecord, SearchResult};
 
 /// Default vector dimension for Qdrant collections.

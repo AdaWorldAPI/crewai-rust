@@ -261,9 +261,7 @@ impl OpenAICompletion {
             .and_then(|c| c.get(0))
             .ok_or("No choices in OpenAI response")?;
 
-        let message = choice
-            .get("message")
-            .ok_or("No message in OpenAI choice")?;
+        let message = choice.get("message").ok_or("No message in OpenAI choice")?;
 
         // Check for tool calls
         if let Some(tool_calls) = message.get("tool_calls") {
@@ -286,9 +284,18 @@ impl OpenAICompletion {
         if let Some(usage) = response.get("usage") {
             log::debug!(
                 "OpenAI token usage: prompt={}, completion={}, total={}",
-                usage.get("prompt_tokens").and_then(|v| v.as_i64()).unwrap_or(0),
-                usage.get("completion_tokens").and_then(|v| v.as_i64()).unwrap_or(0),
-                usage.get("total_tokens").and_then(|v| v.as_i64()).unwrap_or(0),
+                usage
+                    .get("prompt_tokens")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0),
+                usage
+                    .get("completion_tokens")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0),
+                usage
+                    .get("total_tokens")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0),
             );
         }
 
@@ -321,7 +328,11 @@ impl OpenAICompletion {
                     match item_type {
                         "message" => {
                             if let Some(content) = item.get("content") {
-                                if let Some(text) = content.get(0).and_then(|c| c.get("text")).and_then(|t| t.as_str()) {
+                                if let Some(text) = content
+                                    .get(0)
+                                    .and_then(|c| c.get("text"))
+                                    .and_then(|t| t.as_str())
+                                {
                                     result.text = self.state.apply_stop_words(text);
                                 }
                             }
@@ -381,11 +392,7 @@ impl OpenAICompletion {
     }
 
     /// Build the request body for the Chat Completions API.
-    pub fn build_request_body(
-        &self,
-        messages: &[LLMMessage],
-        tools: Option<&[Value]>,
-    ) -> Value {
+    pub fn build_request_body(&self, messages: &[LLMMessage], tools: Option<&[Value]>) -> Value {
         let mut body = serde_json::json!({
             "model": self.state.model,
             "messages": messages,
@@ -618,11 +625,7 @@ impl BaseLLM for OpenAICompletion {
 
             // Handle client errors (4xx)
             if status.is_client_error() {
-                return Err(format!(
-                    "OpenAI API error ({}): {}",
-                    status, response_text
-                )
-                .into());
+                return Err(format!("OpenAI API error ({}): {}", status, response_text).into());
             }
 
             // Parse JSON response
@@ -640,12 +643,8 @@ impl BaseLLM for OpenAICompletion {
 
             // Extract content based on API mode
             let result = match self.api {
-                OpenAIApiMode::Completions => {
-                    self.parse_completions_response(&response_json)?
-                }
-                OpenAIApiMode::Responses => {
-                    self.parse_responses_response(&response_json)?
-                }
+                OpenAIApiMode::Completions => self.parse_completions_response(&response_json)?,
+                OpenAIApiMode::Responses => self.parse_responses_response(&response_json)?,
             };
 
             return Ok(result);

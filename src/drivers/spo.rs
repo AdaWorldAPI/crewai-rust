@@ -326,16 +326,13 @@ pub fn extract_triples(
 /// In the full pipeline, this is replaced by felt-parse semantic analysis.
 fn extract_topic(message: &str) -> String {
     const STOP_WORDS: &[&str] = &[
-        "the", "a", "an", "is", "are", "was", "were", "be", "been",
-        "being", "have", "has", "had", "do", "does", "did", "will",
-        "would", "could", "should", "may", "might", "can", "shall",
-        "i", "you", "he", "she", "it", "we", "they", "me", "him",
-        "her", "us", "them", "my", "your", "his", "its", "our",
-        "their", "this", "that", "these", "those", "what", "which",
-        "who", "whom", "how", "when", "where", "why", "and", "or",
-        "but", "not", "no", "so", "if", "then", "than", "too",
-        "very", "just", "about", "all", "also", "any", "each",
-        "for", "from", "in", "of", "on", "to", "with", "at", "by",
+        "the", "a", "an", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had",
+        "do", "does", "did", "will", "would", "could", "should", "may", "might", "can", "shall",
+        "i", "you", "he", "she", "it", "we", "they", "me", "him", "her", "us", "them", "my",
+        "your", "his", "its", "our", "their", "this", "that", "these", "those", "what", "which",
+        "who", "whom", "how", "when", "where", "why", "and", "or", "but", "not", "no", "so", "if",
+        "then", "than", "too", "very", "just", "about", "all", "also", "any", "each", "for",
+        "from", "in", "of", "on", "to", "with", "at", "by",
     ];
 
     let words: Vec<&str> = message
@@ -571,7 +568,11 @@ mod tests {
             &[],
         );
 
-        assert!(triples.len() >= 3, "Expected >= 3 triples, got {}", triples.len());
+        assert!(
+            triples.len() >= 3,
+            "Expected >= 3 triples, got {}",
+            triples.len()
+        );
 
         let asks_count = triples
             .iter()
@@ -603,23 +604,17 @@ mod tests {
             .count();
         assert_eq!(contradicts_count, 2);
 
-        for t in triples.iter().filter(|t| {
-            t.predicate_hash == ConversationPredicate::Contradicts.hash()
-        }) {
+        for t in triples
+            .iter()
+            .filter(|t| t.predicate_hash == ConversationPredicate::Contradicts.hash())
+        {
             assert!(t.is_inferred());
         }
     }
 
     #[test]
     fn test_extract_triples_hybrid_mode_no_mode_triple() {
-        let triples = extract_triples(
-            "hello",
-            "hi there",
-            "session-1",
-            "hybrid",
-            &[],
-            &[],
-        );
+        let triples = extract_triples("hello", "hi there", "session-1", "hybrid", &[], &[]);
 
         let mode_count = triples
             .iter()
@@ -636,7 +631,12 @@ mod tests {
 
         let triples = vec![
             SpoTriple::new(user_dn, ConversationPredicate::Asks.hash(), topic_dn, 0.8),
-            SpoTriple::new(ada_dn, ConversationPredicate::Explains.hash(), topic_dn, 0.9),
+            SpoTriple::new(
+                ada_dn,
+                ConversationPredicate::Explains.hash(),
+                topic_dn,
+                0.9,
+            ),
         ];
 
         let inferred = infer_triples(&triples);
@@ -696,14 +696,12 @@ mod tests {
 
     #[test]
     fn test_build_spo_context() {
-        let triples = vec![
-            SpoTriple::new(
-                entity_hash("user"),
-                ConversationPredicate::Asks.hash(),
-                entity_hash("architecture"),
-                0.8,
-            ),
-        ];
+        let triples = vec![SpoTriple::new(
+            entity_hash("user"),
+            ConversationPredicate::Asks.hash(),
+            entity_hash("architecture"),
+            0.8,
+        )];
 
         let ctx = build_spo_context(&triples).unwrap();
         assert!(ctx.contains("asks"));
@@ -768,7 +766,10 @@ mod tests {
         // Low confidence → closer to origin (smaller magnitude)
         let mag_h = (vh[0] * vh[0] + vh[1] * vh[1] + vh[2] * vh[2]).sqrt();
         let mag_l = (vl[0] * vl[0] + vl[1] * vl[1] + vl[2] * vl[2]).sqrt();
-        assert!(mag_h > mag_l, "High-confidence should have larger magnitude");
+        assert!(
+            mag_h > mag_l,
+            "High-confidence should have larger magnitude"
+        );
     }
 
     #[test]
@@ -788,7 +789,10 @@ mod tests {
         // Same predicate + object, different subject → should differ in x
         let va = a.to_3d();
         let vb = b.to_3d();
-        assert!((va[0] - vb[0]).abs() > 0.01, "Different subjects should separate in x");
+        assert!(
+            (va[0] - vb[0]).abs() > 0.01,
+            "Different subjects should separate in x"
+        );
         // y (predicate) and z (object) should be equal
         assert!((va[1] - vb[1]).abs() < 0.01);
         assert!((va[2] - vb[2]).abs() < 0.01);

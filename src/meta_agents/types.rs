@@ -60,12 +60,20 @@ pub struct SkillDescriptor {
     pub max_concurrent: u32,
 }
 
-fn default_proficiency() -> f64 { 1.0 }
-fn default_max_concurrent() -> u32 { 1 }
+fn default_proficiency() -> f64 {
+    1.0
+}
+fn default_max_concurrent() -> u32 {
+    1
+}
 
 impl SkillDescriptor {
     /// Create a new skill descriptor with required fields.
-    pub fn new(id: impl Into<String>, name: impl Into<String>, description: impl Into<String>) -> Self {
+    pub fn new(
+        id: impl Into<String>,
+        name: impl Into<String>,
+        description: impl Into<String>,
+    ) -> Self {
         Self {
             id: id.into(),
             name: name.into(),
@@ -122,7 +130,8 @@ impl SkillDescriptor {
         // Check description word overlap
         let desc_lower = self.description.to_lowercase();
         let desc_tokens: Vec<&str> = desc_lower.split_whitespace().collect();
-        let overlap = task_tokens.iter()
+        let overlap = task_tokens
+            .iter()
             .filter(|t| desc_tokens.contains(t))
             .count();
         if !desc_tokens.is_empty() {
@@ -227,7 +236,9 @@ pub struct AgentBlueprint {
     pub config: HashMap<String, Value>,
 }
 
-fn default_max_iter() -> i32 { 25 }
+fn default_max_iter() -> i32 {
+    25
+}
 
 impl AgentBlueprint {
     /// Create a new agent blueprint.
@@ -400,7 +411,9 @@ impl OrchestratedTask {
 
     /// Check if all dependencies are satisfied.
     pub fn dependencies_satisfied(&self, completed_ids: &[String]) -> bool {
-        self.dependencies.iter().all(|dep| completed_ids.contains(dep))
+        self.dependencies
+            .iter()
+            .all(|dep| completed_ids.contains(dep))
     }
 
     /// Mark the task as assigned.
@@ -511,7 +524,8 @@ impl SpawnedAgentState {
 
     /// Best match score across all skills for a task.
     pub fn best_skill_match(&self, task_description: &str) -> f64 {
-        self.skills.iter()
+        self.skills
+            .iter()
             .map(|s| s.match_score(task_description))
             .fold(0.0f64, f64::max)
     }
@@ -527,9 +541,13 @@ mod tests {
 
     #[test]
     fn test_skill_descriptor_creation() {
-        let skill = SkillDescriptor::new("research_web", "Web Research", "Search the web for information")
-            .with_tags(vec!["research".to_string(), "web".to_string()])
-            .with_proficiency(0.9);
+        let skill = SkillDescriptor::new(
+            "research_web",
+            "Web Research",
+            "Search the web for information",
+        )
+        .with_tags(vec!["research".to_string(), "web".to_string()])
+        .with_proficiency(0.9);
         assert_eq!(skill.id, "research_web");
         assert_eq!(skill.proficiency, 0.9);
         assert_eq!(skill.tags.len(), 2);
@@ -537,8 +555,16 @@ mod tests {
 
     #[test]
     fn test_skill_match_score() {
-        let skill = SkillDescriptor::new("web_research", "Web Research", "Search the internet for information and facts")
-            .with_tags(vec!["research".to_string(), "web".to_string(), "search".to_string()]);
+        let skill = SkillDescriptor::new(
+            "web_research",
+            "Web Research",
+            "Search the internet for information and facts",
+        )
+        .with_tags(vec![
+            "research".to_string(),
+            "web".to_string(),
+            "search".to_string(),
+        ]);
 
         let score = skill.match_score("research the web for information about Rust");
         assert!(score > 0.0, "Expected positive score, got {}", score);
@@ -600,7 +626,13 @@ mod tests {
 
     #[test]
     fn test_spawned_agent_state() {
-        let bp = AgentBlueprint::new("Tester", "Test things", "QA expert", "openai/gpt-4o-mini", SavantDomain::QualityAssurance);
+        let bp = AgentBlueprint::new(
+            "Tester",
+            "Test things",
+            "QA expert",
+            "openai/gpt-4o-mini",
+            SavantDomain::QualityAssurance,
+        );
         let mut state = SpawnedAgentState::new("agent-001", &bp);
 
         assert!(!state.busy);
@@ -618,7 +650,13 @@ mod tests {
 
     #[test]
     fn test_spawned_agent_skill_adjustment() {
-        let bp = AgentBlueprint::new("Worker", "Work", "Backstory", "openai/gpt-4o", SavantDomain::General);
+        let bp = AgentBlueprint::new(
+            "Worker",
+            "Work",
+            "Backstory",
+            "openai/gpt-4o",
+            SavantDomain::General,
+        );
         let mut state = SpawnedAgentState::new("agent-001", &bp);
 
         state.add_skill(SkillDescriptor::new("s1", "Skill 1", "First skill"));

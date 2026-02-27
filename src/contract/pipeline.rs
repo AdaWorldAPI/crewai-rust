@@ -210,17 +210,8 @@ mod tests {
 
             // Write output (zero-serde, typed)
             let output_key = format!("out:{}", step.sequence);
-            let output = format!(
-                "Processed by {} (context: {:?})",
-                step.name,
-                context,
-            );
-            bb.put_typed(
-                output_key,
-                output.clone(),
-                &step.step_type,
-                &step.step_type,
-            );
+            let output = format!("Processed by {} (context: {:?})", step.name, context,);
+            bb.put_typed(output_key, output.clone(), &step.step_type, &step.step_type);
 
             step.mark_completed(serde_json::json!({"output": output}));
             Ok(())
@@ -237,7 +228,12 @@ mod tests {
         fn handle(&self, step: &mut UnifiedStep, bb: &mut Blackboard) -> StepResult {
             step.mark_running();
             let key = format!("oc:{}", step.sequence);
-            bb.put_typed(key, format!("oc-output-{}", step.sequence), "oc", &step.step_type);
+            bb.put_typed(
+                key,
+                format!("oc-output-{}", step.sequence),
+                "oc",
+                &step.step_type,
+            );
             step.mark_completed(Value::String("done".into()));
             Ok(())
         }
@@ -255,8 +251,10 @@ mod tests {
         let pipeline = Pipeline::new(router);
 
         let mut exec = UnifiedExecution::new("test-workflow");
-        exec.steps.push(UnifiedStep::new("e1", "crew.agent", "Step A", 0));
-        exec.steps.push(UnifiedStep::new("e1", "crew.agent", "Step B", 1));
+        exec.steps
+            .push(UnifiedStep::new("e1", "crew.agent", "Step A", 0));
+        exec.steps
+            .push(UnifiedStep::new("e1", "crew.agent", "Step B", 1));
 
         let bb = pipeline.run(&mut exec).unwrap();
 
@@ -286,8 +284,10 @@ mod tests {
         let pipeline = Pipeline::new(router);
 
         let mut exec = UnifiedExecution::new("cross-domain");
-        exec.steps.push(UnifiedStep::new("e1", "crew.agent", "Research", 0));
-        exec.steps.push(UnifiedStep::new("e1", "oc.channel.send", "Send", 1));
+        exec.steps
+            .push(UnifiedStep::new("e1", "crew.agent", "Research", 0));
+        exec.steps
+            .push(UnifiedStep::new("e1", "oc.channel.send", "Send", 1));
 
         let bb = pipeline.run(&mut exec).unwrap();
         assert_eq!(exec.status, StepStatus::Completed);
@@ -306,7 +306,8 @@ mod tests {
         let pipeline = Pipeline::new(router);
 
         let mut exec = UnifiedExecution::new("context-test");
-        exec.steps.push(UnifiedStep::new("e1", "crew.agent", "Agent", 0));
+        exec.steps
+            .push(UnifiedStep::new("e1", "crew.agent", "Agent", 0));
 
         let mut bb = Blackboard::new();
         // Pre-populate context
@@ -326,12 +327,15 @@ mod tests {
         let pipeline = Pipeline::new(router);
 
         let mut exec = UnifiedExecution::new("a2a-test");
-        exec.steps.push(UnifiedStep::new("e1", "crew.agent", "Agent", 0));
+        exec.steps
+            .push(UnifiedStep::new("e1", "crew.agent", "Agent", 0));
 
         let mut bb = Blackboard::new();
         // Register agents in A2A
-        bb.a2a.register("agent-1", "Researcher", "research", vec!["search".into()]);
-        bb.a2a.register("agent-2", "Writer", "writing", vec!["write".into()]);
+        bb.a2a
+            .register("agent-1", "Researcher", "research", vec!["search".into()]);
+        bb.a2a
+            .register("agent-2", "Writer", "writing", vec!["write".into()]);
 
         pipeline.run_with_blackboard(&mut exec, &mut bb).unwrap();
 
@@ -360,8 +364,10 @@ mod tests {
         let pipeline = Pipeline::new(router);
 
         let mut exec = UnifiedExecution::new("fail-test");
-        exec.steps.push(UnifiedStep::new("e1", "crew.agent", "Boom", 0));
-        exec.steps.push(UnifiedStep::new("e1", "crew.agent", "Never", 1));
+        exec.steps
+            .push(UnifiedStep::new("e1", "crew.agent", "Boom", 0));
+        exec.steps
+            .push(UnifiedStep::new("e1", "crew.agent", "Never", 1));
 
         let result = pipeline.run(&mut exec);
         assert!(result.is_err());
@@ -382,7 +388,8 @@ mod tests {
         let mut done = UnifiedStep::new("e1", "crew.agent", "AlreadyDone", 0);
         done.mark_completed(serde_json::json!({"pre": true}));
         exec.steps.push(done);
-        exec.steps.push(UnifiedStep::new("e1", "crew.agent", "RunMe", 1));
+        exec.steps
+            .push(UnifiedStep::new("e1", "crew.agent", "RunMe", 1));
 
         let bb = pipeline.run(&mut exec).unwrap();
 

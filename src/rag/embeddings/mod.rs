@@ -28,7 +28,10 @@ pub fn provider_registry() -> HashMap<&'static str, &'static str> {
     registry.insert("amazon-bedrock", "aws.bedrock.BedrockProvider");
     registry.insert("cohere", "cohere.CohereProvider");
     registry.insert("custom", "custom.CustomProvider");
-    registry.insert("google-generativeai", "google.generative_ai.GenerativeAiProvider");
+    registry.insert(
+        "google-generativeai",
+        "google.generative_ai.GenerativeAiProvider",
+    );
     registry.insert("google", "google.generative_ai.GenerativeAiProvider");
     registry.insert("google-vertex", "google.vertex.VertexAIProvider");
     registry.insert("huggingface", "huggingface.HuggingFaceProvider");
@@ -39,7 +42,10 @@ pub fn provider_registry() -> HashMap<&'static str, &'static str> {
     registry.insert("openai", "openai.OpenAIProvider");
     registry.insert("openclip", "openclip.OpenCLIPProvider");
     registry.insert("roboflow", "roboflow.RoboflowProvider");
-    registry.insert("sentence-transformer", "sentence_transformer.SentenceTransformerProvider");
+    registry.insert(
+        "sentence-transformer",
+        "sentence_transformer.SentenceTransformerProvider",
+    );
     registry.insert("text2vec", "text2vec.Text2VecProvider");
     registry.insert("voyageai", "voyageai.VoyageAIProvider");
     registry.insert("watsonx", "ibm.watsonx.WatsonXProvider");

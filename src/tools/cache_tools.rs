@@ -87,7 +87,9 @@ impl Default for CacheTools {
 }
 
 /// Parse a cache key in the format `"tool:{name}|input:{input}"`.
-fn parse_cache_key(key: &str) -> Result<(String, String), Box<dyn std::error::Error + Send + Sync>> {
+fn parse_cache_key(
+    key: &str,
+) -> Result<(String, String), Box<dyn std::error::Error + Send + Sync>> {
     let parts: Vec<&str> = key.splitn(2, "tool:").collect();
     if parts.len() < 2 {
         return Err(format!("Invalid cache key format: {}", key).into());
@@ -130,7 +132,11 @@ mod tests {
     #[test]
     fn test_cache_tools_creates_tool() {
         let handler = CacheHandler::new();
-        handler.add("search", "query=rust", Value::String("Found results".to_string()));
+        handler.add(
+            "search",
+            "query=rust",
+            Value::String("Found results".to_string()),
+        );
 
         let ct = CacheTools::new(handler);
         let mut tool = ct.tool();

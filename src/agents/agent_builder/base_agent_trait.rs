@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use async_trait::async_trait;
-use md5::{Md5, Digest};
+use md5::{Digest, Md5};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
@@ -164,12 +164,7 @@ pub trait BaseAgent: Send + Sync + fmt::Debug {
     ///
     /// Returns an MD5 hex digest of "role|goal|backstory".
     fn key(&self) -> String {
-        let source = format!(
-            "{}|{}|{}",
-            self.role(),
-            self.goal(),
-            self.backstory()
-        );
+        let source = format!("{}|{}|{}", self.role(), self.goal(), self.backstory());
         let mut hasher = Md5::new();
         hasher.update(source.as_bytes());
         let result = hasher.finalize();
@@ -205,16 +200,10 @@ pub trait BaseAgent: Send + Sync + fmt::Debug {
     ) -> Vec<Box<dyn Any + Send + Sync>>;
 
     /// Get platform tools for the specified list of applications.
-    fn get_platform_tools(
-        &self,
-        apps: &[PlatformAppOrAction],
-    ) -> Vec<Box<dyn Any + Send + Sync>>;
+    fn get_platform_tools(&self, apps: &[PlatformAppOrAction]) -> Vec<Box<dyn Any + Send + Sync>>;
 
     /// Get MCP tools for the specified list of MCP server references.
-    fn get_mcp_tools(
-        &self,
-        mcps: &[String],
-    ) -> Vec<Box<dyn Any + Send + Sync>>;
+    fn get_mcp_tools(&self, mcps: &[String]) -> Vec<Box<dyn Any + Send + Sync>>;
 
     /// Interpolate inputs into the agent role, goal, and backstory.
     fn interpolate_inputs(&mut self, inputs: &HashMap<String, String>);
@@ -318,7 +307,10 @@ impl fmt::Debug for BaseAgentData {
             .field("max_tokens", &self.max_tokens)
             .field("adapted_agent", &self.adapted_agent)
             .field("security_config", &self.security_config)
-            .field("callbacks", &format!("[{} callbacks]", self.callbacks.len()))
+            .field(
+                "callbacks",
+                &format!("[{} callbacks]", self.callbacks.len()),
+            )
             .field("apps", &self.apps)
             .field("mcps", &self.mcps)
             .finish()
@@ -408,7 +400,10 @@ impl BaseAgentData {
     pub fn key(&self) -> String {
         let role = self.original_role.as_deref().unwrap_or(&self.role);
         let goal = self.original_goal.as_deref().unwrap_or(&self.goal);
-        let backstory = self.original_backstory.as_deref().unwrap_or(&self.backstory);
+        let backstory = self
+            .original_backstory
+            .as_deref()
+            .unwrap_or(&self.backstory);
 
         let source = format!("{}|{}|{}", role, goal, backstory);
         let mut hasher = Md5::new();
@@ -433,16 +428,14 @@ impl BaseAgentData {
         }
 
         if !inputs.is_empty() {
-            self.role = interpolate_string(
-                self.original_role.as_deref().unwrap_or(&self.role),
-                inputs,
-            );
-            self.goal = interpolate_string(
-                self.original_goal.as_deref().unwrap_or(&self.goal),
-                inputs,
-            );
+            self.role =
+                interpolate_string(self.original_role.as_deref().unwrap_or(&self.role), inputs);
+            self.goal =
+                interpolate_string(self.original_goal.as_deref().unwrap_or(&self.goal), inputs);
             self.backstory = interpolate_string(
-                self.original_backstory.as_deref().unwrap_or(&self.backstory),
+                self.original_backstory
+                    .as_deref()
+                    .unwrap_or(&self.backstory),
                 inputs,
             );
         }

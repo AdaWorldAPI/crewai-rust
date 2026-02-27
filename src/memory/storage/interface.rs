@@ -17,11 +17,7 @@ pub trait Storage: Send + Sync {
     /// # Arguments
     /// * `value` - The value to save.
     /// * `metadata` - Metadata to associate with the value.
-    fn save(
-        &self,
-        value: &str,
-        metadata: &HashMap<String, Value>,
-    ) -> Result<(), anyhow::Error>;
+    fn save(&self, value: &str, metadata: &HashMap<String, Value>) -> Result<(), anyhow::Error>;
 
     /// Save a value with associated metadata to storage asynchronously.
     ///

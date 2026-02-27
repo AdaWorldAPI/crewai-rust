@@ -349,10 +349,7 @@ impl Agent {
     /// Set knowledge for the agent with optional crew embedder configuration.
     ///
     /// Corresponds to `Agent.set_knowledge()` in Python.
-    pub fn set_knowledge(
-        &mut self,
-        crew_embedder: Option<&HashMap<String, serde_json::Value>>,
-    ) {
+    pub fn set_knowledge(&mut self, crew_embedder: Option<&HashMap<String, serde_json::Value>>) {
         if self.embedder.is_none() {
             if let Some(embedder) = crew_embedder {
                 self.embedder = Some(embedder.clone());
@@ -392,15 +389,15 @@ impl Agent {
         context: Option<&str>,
         tools: Option<&[String]>,
     ) -> Result<String, String> {
-        log::debug!(
-            "Agent '{}' executing task: {}",
-            self.role,
-            task_description
-        );
+        log::debug!("Agent '{}' executing task: {}", self.role, task_description);
 
         // Handle reasoning if enabled
         if self.reasoning {
-            let _ = super::utils::handle_reasoning(&self.role, task_description, self.max_reasoning_attempts.unwrap_or(3));
+            let _ = super::utils::handle_reasoning(
+                &self.role,
+                task_description,
+                self.max_reasoning_attempts.unwrap_or(3),
+            );
         }
 
         // Inject date if enabled
@@ -455,11 +452,7 @@ impl Agent {
     }
 
     /// Execute a task with a timeout.
-    fn execute_with_timeout(
-        &mut self,
-        task_prompt: &str,
-        timeout: i64,
-    ) -> Result<String, String> {
+    fn execute_with_timeout(&mut self, task_prompt: &str, timeout: i64) -> Result<String, String> {
         // TODO: Implement actual timeout using tokio::time::timeout or threads.
         log::debug!("Executing with timeout: {}s", timeout);
         self.execute_without_timeout(task_prompt)
@@ -472,7 +465,8 @@ impl Agent {
     /// the final answer.
     fn execute_without_timeout(&mut self, task_prompt: &str) -> Result<String, String> {
         // 1. Create the LLM instance from agent config
-        let llm = self.create_llm_instance()
+        let llm = self
+            .create_llm_instance()
             .map_err(|e| format!("Failed to create LLM instance: {}", e))?;
 
         // 2. Build system + user prompt
@@ -499,21 +493,23 @@ impl Agent {
 
         // 3. Build the executor
         let tools_names = self.tools.join(", ");
-        let tools_description = self.tools.iter()
+        let tools_description = self
+            .tools
+            .iter()
             .map(|t| format!("- {}: A tool named {}", t, t))
             .collect::<Vec<_>>()
             .join("\n");
 
         let mut executor = CrewAgentExecutor::new(
-            Box::new(()),                          // llm placeholder (we use callback)
-            Box::new(()),                          // task placeholder
-            Box::new(()),                          // agent placeholder
-            Box::new(()),                          // crew placeholder
+            Box::new(()), // llm placeholder (we use callback)
+            Box::new(()), // task placeholder
+            Box::new(()), // agent placeholder
+            Box::new(()), // crew placeholder
             prompt,
             self.max_iter as u32,
-            Vec::new(),                            // structured tools
+            Vec::new(), // structured tools
             tools_names.clone(),
-            vec!["Observation:".to_string()],      // stop words
+            vec!["Observation:".to_string()], // stop words
             tools_description,
             ToolsHandler::new(None),
         );
@@ -521,26 +517,33 @@ impl Agent {
         // 4. Set the LLM call callback using the real LLM instance
         let llm_arc: std::sync::Arc<dyn BaseLLM> = std::sync::Arc::from(llm);
         let llm_for_call = llm_arc.clone();
-        executor.set_llm_call(move |messages: &[crate::agents::crew_agent_executor::LLMMessage], tools: Option<&[serde_json::Value]>| {
-            let msgs: Vec<LLMMessage> = messages.iter().map(|m| {
-                m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
-            }).collect();
+        executor.set_llm_call(
+            move |messages: &[crate::agents::crew_agent_executor::LLMMessage],
+                  tools: Option<&[serde_json::Value]>| {
+                let msgs: Vec<LLMMessage> = messages
+                    .iter()
+                    .map(|m| m.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+                    .collect();
 
-            let tools_vec = tools.map(|t| t.to_vec());
+                let tools_vec = tools.map(|t| t.to_vec());
 
-            let result = llm_for_call.call(msgs, tools_vec, None)?;
+                let result = llm_for_call.call(msgs, tools_vec, None)?;
 
-            // Extract text from the LLM Value response
-            match result {
-                serde_json::Value::String(s) => Ok(s),
-                other => Ok(other.to_string()),
-            }
-        });
+                // Extract text from the LLM Value response
+                match result {
+                    serde_json::Value::String(s) => Ok(s),
+                    other => Ok(other.to_string()),
+                }
+            },
+        );
 
         // 5. Set a basic tool executor (logs tool calls, returns stub for now)
         executor.set_tool_executor(|tool_name: &str, tool_input: &str| {
             log::info!("Tool call: {}({})", tool_name, tool_input);
-            Ok(format!("Tool '{}' executed with input: {}", tool_name, tool_input))
+            Ok(format!(
+                "Tool '{}' executed with input: {}",
+                tool_name, tool_input
+            ))
         });
 
         // 6. Run the executor
@@ -548,11 +551,13 @@ impl Agent {
         inputs.insert("input".to_string(), task_prompt.to_string());
         inputs.insert("tool_names".to_string(), tools_names);
 
-        let result = executor.invoke(inputs)
+        let result = executor
+            .invoke(inputs)
             .map_err(|e| format!("Agent execution failed: {}", e))?;
 
         // 7. Extract the output
-        let output = result.get("output")
+        let output = result
+            .get("output")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
@@ -584,21 +589,22 @@ impl Agent {
             }
         };
 
-        log::debug!("Creating LLM instance: provider={}, model={}", provider, model);
+        log::debug!(
+            "Creating LLM instance: provider={}, model={}",
+            provider,
+            model
+        );
 
         match provider.to_lowercase().as_str() {
-            "openai" => {
-                Ok(Box::new(OpenAICompletion::new(model, None, None)))
-            }
-            "anthropic" => {
-                Ok(Box::new(AnthropicCompletion::new(model, None, None)))
-            }
-            "xai" | "grok" => {
-                Ok(Box::new(XAICompletion::new(model, None, None)))
-            }
+            "openai" => Ok(Box::new(OpenAICompletion::new(model, None, None))),
+            "anthropic" => Ok(Box::new(AnthropicCompletion::new(model, None, None))),
+            "xai" | "grok" => Ok(Box::new(XAICompletion::new(model, None, None))),
             other => {
                 // Default to OpenAI-compatible with the full string as model
-                log::warn!("Unknown provider '{}', falling back to OpenAI-compatible", other);
+                log::warn!(
+                    "Unknown provider '{}', falling back to OpenAI-compatible",
+                    other
+                );
                 Ok(Box::new(OpenAICompletion::new(llm_str, None, None)))
             }
         }
@@ -812,10 +818,7 @@ impl Agent {
     fn validate_docker_installation(&self) -> Result<(), String> {
         // TODO: Check if Docker is installed and running.
         if self.allow_code_execution {
-            log::debug!(
-                "Validating Docker installation for agent '{}'",
-                self.role
-            );
+            log::debug!("Validating Docker installation for agent '{}'", self.role);
         }
         Ok(())
     }

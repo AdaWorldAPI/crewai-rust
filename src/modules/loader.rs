@@ -131,7 +131,10 @@ impl ModuleLoader {
             for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
-                if path.extension().map_or(false, |ext| ext == "yaml" || ext == "yml") {
+                if path
+                    .extension()
+                    .map_or(false, |ext| ext == "yaml" || ext == "yml")
+                {
                     match self.load_file(path.to_str().unwrap_or_default()) {
                         Ok(instance) => instances.push(instance),
                         Err(e) => {
@@ -280,10 +283,7 @@ impl ModuleLoader {
                 );
             }
             if !auth.scopes.is_empty() {
-                config.insert(
-                    "scopes".to_string(),
-                    serde_json::json!(auth.scopes),
-                );
+                config.insert("scopes".to_string(), serde_json::json!(auth.scopes));
             }
         }
         if let Some(prefix) = iface.bindspace_prefix {
@@ -302,10 +302,7 @@ impl ModuleLoader {
             interface: CapabilityInterface {
                 protocol: iface.protocol.clone(),
                 config,
-                endpoint_template: iface
-                    .endpoint_env
-                    .as_ref()
-                    .map(|e| format!("${{{}}}", e)),
+                endpoint_template: iface.endpoint_env.as_ref().map(|e| format!("${{{}}}", e)),
                 auth_scheme: iface.auth.as_ref().map(|a| a.scheme.clone()),
             },
             tools,
@@ -357,7 +354,10 @@ module:
         let instance = loader.load_yaml(minimal_yaml()).unwrap();
         assert_eq!(instance.def.module.id, "test:loader");
         assert_eq!(instance.blueprint.role, "Test Agent");
-        assert_eq!(instance.blueprint.domain, crate::meta_agents::SavantDomain::General);
+        assert_eq!(
+            instance.blueprint.domain,
+            crate::meta_agents::SavantDomain::General
+        );
         assert!(instance.capabilities.is_empty());
         assert!(instance.gate.is_none());
     }
@@ -400,7 +400,10 @@ module:
 
         // Blueprint should include tool names
         assert!(instance.blueprint.tools.contains(&"list_items".to_string()));
-        assert!(instance.blueprint.tools.contains(&"create_item".to_string()));
+        assert!(instance
+            .blueprint
+            .tools
+            .contains(&"create_item".to_string()));
     }
 
     #[test]

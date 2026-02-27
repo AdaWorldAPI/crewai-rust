@@ -37,10 +37,7 @@ pub trait CrewProvider: Send + Sync {
     ///
     /// The crew output containing raw results, structured output, task outputs,
     /// and token usage metrics.
-    async fn kickoff(
-        &self,
-        inputs: HashMap<String, Value>,
-    ) -> Result<CrewOutput, anyhow::Error>;
+    async fn kickoff(&self, inputs: HashMap<String, Value>) -> Result<CrewOutput, anyhow::Error>;
 
     /// Execute the crew asynchronously (non-blocking).
     ///

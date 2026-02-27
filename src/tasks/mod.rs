@@ -2,8 +2,8 @@
 //!
 //! Corresponds to `crewai/tasks/`.
 
-pub mod task_output;
 pub mod conditional_task;
-pub mod llm_guardrail;
 pub mod hallucination_guardrail;
+pub mod llm_guardrail;
 pub mod output_format;
+pub mod task_output;

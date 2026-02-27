@@ -107,8 +107,7 @@ pub enum InnerThoughtResult {
 /// - `None`: all results except `Continue` are silently dropped
 /// - `Constrained`: only `MutateProperties` and `AdjustVolition` are allowed
 /// - `Open`: all modifications are allowed
-pub type InnerThoughtHook =
-    Box<dyn Fn(&AgentState) -> InnerThoughtResult + Send + Sync>;
+pub type InnerThoughtHook = Box<dyn Fn(&AgentState) -> InnerThoughtResult + Send + Sync>;
 
 /// Validate that an inner thought result respects the given bounds.
 pub fn validate_result(result: &InnerThoughtResult, bounds: SelfModifyBounds) -> bool {
@@ -228,9 +227,18 @@ mod tests {
 
     #[test]
     fn test_continue_is_always_valid() {
-        assert!(validate_result(&InnerThoughtResult::Continue, SelfModifyBounds::None));
-        assert!(validate_result(&InnerThoughtResult::Continue, SelfModifyBounds::Constrained));
-        assert!(validate_result(&InnerThoughtResult::Continue, SelfModifyBounds::Open));
+        assert!(validate_result(
+            &InnerThoughtResult::Continue,
+            SelfModifyBounds::None
+        ));
+        assert!(validate_result(
+            &InnerThoughtResult::Continue,
+            SelfModifyBounds::Constrained
+        ));
+        assert!(validate_result(
+            &InnerThoughtResult::Continue,
+            SelfModifyBounds::Open
+        ));
     }
 
     #[test]
@@ -272,7 +280,10 @@ mod tests {
         let new = apply_result(&state, &result);
         assert_eq!(new.thinking_style[0], 0.9);
         assert_eq!(new.thinking_style[9], 0.0);
-        assert_eq!(new.current_vector.get("autonomy").copied().unwrap_or(0.0), 0.3);
+        assert_eq!(
+            new.current_vector.get("autonomy").copied().unwrap_or(0.0),
+            0.3
+        );
     }
 
     #[test]

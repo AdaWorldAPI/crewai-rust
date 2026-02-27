@@ -192,7 +192,11 @@ impl StreamAccumulator {
             }
             StreamChunk::ThinkingDelta { .. } => false,
             StreamChunk::ToolCallDelta { .. } => false,
-            StreamChunk::Done { content, tool_calls, usage } => {
+            StreamChunk::Done {
+                content,
+                tool_calls,
+                usage,
+            } => {
                 // The Done chunk carries the final assembled content
                 self.text = content.clone();
                 if let Some(tc) = tool_calls {
@@ -237,7 +241,9 @@ mod tests {
 
     #[test]
     fn test_stream_chunk_serde() {
-        let delta = StreamChunk::TextDelta { text: "hello ".into() };
+        let delta = StreamChunk::TextDelta {
+            text: "hello ".into(),
+        };
         let json = serde_json::to_string(&delta).unwrap();
         let back: StreamChunk = serde_json::from_str(&json).unwrap();
         match back {
@@ -251,7 +257,11 @@ mod tests {
         let done = StreamChunk::Done {
             content: "full response".into(),
             tool_calls: None,
-            usage: Some(StreamUsage { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 }),
+            usage: Some(StreamUsage {
+                prompt_tokens: 10,
+                completion_tokens: 5,
+                total_tokens: 15,
+            }),
         };
         let json = serde_json::to_string(&done).unwrap();
         assert!(json.contains("full response"));
@@ -262,14 +272,22 @@ mod tests {
     fn test_accumulator() {
         let mut acc = StreamAccumulator::new();
 
-        assert!(!acc.push(&StreamChunk::TextDelta { text: "Hello ".into() }));
-        assert!(!acc.push(&StreamChunk::TextDelta { text: "world!".into() }));
+        assert!(!acc.push(&StreamChunk::TextDelta {
+            text: "Hello ".into()
+        }));
+        assert!(!acc.push(&StreamChunk::TextDelta {
+            text: "world!".into()
+        }));
         assert_eq!(acc.text(), "Hello world!");
 
         let done = acc.push(&StreamChunk::Done {
             content: "Hello world!".into(),
             tool_calls: None,
-            usage: Some(StreamUsage { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 }),
+            usage: Some(StreamUsage {
+                prompt_tokens: 5,
+                completion_tokens: 3,
+                total_tokens: 8,
+            }),
         });
         assert!(done);
         assert_eq!(acc.text(), "Hello world!");
@@ -279,7 +297,9 @@ mod tests {
     #[test]
     fn test_accumulator_error() {
         let mut acc = StreamAccumulator::new();
-        let done = acc.push(&StreamChunk::Error { message: "timeout".into() });
+        let done = acc.push(&StreamChunk::Error {
+            message: "timeout".into(),
+        });
         assert!(done);
     }
 
@@ -287,12 +307,16 @@ mod tests {
     async fn test_channel_stream_receiver() {
         let (tx, mut rx) = ChannelStreamReceiver::pair(16);
 
-        tx.send(StreamChunk::TextDelta { text: "hi".into() }).await.unwrap();
+        tx.send(StreamChunk::TextDelta { text: "hi".into() })
+            .await
+            .unwrap();
         tx.send(StreamChunk::Done {
             content: "hi".into(),
             tool_calls: None,
             usage: None,
-        }).await.unwrap();
+        })
+        .await
+        .unwrap();
         drop(tx);
 
         let c1 = rx.next().await.unwrap();

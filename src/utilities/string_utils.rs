@@ -4,18 +4,15 @@
 
 use std::collections::HashMap;
 
-use regex::Regex;
 use once_cell::sync::Lazy;
+use regex::Regex;
 
 static VARIABLE_PATTERN: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"\{([A-Za-z_][A-Za-z0-9_\-]*)\}").unwrap());
 static QUOTE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r#"['"]+"#).unwrap());
-static CAMEL_LOWER_UPPER: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"([a-z])([A-Z])").unwrap());
-static CAMEL_UPPER_LOWER: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"([A-Z]+)([A-Z][a-z])").unwrap());
-static DISALLOWED_CHARS: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"[^a-zA-Z0-9]+").unwrap());
+static CAMEL_LOWER_UPPER: Lazy<Regex> = Lazy::new(|| Regex::new(r"([a-z])([A-Z])").unwrap());
+static CAMEL_UPPER_LOWER: Lazy<Regex> = Lazy::new(|| Regex::new(r"([A-Z]+)([A-Z][a-z])").unwrap());
+static DISALLOWED_CHARS: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^a-zA-Z0-9]+").unwrap());
 static DUPLICATE_UNDERSCORE: Lazy<Regex> = Lazy::new(|| Regex::new(r"_+").unwrap());
 
 const MAX_TOOL_NAME_LENGTH: usize = 64;
@@ -97,7 +94,10 @@ pub fn interpolate_only(
         .collect();
 
     // Check for missing variables
-    let missing: Vec<&String> = variables.iter().filter(|v| !inputs.contains_key(*v)).collect();
+    let missing: Vec<&String> = variables
+        .iter()
+        .filter(|v| !inputs.contains_key(*v))
+        .collect();
     if !missing.is_empty() {
         return Err(format!(
             "Template variable '{}' not found in inputs dictionary",

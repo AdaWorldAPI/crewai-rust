@@ -531,8 +531,16 @@ module:
     #[test]
     fn test_all_savant_domains() {
         for domain_str in [
-            "research", "engineering", "data_analysis", "content_creation",
-            "planning", "quality_assurance", "security", "dev_ops", "design", "general",
+            "research",
+            "engineering",
+            "data_analysis",
+            "content_creation",
+            "planning",
+            "quality_assurance",
+            "security",
+            "dev_ops",
+            "design",
+            "general",
         ] {
             let yaml = format!(
                 r#"
@@ -653,7 +661,11 @@ module:
         assert_eq!(def.module.knowledge.len(), 3);
 
         match &def.module.knowledge[0] {
-            KnowledgeSource::Rag { source, index, embedding_model } => {
+            KnowledgeSource::Rag {
+                source,
+                index,
+                embedding_model,
+            } => {
                 assert_eq!(source, "s3://docs/");
                 assert_eq!(index, "docs_index");
                 assert_eq!(embedding_model.as_deref(), Some("jina-v3"));
@@ -662,7 +674,11 @@ module:
         }
 
         match &def.module.knowledge[1] {
-            KnowledgeSource::BindSpace { prefix, resonance_threshold, max_results } => {
+            KnowledgeSource::BindSpace {
+                prefix,
+                resonance_threshold,
+                max_results,
+            } => {
                 assert_eq!(*prefix, 14);
                 assert_eq!(*resonance_threshold, 0.7);
                 assert_eq!(*max_results, 5);
@@ -771,7 +787,10 @@ module:
 "#;
         let def = ModuleDef::from_yaml(yaml).unwrap();
         assert!(def.module.agent.allow_delegation);
-        assert_eq!(def.module.agent.delegation_targets, vec!["soc:threat_intel", "coding:agent"]);
+        assert_eq!(
+            def.module.agent.delegation_targets,
+            vec!["soc:threat_intel", "coding:agent"]
+        );
     }
 
     #[test]
@@ -806,7 +825,10 @@ module:
         assert_eq!(ovr.requires_approval, Some(true));
         assert_eq!(ovr.collapse_gate, Some(true));
         assert_eq!(ovr.audit_level.as_deref(), Some("full"));
-        assert_eq!(ovr.requires_roles.as_ref().unwrap(), &vec!["admin".to_string()]);
+        assert_eq!(
+            ovr.requires_roles.as_ref().unwrap(),
+            &vec!["admin".to_string()]
+        );
     }
 
     #[test]
@@ -878,6 +900,9 @@ module:
         assert_eq!(def.module.interfaces.len(), 1);
         assert_eq!(def.module.knowledge.len(), 2);
         assert_eq!(def.module.skills.len(), 1);
-        assert_eq!(def.module.agent.delegation_targets, vec!["soc:threat_intel"]);
+        assert_eq!(
+            def.module.agent.delegation_targets,
+            vec!["soc:threat_intel"]
+        );
     }
 }

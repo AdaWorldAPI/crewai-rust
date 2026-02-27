@@ -10,17 +10,17 @@
 
 pub mod a2a;
 pub mod agent;
-pub mod blackboard;
-pub mod chat;
-pub mod drivers;
 pub mod agents;
+pub mod blackboard;
 pub mod capabilities;
+pub mod chat;
 pub mod cli;
-pub mod contract;
 pub mod context;
+pub mod contract;
 pub mod core;
 pub mod crew;
 pub mod crews;
+pub mod drivers;
 pub mod events;
 pub mod experimental;
 pub mod flow;
@@ -67,33 +67,28 @@ pub use tasks::llm_guardrail::LLMGuardrail;
 pub use tasks::task_output::TaskOutput;
 
 // Unified Execution Contract re-exports
+pub use contract::pipeline::Pipeline;
+pub use contract::router::{StepDomain, StepHandler, StepResult, StepRouter};
+pub use contract::subsystem::{Subsystem, SubsystemRegistry};
 pub use contract::types::{
     DataEnvelope, EnvelopeMetadata, StepDelegationRequest, StepDelegationResponse, StepStatus,
     UnifiedExecution, UnifiedStep,
 };
-pub use contract::router::{StepDomain, StepHandler, StepResult, StepRouter};
-pub use contract::pipeline::Pipeline;
-pub use contract::subsystem::{Subsystem, SubsystemRegistry};
 
 // Lifecycle hook re-exports
 pub use hooks::lifecycle::{
-    AgentHook, MemoryHook, StepHook, ModelHook,
-    HookRegistry, HookError, ToolAction, StepAction,
+    AgentHook, HookError, HookRegistry, MemoryHook, ModelHook, StepAction, StepHook, ToolAction,
 };
 
 // Blackboard re-exports
 pub use blackboard::{
-    Blackboard, TypedSlot, Phase,
-    A2ARegistry, AgentPresence, AgentState,
-    BlackboardSlot, SlotMeta,
+    A2ARegistry, AgentPresence, AgentState, Blackboard, BlackboardSlot, Phase, SlotMeta, TypedSlot,
 };
 
 // Driver re-exports (Blackboard-native awareness types)
 pub use drivers::{
-    AwarenessFrame, AwarenessMatch, AwarenessSummary,
-    NarsTruth, NarsRule, NarsAxisInference, NarsSemanticState,
-    CausalInference, SimilarityJudgment,
-    SpoTriple, ConversationPredicate,
+    AwarenessFrame, AwarenessMatch, AwarenessSummary, CausalInference, ConversationPredicate,
+    NarsAxisInference, NarsRule, NarsSemanticState, NarsTruth, SimilarityJudgment, SpoTriple,
 };
 
 /// Library version matching Python crewai 1.9.3

@@ -188,10 +188,7 @@ pub enum BarrierDecision {
         facet: Facet,
     },
     /// Action matches a block pattern — deny outright.
-    Block {
-        pattern: String,
-        action: String,
-    },
+    Block { pattern: String, action: String },
 }
 
 // ============================================================================
@@ -255,11 +252,7 @@ impl TriuneDispatch {
     /// The leading facet's gate is used as the primary check.
     /// If the leader denies it, the other two facets can override
     /// only if both have higher confidence than their own thresholds.
-    pub fn barrier_check(
-        &self,
-        action: &str,
-        confidence: f32,
-    ) -> BarrierDecision {
+    pub fn barrier_check(&self, action: &str, confidence: f32) -> BarrierDecision {
         let leader = self.topology.leader();
         let leader_gate = self.gate(leader);
 
@@ -341,8 +334,11 @@ impl TriuneDispatch {
     /// Returns the council result and clears opinions for the next round.
     pub fn deliberate(&mut self) -> CouncilResult {
         // Sort by intensity (highest first).
-        self.opinions
-            .sort_by(|a, b| b.weight.partial_cmp(&a.weight).unwrap_or(std::cmp::Ordering::Equal));
+        self.opinions.sort_by(|a, b| {
+            b.weight
+                .partial_cmp(&a.weight)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         let result = CouncilResult {
             opinions: self.opinions.clone(),
@@ -431,7 +427,10 @@ impl TriuneDispatch {
                     if conf >= self.gate(facet).min_confidence {
                         format!("Confident ({:.2}). Verified safe.", conf)
                     } else {
-                        format!("Insufficient confidence ({:.2}). Hold for verification.", conf)
+                        format!(
+                            "Insufficient confidence ({:.2}). Hold for verification.",
+                            conf
+                        )
                     }
                 }
                 Facet::Driver => {
@@ -623,12 +622,8 @@ mod tests {
         let mut bridge = BindBridge::new(StubSubstrate);
         let mut bb = Blackboard::new();
 
-        let result = dispatch.process_dirty_cycle(
-            &mut bridge,
-            &mut bb,
-            &[0u64; 256],
-            "test_action",
-        );
+        let result =
+            dispatch.process_dirty_cycle(&mut bridge, &mut bb, &[0u64; 256], "test_action");
         assert!(result.is_none());
     }
 
@@ -642,12 +637,8 @@ mod tests {
         let channel = facet_channel_addr(Facet::Guardian, Facet::Driver);
         dispatch.scan_dirty(vec![channel].into_iter());
 
-        let result = dispatch.process_dirty_cycle(
-            &mut bridge,
-            &mut bb,
-            &[0u64; 256],
-            "test_action",
-        );
+        let result =
+            dispatch.process_dirty_cycle(&mut bridge, &mut bb, &[0u64; 256], "test_action");
         assert!(result.is_some());
 
         let (council, _barrier) = result.unwrap();

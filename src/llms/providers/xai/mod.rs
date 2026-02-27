@@ -156,11 +156,7 @@ impl XAICompletion {
     /// The xAI API is OpenAI-compatible with additional parameters:
     /// - `search`: enable live web search grounding
     /// - `reasoning_effort`: control thinking depth for grok-3
-    pub fn build_request_body(
-        &self,
-        messages: &[LLMMessage],
-        tools: Option<&[Value]>,
-    ) -> Value {
+    pub fn build_request_body(&self, messages: &[LLMMessage], tools: Option<&[Value]>) -> Value {
         let mut body = serde_json::json!({
             "model": self.state.model,
             "messages": messages,
@@ -238,9 +234,7 @@ impl XAICompletion {
             .and_then(|c| c.get(0))
             .ok_or("No choices in xAI response")?;
 
-        let message = choice
-            .get("message")
-            .ok_or("No message in xAI choice")?;
+        let message = choice.get("message").ok_or("No message in xAI choice")?;
 
         // Check for tool calls
         if let Some(tool_calls) = message.get("tool_calls") {
@@ -259,31 +253,50 @@ impl XAICompletion {
 
         // Log token usage (including cached prompt tokens from xAI prefix cache)
         if let Some(usage) = response.get("usage") {
-            let prompt = usage.get("prompt_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
-            let completion = usage.get("completion_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
-            let total = usage.get("total_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
+            let prompt = usage
+                .get("prompt_tokens")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
+            let completion = usage
+                .get("completion_tokens")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
+            let total = usage
+                .get("total_tokens")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
 
             // xAI reports cached tokens in prompt_tokens_details.cached_tokens
             // or at top-level as cached_prompt_text_tokens
-            let cached = usage.get("prompt_tokens_details")
+            let cached = usage
+                .get("prompt_tokens_details")
                 .and_then(|d| d.get("cached_tokens"))
                 .and_then(|v| v.as_i64())
                 .or_else(|| {
-                    usage.get("cached_prompt_text_tokens")
+                    usage
+                        .get("cached_prompt_text_tokens")
                         .and_then(|v| v.as_i64())
                 })
                 .unwrap_or(0);
 
             log::debug!(
                 "xAI token usage: prompt={}, cached={}, completion={}, total={}",
-                prompt, cached, completion, total,
+                prompt,
+                cached,
+                completion,
+                total,
             );
 
             if cached > 0 {
                 log::info!(
                     "xAI prompt cache hit: {}/{} tokens cached ({:.0}%)",
-                    cached, prompt,
-                    if prompt > 0 { cached as f64 / prompt as f64 * 100.0 } else { 0.0 },
+                    cached,
+                    prompt,
+                    if prompt > 0 {
+                        cached as f64 / prompt as f64 * 100.0
+                    } else {
+                        0.0
+                    },
                 );
             }
         }
@@ -391,11 +404,7 @@ impl BaseLLM for XAICompletion {
 
         for attempt in 0..=self.max_retries {
             if attempt > 0 {
-                log::warn!(
-                    "xAI API retry attempt {} after {:?}",
-                    attempt,
-                    retry_delay
-                );
+                log::warn!("xAI API retry attempt {} after {:?}", attempt, retry_delay);
                 tokio::time::sleep(retry_delay).await;
                 retry_delay *= 2;
             }
@@ -423,8 +432,7 @@ impl BaseLLM for XAICompletion {
 
             // Server errors
             if status.is_server_error() {
-                last_error =
-                    Some(format!("xAI API server error: {}", status).into());
+                last_error = Some(format!("xAI API server error: {}", status).into());
                 continue;
             }
 
@@ -438,11 +446,7 @@ impl BaseLLM for XAICompletion {
 
             // Client errors — don't retry
             if status.is_client_error() {
-                return Err(format!(
-                    "xAI API error ({}): {}",
-                    status, response_text
-                )
-                .into());
+                return Err(format!("xAI API error ({}): {}", status, response_text).into());
             }
 
             // Parse JSON
@@ -471,8 +475,7 @@ impl BaseLLM for XAICompletion {
             return Ok(result);
         }
 
-        Err(last_error
-            .unwrap_or_else(|| "xAI API call failed after all retries".into()))
+        Err(last_error.unwrap_or_else(|| "xAI API call failed after all retries".into()))
     }
 
     fn get_token_usage_summary(&self) -> UsageMetrics {
@@ -555,10 +558,7 @@ mod tests {
 
         let mut msg = HashMap::new();
         msg.insert("role".to_string(), Value::String("user".to_string()));
-        msg.insert(
-            "content".to_string(),
-            Value::String("Hello".to_string()),
-        );
+        msg.insert("content".to_string(), Value::String("Hello".to_string()));
         let messages = vec![msg];
 
         let body = provider.build_request_body(&messages, None);

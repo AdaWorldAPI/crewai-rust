@@ -71,10 +71,7 @@ pub struct OutputConverterData {
 
 impl OutputConverterData {
     /// Create a new `OutputConverterData`.
-    pub fn new(
-        text: impl Into<String>,
-        instructions: impl Into<String>,
-    ) -> Self {
+    pub fn new(text: impl Into<String>, instructions: impl Into<String>) -> Self {
         Self {
             text: text.into(),
             instructions: instructions.into(),

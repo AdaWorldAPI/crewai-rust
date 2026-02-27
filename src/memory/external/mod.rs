@@ -47,9 +47,7 @@ impl ExternalMemory {
     pub fn new(storage: Option<Box<dyn Storage>>) -> Self {
         // If no storage is provided, create a no-op placeholder.
         // The actual storage will be configured via set_crew / create_storage.
-        let storage = storage.unwrap_or_else(|| {
-            Box::new(NoOpStorage)
-        });
+        let storage = storage.unwrap_or_else(|| Box::new(NoOpStorage));
         let memory = Memory::new(storage);
         Self { memory }
     }
@@ -61,9 +59,7 @@ impl ExternalMemory {
     ///
     /// # Returns
     /// A boxed Storage implementation, or an error if the provider is not supported.
-    pub fn create_storage(
-        embedder_config: &Value,
-    ) -> Result<Box<dyn Storage>, anyhow::Error> {
+    pub fn create_storage(embedder_config: &Value) -> Result<Box<dyn Storage>, anyhow::Error> {
         let provider = embedder_config
             .get("provider")
             .and_then(|p| p.as_str())
@@ -73,13 +69,9 @@ impl ExternalMemory {
             "mem0" => {
                 let config = embedder_config
                     .get("config")
-                    .and_then(|c| {
-                        serde_json::from_value::<HashMap<String, Value>>(c.clone()).ok()
-                    });
+                    .and_then(|c| serde_json::from_value::<HashMap<String, Value>>(c.clone()).ok());
                 let storage = crate::memory::storage::mem0_storage::Mem0Storage::new(
-                    "external",
-                    None,
-                    config,
+                    "external", None, config,
                 )?;
                 Ok(Box::new(storage))
             }
@@ -104,8 +96,7 @@ impl ExternalMemory {
             metadata,
             agent_role.map(|s| s.to_string()),
         );
-        self.memory
-            .save(&item.value, item.metadata)
+        self.memory.save(&item.value, item.metadata)
     }
 
     /// Save a value to external memory asynchronously.
@@ -120,9 +111,7 @@ impl ExternalMemory {
             metadata,
             agent_role.map(|s| s.to_string()),
         );
-        self.memory
-            .asave(&item.value, item.metadata)
-            .await
+        self.memory.asave(&item.value, item.metadata).await
     }
 
     /// Search external memory for relevant entries.
@@ -142,9 +131,7 @@ impl ExternalMemory {
         limit: usize,
         score_threshold: f64,
     ) -> Result<Vec<Value>, anyhow::Error> {
-        self.memory
-            .asearch(query, limit, score_threshold)
-            .await
+        self.memory.asearch(query, limit, score_threshold).await
     }
 
     /// Reset external memory.
@@ -158,11 +145,7 @@ struct NoOpStorage;
 
 #[async_trait::async_trait]
 impl Storage for NoOpStorage {
-    fn save(
-        &self,
-        _value: &str,
-        _metadata: &HashMap<String, Value>,
-    ) -> Result<(), anyhow::Error> {
+    fn save(&self, _value: &str, _metadata: &HashMap<String, Value>) -> Result<(), anyhow::Error> {
         Ok(())
     }
 

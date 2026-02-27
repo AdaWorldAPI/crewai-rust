@@ -63,9 +63,15 @@ pub struct GRPCServerConfig {
     pub reflection_enabled: bool,
 }
 
-fn default_grpc_host() -> String { "localhost".to_string() }
-fn default_grpc_port() -> u16 { 50051 }
-fn default_max_workers() -> usize { 10 }
+fn default_grpc_host() -> String {
+    "localhost".to_string()
+}
+fn default_grpc_port() -> u16 {
+    50051
+}
+fn default_max_workers() -> usize {
+    10
+}
 
 impl Default for GRPCServerConfig {
     fn default() -> Self {
@@ -98,8 +104,12 @@ pub struct JSONRPCServerConfig {
     pub agent_card_path: String,
 }
 
-fn default_rpc_path() -> String { "/a2a".to_string() }
-fn default_agent_card_path() -> String { "/.well-known/agent-card.json".to_string() }
+fn default_rpc_path() -> String {
+    "/a2a".to_string()
+}
+fn default_agent_card_path() -> String {
+    "/.well-known/agent-card.json".to_string()
+}
 
 impl Default for JSONRPCServerConfig {
     fn default() -> Self {
@@ -209,10 +219,18 @@ pub struct A2AClientConfig {
     pub transport: ClientTransportConfig,
 }
 
-fn default_timeout() -> u64 { 120 }
-fn default_max_turns() -> u32 { 10 }
-fn default_true() -> bool { true }
-fn default_accepted_output_modes() -> Vec<String> { vec!["application/json".to_string()] }
+fn default_timeout() -> u64 {
+    120
+}
+fn default_max_turns() -> u32 {
+    10
+}
+fn default_true() -> bool {
+    true
+}
+fn default_accepted_output_modes() -> Vec<String> {
+    vec!["application/json".to_string()]
+}
 
 /// Configuration for exposing a Crew or Agent as an A2A server.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -250,7 +268,9 @@ pub struct A2AServerConfig {
     pub auth: Option<String>,
 }
 
-fn default_version() -> String { "1.0.0".to_string() }
+fn default_version() -> String {
+    "1.0.0".to_string()
+}
 fn default_mime_types() -> Vec<String> {
     vec!["text/plain".to_string(), "application/json".to_string()]
 }

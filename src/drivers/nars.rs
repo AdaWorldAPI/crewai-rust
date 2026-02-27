@@ -127,7 +127,10 @@ impl NarsTruth {
         }
         let frequency = positive / total;
         let confidence = total / (total + Self::HORIZON);
-        Self { frequency, confidence }
+        Self {
+            frequency,
+            confidence,
+        }
     }
 
     /// Convert to evidence counts.
@@ -163,14 +166,20 @@ impl NarsTruth {
     pub fn deduction(&self, other: &NarsTruth) -> NarsTruth {
         let f = self.frequency * other.frequency;
         let c = self.confidence * other.confidence * f;
-        NarsTruth { frequency: f, confidence: c }
+        NarsTruth {
+            frequency: f,
+            confidence: c,
+        }
     }
 
     /// Abduction: A→B, C→B ⊢ A→C.
     pub fn abduction(&self, other: &NarsTruth) -> NarsTruth {
         let f = self.frequency;
         let c = other.frequency * self.confidence * other.confidence;
-        NarsTruth { frequency: f, confidence: c }
+        NarsTruth {
+            frequency: f,
+            confidence: c,
+        }
     }
 
     /// Comparison: A→B, C→B ⊢ A↔C.
@@ -178,7 +187,10 @@ impl NarsTruth {
         let f1f2 = self.frequency * other.frequency;
         let f = f1f2 / (self.frequency + other.frequency - f1f2).max(f32::EPSILON);
         let c = self.confidence * other.confidence * f;
-        NarsTruth { frequency: f, confidence: c }
+        NarsTruth {
+            frequency: f,
+            confidence: c,
+        }
     }
 }
 
@@ -309,14 +321,9 @@ pub fn nars_analyze(
     // ── Phase 2: Tensioned matches → Abduction ───────────────────────────
     for am in &frame.tensioned {
         for (axis, &(cached_val, current_val)) in &am.divergent_axes {
-            let cached_truth = NarsTruth::new(
-                (cached_val + 1.0) / 2.0,
-                am.similarity.clamp(0.1, 0.9),
-            );
-            let current_truth = NarsTruth::new(
-                (current_val + 1.0) / 2.0,
-                0.8,
-            );
+            let cached_truth =
+                NarsTruth::new((cached_val + 1.0) / 2.0, am.similarity.clamp(0.1, 0.9));
+            let current_truth = NarsTruth::new((current_val + 1.0) / 2.0, 0.8);
 
             let abducted = cached_truth.abduction(&current_truth);
 
@@ -326,10 +333,7 @@ pub fn nars_analyze(
                     axis, cached_val, am.presence_mode, current_val
                 )
             } else {
-                format!(
-                    "Weak divergence on '{}': contexts partially overlap",
-                    axis
-                )
+                format!("Weak divergence on '{}': contexts partially overlap", axis)
             };
 
             causal_inferences.push(CausalInference {
@@ -340,10 +344,7 @@ pub fn nars_analyze(
                 explanation,
             });
 
-            let tension_truth = NarsTruth::from_evidence(
-                0.3,
-                0.7 * (1.0 - abducted.confidence),
-            );
+            let tension_truth = NarsTruth::from_evidence(0.3, 0.7 * (1.0 - abducted.confidence));
 
             axis_truths
                 .entry(axis.clone())
@@ -365,14 +366,10 @@ pub fn nars_analyze(
     if uncertains.len() >= 2 {
         for i in 0..uncertains.len().min(3) {
             for j in (i + 1)..uncertains.len().min(4) {
-                let a_truth = NarsTruth::new(
-                    uncertains[i].similarity,
-                    uncertains[i].similarity * 0.5,
-                );
-                let b_truth = NarsTruth::new(
-                    uncertains[j].similarity,
-                    uncertains[j].similarity * 0.5,
-                );
+                let a_truth =
+                    NarsTruth::new(uncertains[i].similarity, uncertains[i].similarity * 0.5);
+                let b_truth =
+                    NarsTruth::new(uncertains[j].similarity, uncertains[j].similarity * 0.5);
                 let comparison = a_truth.comparison(&b_truth);
 
                 similarity_judgments.push(SimilarityJudgment {
@@ -501,18 +498,10 @@ pub fn nars_to_weight_deltas(state: &NarsSemanticState) -> [f32; 32] {
         if let Some(inference) = state.axis_truths.get(*axis_name) {
             let expectation = inference.truth.expectation();
             deltas[*slot] = match inference.rule {
-                NarsRule::Revision => {
-                    0.05 + 0.05 * inference.truth.confidence
-                }
-                NarsRule::Abduction => {
-                    -0.03 - 0.05 * (1.0 - inference.truth.confidence)
-                }
-                NarsRule::Comparison => {
-                    -0.01
-                }
-                NarsRule::Direct => {
-                    0.02 * (expectation - 0.5)
-                }
+                NarsRule::Revision => 0.05 + 0.05 * inference.truth.confidence,
+                NarsRule::Abduction => -0.03 - 0.05 * (1.0 - inference.truth.confidence),
+                NarsRule::Comparison => -0.01,
+                NarsRule::Direct => 0.02 * (expectation - 0.5),
             };
         }
     }
@@ -559,10 +548,7 @@ mod tests {
         let c_count = crystallized.len();
         let t_count = tensioned.len();
         let u_count = uncertain.len();
-        let best = crystallized
-            .first()
-            .map(|m| m.similarity)
-            .unwrap_or(0.0);
+        let best = crystallized.first().map(|m| m.similarity).unwrap_or(0.0);
         AwarenessFrame {
             crystallized,
             tensioned,
@@ -673,10 +659,9 @@ mod tests {
     #[test]
     fn test_nars_analyze_tensioned_abduction() {
         let mut tensioned_match = make_match(0.72, "wife", 3);
-        tensioned_match.divergent_axes.insert(
-            "warm_cool".into(),
-            (0.9, -0.6),
-        );
+        tensioned_match
+            .divergent_axes
+            .insert("warm_cool".into(), (0.9, -0.6));
 
         let frame = make_frame(vec![], vec![tensioned_match], vec![]);
         let axes = HashMap::new();
@@ -699,10 +684,7 @@ mod tests {
         let frame = make_frame(
             vec![],
             vec![],
-            vec![
-                make_match(0.55, "hybrid", 3),
-                make_match(0.52, "hybrid", 2),
-            ],
+            vec![make_match(0.55, "hybrid", 3), make_match(0.52, "hybrid", 2)],
         );
 
         let axes = HashMap::new();
@@ -866,11 +848,7 @@ mod tests {
 
     #[test]
     fn test_awareness_frame_json_roundtrip() {
-        let frame = make_frame(
-            vec![make_match(0.92, "wife", 4)],
-            vec![],
-            vec![],
-        );
+        let frame = make_frame(vec![make_match(0.92, "wife", 4)], vec![], vec![]);
         let json = serde_json::to_string(&frame).unwrap();
         let restored: AwarenessFrame = serde_json::from_str(&json).unwrap();
         assert_eq!(restored.crystallized.len(), 1);
@@ -880,12 +858,15 @@ mod tests {
     #[test]
     fn test_nars_semantic_state_json_roundtrip() {
         let mut axis_truths = HashMap::new();
-        axis_truths.insert("warm_cool".into(), NarsAxisInference {
-            axis: "warm_cool".into(),
-            truth: NarsTruth::new(0.9, 0.8),
-            rule: NarsRule::Revision,
-            evidence_count: 3,
-        });
+        axis_truths.insert(
+            "warm_cool".into(),
+            NarsAxisInference {
+                axis: "warm_cool".into(),
+                truth: NarsTruth::new(0.9, 0.8),
+                rule: NarsRule::Revision,
+                evidence_count: 3,
+            },
+        );
 
         let state = NarsSemanticState {
             axis_truths,

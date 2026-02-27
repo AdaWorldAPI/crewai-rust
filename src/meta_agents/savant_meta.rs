@@ -29,15 +29,15 @@ use crate::agent::Agent;
 
 use super::card_builder::{build_card_from_blueprint, build_card_from_state, update_card_skills};
 use super::delegation::{
-    AgentFeedback, CapabilityUpdate, CapabilityUpdateTrigger, DelegationRequest,
-    DelegationResult, OrchestrationEvent, SkillAdjustment, SkillAdjustmentType, TaskOutcome,
+    AgentFeedback, CapabilityUpdate, CapabilityUpdateTrigger, DelegationRequest, DelegationResult,
+    OrchestrationEvent, SkillAdjustment, SkillAdjustmentType, TaskOutcome,
 };
 use super::savants;
 use super::skill_engine::{SkillEngine, SkillEngineConfig};
 use super::spawner::SpawnerAgent;
 use super::types::{
-    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain,
-    SkillDescriptor, SpawnedAgentState, TaskPriority,
+    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain, SkillDescriptor,
+    SpawnedAgentState, TaskPriority,
 };
 
 // ---------------------------------------------------------------------------
@@ -258,7 +258,11 @@ impl SavantCoordinator {
     }
 
     /// Spawn a savant from a specific blueprint.
-    pub fn spawn_from_blueprint(&mut self, blueprint: &AgentBlueprint, auto_spawned: bool) -> String {
+    pub fn spawn_from_blueprint(
+        &mut self,
+        blueprint: &AgentBlueprint,
+        auto_spawned: bool,
+    ) -> String {
         let savant_id = format!(
             "savant-{}-{}",
             blueprint.domain,
@@ -369,7 +373,10 @@ impl SavantCoordinator {
             // Required skills check
             if !task.required_skills.is_empty() {
                 let skill_ids: Vec<&str> = entry.skills.iter().map(|s| s.id.as_str()).collect();
-                let has_all = task.required_skills.iter().all(|r| skill_ids.contains(&r.as_str()));
+                let has_all = task
+                    .required_skills
+                    .iter()
+                    .all(|r| skill_ids.contains(&r.as_str()));
                 if has_all {
                     score += 2.0;
                 } else {
@@ -393,7 +400,11 @@ impl SavantCoordinator {
         // Check if we have a good enough match
         if let Some((id, score, matched_skills)) = best {
             if score >= self.min_match_score {
-                let domain = self.registry.get(&id).map(|e| e.domain).unwrap_or(SavantDomain::General);
+                let domain = self
+                    .registry
+                    .get(&id)
+                    .map(|e| e.domain)
+                    .unwrap_or(SavantDomain::General);
                 return RoutingDecision {
                     savant_id: id,
                     match_score: score,
@@ -421,7 +432,11 @@ impl SavantCoordinator {
         } else {
             // Fallback: route to the least-busy general savant
             let fallback_id = self.registry.keys().next().cloned().unwrap_or_default();
-            let domain = self.registry.get(&fallback_id).map(|e| e.domain).unwrap_or(SavantDomain::General);
+            let domain = self
+                .registry
+                .get(&fallback_id)
+                .map(|e| e.domain)
+                .unwrap_or(SavantDomain::General);
             RoutingDecision {
                 savant_id: fallback_id,
                 match_score: 0.0,
@@ -518,10 +533,14 @@ impl SavantCoordinator {
         context: Option<&str>,
     ) -> Result<CrossDomainDelegation, String> {
         // Verify the source savant can delegate to the target domain
-        let can_delegate = self.registry.get(from_savant_id)
+        let can_delegate = self
+            .registry
+            .get(from_savant_id)
             .map(|e| e.can_delegate_to(target_domain))
             .unwrap_or(false);
-        let from_domain = self.registry.get(from_savant_id)
+        let from_domain = self
+            .registry
+            .get(from_savant_id)
             .map(|e| e.domain)
             .unwrap_or(SavantDomain::General);
 
@@ -533,7 +552,8 @@ impl SavantCoordinator {
         }
 
         // Find or spawn a target savant
-        let target_id = self.find_savant_for_domain(target_domain)
+        let target_id = self
+            .find_savant_for_domain(target_domain)
             .unwrap_or_else(|| self.spawn_savant(target_domain));
 
         // Create task
@@ -546,11 +566,12 @@ impl SavantCoordinator {
 
         let delegation_id = Uuid::new_v4().to_string();
 
-        self.event_log.push(OrchestrationEvent::DelegationRequested {
-            request_id: delegation_id.clone(),
-            from_agent: from_savant_id.to_string(),
-            target_domain: Some(target_domain),
-        });
+        self.event_log
+            .push(OrchestrationEvent::DelegationRequested {
+                request_id: delegation_id.clone(),
+                from_agent: from_savant_id.to_string(),
+                target_domain: Some(target_domain),
+            });
 
         // Execute
         let result = self.execute_task(&mut task);
@@ -560,11 +581,12 @@ impl SavantCoordinator {
             Err(_) => (Some(false), None),
         };
 
-        self.event_log.push(OrchestrationEvent::DelegationCompleted {
-            request_id: delegation_id.clone(),
-            from_agent: target_id.clone(),
-            success: success.unwrap_or(false),
-        });
+        self.event_log
+            .push(OrchestrationEvent::DelegationCompleted {
+                request_id: delegation_id.clone(),
+                from_agent: target_id.clone(),
+                success: success.unwrap_or(false),
+            });
 
         let record = CrossDomainDelegation {
             id: delegation_id,
@@ -583,10 +605,13 @@ impl SavantCoordinator {
 
     /// Find an idle savant for a specific domain.
     fn find_savant_for_domain(&self, domain: SavantDomain) -> Option<String> {
-        self.registry.iter()
+        self.registry
+            .iter()
             .filter(|(_, e)| e.domain == domain && !e.busy)
             .max_by(|(_, a), (_, b)| {
-                a.performance_score.partial_cmp(&b.performance_score).unwrap_or(std::cmp::Ordering::Equal)
+                a.performance_score
+                    .partial_cmp(&b.performance_score)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             })
             .map(|(id, _)| id.clone())
     }
@@ -604,9 +629,12 @@ impl SavantCoordinator {
         success: bool,
     ) {
         // Build feedback
-        let relevant_skills: Vec<String> = self.registry.get(savant_id)
+        let relevant_skills: Vec<String> = self
+            .registry
+            .get(savant_id)
             .map(|e| {
-                e.skills.iter()
+                e.skills
+                    .iter()
                     .filter(|s| s.match_score(task_description) > 0.0)
                     .map(|s| s.id.clone())
                     .collect()
@@ -614,11 +642,9 @@ impl SavantCoordinator {
             .unwrap_or_default();
 
         let feedback = if success {
-            AgentFeedback::success(savant_id, task_id)
-                .with_relevant_skills(relevant_skills)
+            AgentFeedback::success(savant_id, task_id).with_relevant_skills(relevant_skills)
         } else {
-            AgentFeedback::failure(savant_id, task_id)
-                .with_relevant_skills(relevant_skills)
+            AgentFeedback::failure(savant_id, task_id).with_relevant_skills(relevant_skills)
         };
 
         // Apply to agent state and card
@@ -638,7 +664,9 @@ impl SavantCoordinator {
 
             if let Some(card) = self.cards.get_mut(savant_id) {
                 state.complete_task(success);
-                let (_update, events) = self.skill_engine.apply_feedback(&feedback, &mut state, card);
+                let (_update, events) = self
+                    .skill_engine
+                    .apply_feedback(&feedback, &mut state, card);
                 self.event_log.extend(events);
 
                 // Sync state back to entry
@@ -661,7 +689,9 @@ impl SavantCoordinator {
         to_savant: &str,
         penalty: f64,
     ) -> Vec<SkillAdjustment> {
-        let source_skills: Vec<SkillDescriptor> = self.registry.get(from_savant)
+        let source_skills: Vec<SkillDescriptor> = self
+            .registry
+            .get(from_savant)
             .map(|e| e.skills.clone())
             .unwrap_or_default();
 
@@ -730,7 +760,8 @@ impl SavantCoordinator {
 
     /// List all savants in a domain.
     pub fn savants_in_domain(&self, domain: SavantDomain) -> Vec<&SavantEntry> {
-        self.registry.values()
+        self.registry
+            .values()
             .filter(|e| e.domain == domain)
             .collect()
     }
@@ -836,8 +867,7 @@ mod tests {
         let mut coord = SavantCoordinator::new("openai/gpt-4o-mini");
         // Don't spawn any savants
 
-        let task = OrchestratedTask::new("Deploy to Kubernetes")
-            .with_domain(SavantDomain::DevOps);
+        let task = OrchestratedTask::new("Deploy to Kubernetes").with_domain(SavantDomain::DevOps);
 
         let decision = coord.route_task(&task);
         assert_eq!(decision.domain, SavantDomain::DevOps);
@@ -941,7 +971,11 @@ mod tests {
         let cards = coord.get_cards();
         assert_eq!(cards.len(), 9);
         for card in cards {
-            assert!(!card.skills.is_empty(), "Card '{}' should have skills", card.name);
+            assert!(
+                !card.skills.is_empty(),
+                "Card '{}' should have skills",
+                card.name
+            );
             assert!(card.description.is_some());
         }
     }
@@ -952,7 +986,8 @@ mod tests {
         coord.spawn_savant(SavantDomain::Engineering);
 
         let events = coord.get_event_log();
-        let spawn_events: Vec<_> = events.iter()
+        let spawn_events: Vec<_> = events
+            .iter()
             .filter(|e| matches!(e, OrchestrationEvent::AgentSpawned { .. }))
             .collect();
         assert_eq!(spawn_events.len(), 1);
@@ -964,8 +999,12 @@ mod tests {
         coord.spawn_savant(SavantDomain::Security);
         coord.spawn_savant(SavantDomain::Research);
 
-        assert!(coord.find_savant_for_domain(SavantDomain::Security).is_some());
-        assert!(coord.find_savant_for_domain(SavantDomain::Research).is_some());
+        assert!(coord
+            .find_savant_for_domain(SavantDomain::Security)
+            .is_some());
+        assert!(coord
+            .find_savant_for_domain(SavantDomain::Research)
+            .is_some());
         assert!(coord.find_savant_for_domain(SavantDomain::Design).is_none());
     }
 

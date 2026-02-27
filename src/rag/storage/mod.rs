@@ -21,9 +21,7 @@ pub trait BaseRAGStorage: Send + Sync {
 
     /// Sanitize an agent role to ensure valid directory names.
     fn sanitize_role(&self, role: &str) -> String {
-        role.replace('\n', "")
-            .replace(' ', "_")
-            .replace('/', "_")
+        role.replace('\n', "").replace(' ', "_").replace('/', "_")
     }
 
     /// Save a value with metadata to the storage.
@@ -31,11 +29,7 @@ pub trait BaseRAGStorage: Send + Sync {
     /// # Arguments
     /// * `value` - The value to save.
     /// * `metadata` - Metadata to associate with the value.
-    fn save(
-        &self,
-        value: &str,
-        metadata: &HashMap<String, Value>,
-    ) -> Result<(), anyhow::Error>;
+    fn save(&self, value: &str, metadata: &HashMap<String, Value>) -> Result<(), anyhow::Error>;
 
     /// Search for entries in the storage.
     ///

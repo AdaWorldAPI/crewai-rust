@@ -23,7 +23,7 @@ use serde_json::Value;
 
 use crewai::blackboard::{A2ARegistry, AgentState};
 use crewai::drivers::spo::{
-    extract_triples, infer_triples, entity_hash, ConversationPredicate, SpoTriple,
+    entity_hash, extract_triples, infer_triples, ConversationPredicate, SpoTriple,
 };
 use crewai::llms::base_llm::{BaseLLM, LLMMessage};
 use crewai::llms::providers::anthropic::AnthropicCompletion;
@@ -266,7 +266,11 @@ async fn test_claude_grok_a2a_loop() {
     ];
 
     let claude_result = claude.acall(claude_messages, None, None).await;
-    assert!(claude_result.is_ok(), "Claude call failed: {:?}", claude_result.err());
+    assert!(
+        claude_result.is_ok(),
+        "Claude call failed: {:?}",
+        claude_result.err()
+    );
 
     let claude_response = claude_result.unwrap();
     let claude_text = claude_response.as_str().unwrap_or("").to_string();
@@ -276,14 +280,8 @@ async fn test_claude_grok_a2a_loop() {
     registry.set_state("claude", AgentState::Completed);
 
     // ---- Extract SPO triples from Claude's turn ----
-    let claude_triples = extract_triples(
-        seed_task,
-        &claude_text,
-        "a2a-claude-grok",
-        "work",
-        &[],
-        &[],
-    );
+    let claude_triples =
+        extract_triples(seed_task, &claude_text, "a2a-claude-grok", "work", &[], &[]);
     println!(
         "SPO triples from Claude's turn: {} (3D projections below)",
         claude_triples.len()
@@ -293,8 +291,10 @@ async fn test_claude_grok_a2a_loop() {
         let pred = ConversationPredicate::from_hash(t.predicate_hash)
             .map(|p| p.label())
             .unwrap_or("?");
-        println!("  ({:#010x}) —[{}]→ ({:#010x})  3D=[{:.3}, {:.3}, {:.3}]",
-            t.subject_dn, pred, t.object_dn, v[0], v[1], v[2]);
+        println!(
+            "  ({:#010x}) —[{}]→ ({:#010x})  3D=[{:.3}, {:.3}, {:.3}]",
+            t.subject_dn, pred, t.object_dn, v[0], v[1], v[2]
+        );
     }
 
     // ---- Turn 2: Grok refines Claude's output ----
@@ -305,7 +305,7 @@ async fn test_claude_grok_a2a_loop() {
         system_msg(
             "You are a fast synthesis agent. You received the following analysis from Claude \
              (another AI agent). Critique it in 2-3 sentences — add what's missing or correct \
-             any imprecision."
+             any imprecision.",
         ),
         user_msg(&format!(
             "Claude's analysis:\n\n{}\n\nYour critique (2-3 sentences):",
@@ -314,7 +314,11 @@ async fn test_claude_grok_a2a_loop() {
     ];
 
     let grok_result = grok.acall(grok_messages, None, None).await;
-    assert!(grok_result.is_ok(), "Grok call failed: {:?}", grok_result.err());
+    assert!(
+        grok_result.is_ok(),
+        "Grok call failed: {:?}",
+        grok_result.err()
+    );
 
     let grok_response = grok_result.unwrap();
     let grok_text = grok_response.as_str().unwrap_or("").to_string();
@@ -352,14 +356,22 @@ async fn test_claude_grok_a2a_loop() {
             .unwrap_or("?");
         println!(
             "  [inferred] ({:#010x}) —[{}]→ ({:#010x})  3D=[{:.3}, {:.3}, {:.3}]  c={:.0}%",
-            t.subject_dn, pred, t.object_dn, v[0], v[1], v[2],
+            t.subject_dn,
+            pred,
+            t.object_dn,
+            v[0],
+            v[1],
+            v[2],
             t.confidence() * 100.0
         );
     }
 
     // ---- Verify the loop completed ----
     assert_eq!(registry.by_state(AgentState::Completed).len(), 2);
-    assert!(!all_triples.is_empty(), "Should have SPO triples from both agents");
+    assert!(
+        !all_triples.is_empty(),
+        "Should have SPO triples from both agents"
+    );
     println!("\nA2A loop complete: Claude → Grok round-trip verified.");
 }
 

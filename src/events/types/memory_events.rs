@@ -110,12 +110,7 @@ pub struct MemoryQueryFailedEvent {
 }
 
 impl MemoryQueryFailedEvent {
-    pub fn new(
-        query: String,
-        limit: i64,
-        score_threshold: Option<f64>,
-        error: String,
-    ) -> Self {
+    pub fn new(query: String, limit: i64, score_threshold: Option<f64>, error: String) -> Self {
         Self {
             base: BaseEventData::new("memory_query_failed"),
             query,
@@ -177,11 +172,7 @@ pub struct MemorySaveCompletedEvent {
 }
 
 impl MemorySaveCompletedEvent {
-    pub fn new(
-        value: String,
-        metadata: Option<HashMap<String, Value>>,
-        save_time_ms: f64,
-    ) -> Self {
+    pub fn new(value: String, metadata: Option<HashMap<String, Value>>, save_time_ms: f64) -> Self {
         Self {
             base: BaseEventData::new("memory_save_completed"),
             value,

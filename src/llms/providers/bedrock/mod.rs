@@ -69,19 +69,13 @@ mod sigv4 {
 
     /// HMAC-SHA256 keyed hash.
     fn hmac_sha256(key: &[u8], data: &[u8]) -> Vec<u8> {
-        let mut mac =
-            HmacSha256::new_from_slice(key).expect("HMAC can take key of any size");
+        let mut mac = HmacSha256::new_from_slice(key).expect("HMAC can take key of any size");
         mac.update(data);
         mac.finalize().into_bytes().to_vec()
     }
 
     /// Derive the SigV4 signing key.
-    pub fn signing_key(
-        secret: &str,
-        date_stamp: &str,
-        region: &str,
-        service: &str,
-    ) -> Vec<u8> {
+    pub fn signing_key(secret: &str, date_stamp: &str, region: &str, service: &str) -> Vec<u8> {
         let k_date = hmac_sha256(format!("AWS4{}", secret).as_bytes(), date_stamp.as_bytes());
         let k_region = hmac_sha256(&k_date, region.as_bytes());
         let k_service = hmac_sha256(&k_region, service.as_bytes());
@@ -270,22 +264,13 @@ impl BedrockCompletion {
     }
 
     /// Convert OpenAI-style messages to Bedrock Converse API format.
-    fn format_messages(
-        &self,
-        messages: &[LLMMessage],
-    ) -> (Vec<Value>, Vec<Value>) {
+    fn format_messages(&self, messages: &[LLMMessage]) -> (Vec<Value>, Vec<Value>) {
         let mut system_parts: Vec<Value> = Vec::new();
         let mut converse_messages: Vec<Value> = Vec::new();
 
         for msg in messages {
-            let role = msg
-                .get("role")
-                .and_then(|v| v.as_str())
-                .unwrap_or("user");
-            let content = msg
-                .get("content")
-                .cloned()
-                .unwrap_or(Value::Null);
+            let role = msg.get("role").and_then(|v| v.as_str()).unwrap_or("user");
+            let content = msg.get("content").cloned().unwrap_or(Value::Null);
 
             if role == "system" {
                 if let Some(text) = content.as_str() {
@@ -323,10 +308,7 @@ impl BedrockCompletion {
                 // Add tool use blocks
                 if let Some(tool_calls) = msg.get("tool_calls").and_then(|v| v.as_array()) {
                     for tc in tool_calls {
-                        let id = tc
-                            .get("id")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("unknown");
+                        let id = tc.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
                         let func = tc.get("function").unwrap_or(&Value::Null);
                         let name = func.get("name").and_then(|v| v.as_str()).unwrap_or("");
                         let args_str = func
@@ -368,11 +350,7 @@ impl BedrockCompletion {
     }
 
     /// Build the Converse API request body.
-    fn build_request_body(
-        &self,
-        messages: &[LLMMessage],
-        tools: Option<&[Value]>,
-    ) -> Value {
+    fn build_request_body(&self, messages: &[LLMMessage], tools: Option<&[Value]>) -> Value {
         let (system_parts, converse_messages) = self.format_messages(messages);
 
         let mut body = serde_json::json!({
@@ -447,9 +425,7 @@ impl BedrockCompletion {
         }
 
         // Guardrails
-        if let (Some(ref id), Some(ref version)) =
-            (&self.guardrail_id, &self.guardrail_version)
-        {
+        if let (Some(ref id), Some(ref version)) = (&self.guardrail_id, &self.guardrail_version) {
             body["guardrailConfig"] = serde_json::json!({
                 "guardrailIdentifier": id,
                 "guardrailVersion": version,
@@ -486,10 +462,7 @@ impl BedrockCompletion {
                     .get("toolUseId")
                     .and_then(|v| v.as_str())
                     .unwrap_or("unknown");
-                let name = tool_use
-                    .get("name")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("");
+                let name = tool_use.get("name").and_then(|v| v.as_str()).unwrap_or("");
                 let input = tool_use.get("input").unwrap_or(&Value::Null);
                 let args_str = serde_json::to_string(input).unwrap_or_default();
 
@@ -562,8 +535,7 @@ impl BedrockCompletion {
         let now = chrono::Utc::now();
         let amz_date = now.format("%Y%m%dT%H%M%SZ").to_string();
         let date_stamp = now.format("%Y%m%d").to_string();
-        let credential_scope =
-            format!("{}/{}/{}/aws4_request", date_stamp, region, SERVICE);
+        let credential_scope = format!("{}/{}/{}/aws4_request", date_stamp, region, SERVICE);
 
         let host = self.host();
         let payload_hash = sigv4::sha256_hex(payload);
@@ -599,8 +571,7 @@ impl BedrockCompletion {
         let canonical_hash = sigv4::sha256_hex(canonical.as_bytes());
         let sts = sigv4::string_to_sign(&amz_date, &credential_scope, &canonical_hash);
 
-        let signing_key =
-            sigv4::signing_key(secret_key, &date_stamp, region, SERVICE);
+        let signing_key = sigv4::signing_key(secret_key, &date_stamp, region, SERVICE);
         let signature = sigv4::sign_hex(&signing_key, &sts);
 
         let auth_header =
@@ -765,8 +736,7 @@ impl BaseLLM for BedrockCompletion {
             }
 
             if status.is_server_error() {
-                last_error =
-                    Some(format!("Bedrock API server error: {}", status).into());
+                last_error = Some(format!("Bedrock API server error: {}", status).into());
                 continue;
             }
 
@@ -779,11 +749,7 @@ impl BaseLLM for BedrockCompletion {
             };
 
             if status.is_client_error() {
-                return Err(format!(
-                    "Bedrock API error ({}): {}",
-                    status, response_text
-                )
-                .into());
+                return Err(format!("Bedrock API error ({}): {}", status, response_text).into());
             }
 
             let response_json: Value = match serde_json::from_str(&response_text) {
@@ -807,8 +773,7 @@ impl BaseLLM for BedrockCompletion {
             return self.parse_response(&response_json);
         }
 
-        Err(last_error
-            .unwrap_or_else(|| "Bedrock API call failed after all retries".into()))
+        Err(last_error.unwrap_or_else(|| "Bedrock API call failed after all retries".into()))
     }
 
     fn get_token_usage_summary(&self) -> UsageMetrics {
@@ -830,12 +795,12 @@ mod tests {
 
     #[test]
     fn test_bedrock_new_defaults() {
-        let provider = BedrockCompletion::new(
-            "anthropic.claude-3-5-sonnet-20241022-v2:0",
-            None,
-            None,
+        let provider =
+            BedrockCompletion::new("anthropic.claude-3-5-sonnet-20241022-v2:0", None, None);
+        assert_eq!(
+            provider.model(),
+            "anthropic.claude-3-5-sonnet-20241022-v2:0"
         );
-        assert_eq!(provider.model(), "anthropic.claude-3-5-sonnet-20241022-v2:0");
         assert_eq!(provider.provider(), "bedrock");
         assert!(provider.supports_function_calling());
         assert!(provider.supports_multimodal());
@@ -857,27 +822,35 @@ mod tests {
 
     #[test]
     fn test_converse_uri_encodes_colons() {
-        let provider = BedrockCompletion::new(
-            "anthropic.claude-3-5-sonnet-20241022-v2:0",
-            None,
-            None,
-        );
+        let provider =
+            BedrockCompletion::new("anthropic.claude-3-5-sonnet-20241022-v2:0", None, None);
         let uri = provider.converse_uri();
         assert!(uri.contains("%3A"), "URI should encode colons: {}", uri);
-        assert!(!uri.contains(':') || uri.starts_with("/model/"),
-            "Model ID colons should be encoded");
+        assert!(
+            !uri.contains(':') || uri.starts_with("/model/"),
+            "Model ID colons should be encoded"
+        );
     }
 
     fn msg(pairs: &[(&str, Value)]) -> LLMMessage {
-        pairs.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.clone()))
+            .collect()
     }
 
     #[test]
     fn test_format_messages_basic() {
         let provider = BedrockCompletion::new("test-model", None, None);
         let messages: Vec<LLMMessage> = vec![
-            msg(&[("role", serde_json::json!("system")), ("content", serde_json::json!("You are helpful."))]),
-            msg(&[("role", serde_json::json!("user")), ("content", serde_json::json!("Hello"))]),
+            msg(&[
+                ("role", serde_json::json!("system")),
+                ("content", serde_json::json!("You are helpful.")),
+            ]),
+            msg(&[
+                ("role", serde_json::json!("user")),
+                ("content", serde_json::json!("Hello")),
+            ]),
         ];
 
         let (system, converse) = provider.format_messages(&messages);
@@ -894,10 +867,13 @@ mod tests {
             msg(&[
                 ("role", serde_json::json!("assistant")),
                 ("content", serde_json::json!("")),
-                ("tool_calls", serde_json::json!([{
-                    "id": "tc_1",
-                    "function": { "name": "get_weather", "arguments": "{\"city\":\"NYC\"}" }
-                }])),
+                (
+                    "tool_calls",
+                    serde_json::json!([{
+                        "id": "tc_1",
+                        "function": { "name": "get_weather", "arguments": "{\"city\":\"NYC\"}" }
+                    }]),
+                ),
             ]),
             msg(&[
                 ("role", serde_json::json!("tool")),
@@ -921,9 +897,10 @@ mod tests {
     #[test]
     fn test_build_request_body_with_tools() {
         let provider = BedrockCompletion::new("test-model", None, None);
-        let messages: Vec<LLMMessage> = vec![
-            msg(&[("role", serde_json::json!("user")), ("content", serde_json::json!("What's the weather?"))]),
-        ];
+        let messages: Vec<LLMMessage> = vec![msg(&[
+            ("role", serde_json::json!("user")),
+            ("content", serde_json::json!("What's the weather?")),
+        ])];
         let tools = vec![serde_json::json!({
             "type": "function",
             "function": {

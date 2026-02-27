@@ -129,10 +129,7 @@ impl PendingFeedbackContext {
             serde_json::to_value(&self.metadata).unwrap_or_default(),
         );
         if let Some(ref llm) = self.llm {
-            map.insert(
-                "llm".to_string(),
-                serde_json::Value::String(llm.clone()),
-            );
+            map.insert("llm".to_string(), serde_json::Value::String(llm.clone()));
         }
         map.insert(
             "requested_at".to_string(),
@@ -406,8 +403,7 @@ mod tests {
             serde_json::Value::Null,
             "msg".to_string(),
         );
-        let pending =
-            HumanFeedbackPending::new(ctx, None, Some("Custom message".to_string()));
+        let pending = HumanFeedbackPending::new(ctx, None, Some("Custom message".to_string()));
         assert_eq!(format!("{}", pending), "Custom message");
     }
 }

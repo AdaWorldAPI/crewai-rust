@@ -10,8 +10,8 @@ use crate::a2a::client::AgentCard;
 
 use super::card_builder::update_card_skills;
 use super::delegation::{
-    AgentFeedback, CapabilityUpdate, CapabilityUpdateTrigger, OrchestrationEvent,
-    SkillAdjustment, SkillAdjustmentType, TaskOutcome,
+    AgentFeedback, CapabilityUpdate, CapabilityUpdateTrigger, OrchestrationEvent, SkillAdjustment,
+    SkillAdjustmentType, TaskOutcome,
 };
 use super::types::{SkillDescriptor, SpawnedAgentState};
 
@@ -135,7 +135,9 @@ impl SkillEngine {
         }
 
         // Remove skills below threshold
-        let to_remove: Vec<String> = state.skills.iter()
+        let to_remove: Vec<String> = state
+            .skills
+            .iter()
             .filter(|s| s.proficiency < self.config.removal_threshold)
             .map(|s| s.id.clone())
             .collect();
@@ -191,7 +193,9 @@ impl SkillEngine {
             if feedback.relevant_skills.contains(&skill.id) {
                 let old = skill.proficiency;
                 // EMA: new = old + alpha * (1.0 - old)
-                skill.proficiency = (skill.proficiency + self.config.success_alpha * (self.config.max_proficiency - skill.proficiency))
+                skill.proficiency = (skill.proficiency
+                    + self.config.success_alpha
+                        * (self.config.max_proficiency - skill.proficiency))
                     .min(self.config.max_proficiency);
                 adjustments.push(SkillAdjustment {
                     skill_id: skill.id.clone(),
@@ -210,7 +214,8 @@ impl SkillEngine {
                         missing,
                         missing,
                         format!("Discovered as needed during task {}", feedback.task_id),
-                    ).with_proficiency(self.config.discovery_initial_proficiency);
+                    )
+                    .with_proficiency(self.config.discovery_initial_proficiency);
                     state.add_skill(new_skill);
                     adjustments.push(SkillAdjustment {
                         skill_id: missing.clone(),
@@ -238,7 +243,8 @@ impl SkillEngine {
         for skill in &mut state.skills {
             if feedback.relevant_skills.contains(&skill.id) {
                 let old = skill.proficiency;
-                skill.proficiency = (skill.proficiency + mild_alpha * (self.config.max_proficiency - skill.proficiency))
+                skill.proficiency = (skill.proficiency
+                    + mild_alpha * (self.config.max_proficiency - skill.proficiency))
                     .min(self.config.max_proficiency);
                 adjustments.push(SkillAdjustment {
                     skill_id: skill.id.clone(),
@@ -293,8 +299,8 @@ impl SkillEngine {
         for src_skill in &source.skills {
             if !target.skills.iter().any(|s| s.id == src_skill.id) {
                 let mut new_skill = src_skill.clone();
-                new_skill.proficiency = (src_skill.proficiency * (1.0 - penalty))
-                    .max(self.config.min_proficiency);
+                new_skill.proficiency =
+                    (src_skill.proficiency * (1.0 - penalty)).max(self.config.min_proficiency);
                 target.add_skill(new_skill);
                 adjustments.push(SkillAdjustment {
                     skill_id: src_skill.id.clone(),
@@ -325,9 +331,20 @@ mod tests {
     use crate::meta_agents::types::{AgentBlueprint, SavantDomain};
 
     fn make_agent() -> (SpawnedAgentState, AgentCard) {
-        let bp = AgentBlueprint::new("Test", "Goal", "Back", "openai/gpt-4o-mini", SavantDomain::Research)
-            .with_skill(SkillDescriptor::new("web_research", "Web Research", "Search web").with_proficiency(0.8))
-            .with_skill(SkillDescriptor::new("synthesis", "Synthesis", "Combine info").with_proficiency(0.7));
+        let bp = AgentBlueprint::new(
+            "Test",
+            "Goal",
+            "Back",
+            "openai/gpt-4o-mini",
+            SavantDomain::Research,
+        )
+        .with_skill(
+            SkillDescriptor::new("web_research", "Web Research", "Search web")
+                .with_proficiency(0.8),
+        )
+        .with_skill(
+            SkillDescriptor::new("synthesis", "Synthesis", "Combine info").with_proficiency(0.7),
+        );
         let state = SpawnedAgentState::new("agent-test", &bp);
         let card = build_card_from_state(&state, "http://localhost");
         (state, card)
@@ -375,7 +392,11 @@ mod tests {
         engine.apply_feedback(&feedback, &mut state, &mut card);
 
         assert_eq!(state.skills.len(), 3);
-        let new_skill = state.skills.iter().find(|s| s.id == "data_analysis").unwrap();
+        let new_skill = state
+            .skills
+            .iter()
+            .find(|s| s.id == "data_analysis")
+            .unwrap();
         assert!((new_skill.proficiency - 0.5).abs() < 0.01);
     }
 
@@ -389,7 +410,10 @@ mod tests {
 
         let old = state.skills[0].proficiency;
         engine.apply_feedback(&feedback, &mut state, &mut card);
-        assert!((state.skills[0].proficiency - (old + 0.1)).abs() < 0.01 || state.skills[0].proficiency > old);
+        assert!(
+            (state.skills[0].proficiency - (old + 0.1)).abs() < 0.01
+                || state.skills[0].proficiency > old
+        );
     }
 
     #[test]
@@ -397,7 +421,13 @@ mod tests {
         let engine = SkillEngine::default_engine();
         let (source, _) = make_agent();
 
-        let bp = AgentBlueprint::new("Target", "Goal", "Back", "openai/gpt-4o-mini", SavantDomain::Engineering);
+        let bp = AgentBlueprint::new(
+            "Target",
+            "Goal",
+            "Back",
+            "openai/gpt-4o-mini",
+            SavantDomain::Engineering,
+        );
         let mut target = SpawnedAgentState::new("agent-target", &bp);
         assert!(target.skills.is_empty());
 

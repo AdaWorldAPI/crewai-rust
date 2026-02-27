@@ -185,7 +185,7 @@ impl<S: SubstrateView> BindBridge<S> {
         let matches = self.substrate.hamming_search(
             query_fingerprint,
             (0x80, 0xFF),
-            32, // top_k
+            32,                             // top_k
             self.cached_noise_floor + 0.05, // threshold = noise_floor + margin
         );
 
@@ -222,10 +222,8 @@ impl<S: SubstrateView> BindBridge<S> {
                         for (axis, &current_val) in current_axes {
                             let cached_val = (freq * 2.0) - 1.0; // freq → [-1,1]
                             if (cached_val - current_val).abs() > 0.3 {
-                                am.divergent_axes.insert(
-                                    axis.clone(),
-                                    (cached_val, current_val),
-                                );
+                                am.divergent_axes
+                                    .insert(axis.clone(), (cached_val, current_val));
                             }
                         }
                     }
@@ -291,11 +289,8 @@ impl<S: SubstrateView> BindBridge<S> {
         for (i, (axis, inference)) in state.axis_truths.iter().enumerate() {
             let slot = (i + 1) as u8; // slots 1..N
             let addr = 0x0400 | slot as u16;
-            self.substrate.write_truth(
-                addr,
-                inference.truth.frequency,
-                inference.truth.confidence,
-            );
+            self.substrate
+                .write_truth(addr, inference.truth.frequency, inference.truth.confidence);
         }
     }
 
@@ -334,12 +329,7 @@ impl<S: SubstrateView> BindBridge<S> {
     /// Reads the fingerprint and truth value at `addr` and writes them
     /// as a typed tuple into the Blackboard.
     #[cfg(feature = "ladybug")]
-    pub fn project_addr(
-        &self,
-        bb: &mut Blackboard,
-        key: impl Into<String>,
-        addr: u16,
-    ) {
+    pub fn project_addr(&self, bb: &mut Blackboard, key: impl Into<String>, addr: u16) {
         if let Some(fp) = self.substrate.read_fingerprint(addr) {
             let truth = self.substrate.read_truth(addr);
             let label = self.substrate.read_label(addr);
@@ -353,12 +343,7 @@ impl<S: SubstrateView> BindBridge<S> {
                 truth_conf: truth.map(|(_, c)| c).unwrap_or(0.0),
             };
 
-            bb.put_typed(
-                key,
-                projection,
-                "lb.bind_bridge",
-                "bind.project",
-            );
+            bb.put_typed(key, projection, "lb.bind_bridge", "bind.project");
         }
     }
 }
@@ -390,18 +375,35 @@ pub struct BindProjection {
 pub struct StubSubstrate;
 
 impl SubstrateView for StubSubstrate {
-    fn read_fingerprint(&self, _addr: u16) -> Option<[u64; 256]> { None }
-    fn read_label(&self, _addr: u16) -> Option<String> { None }
-    fn read_truth(&self, _addr: u16) -> Option<(f32, f32)> { None }
+    fn read_fingerprint(&self, _addr: u16) -> Option<[u64; 256]> {
+        None
+    }
+    fn read_label(&self, _addr: u16) -> Option<String> {
+        None
+    }
+    fn read_truth(&self, _addr: u16) -> Option<(f32, f32)> {
+        None
+    }
     fn write_truth(&mut self, _addr: u16, _frequency: f32, _confidence: f32) {}
     fn hamming_search(
-        &self, _query: &[u64; 256], _prefix_range: (u8, u8),
-        _top_k: usize, _threshold: f32,
-    ) -> Vec<SubstrateMatch> { Vec::new() }
-    fn write_fingerprint(&mut self, _addr: u16, _fingerprint: [u64; 256]) -> bool { false }
+        &self,
+        _query: &[u64; 256],
+        _prefix_range: (u8, u8),
+        _top_k: usize,
+        _threshold: f32,
+    ) -> Vec<SubstrateMatch> {
+        Vec::new()
+    }
+    fn write_fingerprint(&mut self, _addr: u16, _fingerprint: [u64; 256]) -> bool {
+        false
+    }
     fn xor_delta(&mut self, _addr: u16, _delta: [u64; 256]) {}
-    fn noise_floor(&self, _prefix_range: (u8, u8)) -> f32 { 0.0 }
-    fn nars_surface(&self) -> Vec<(u8, String, f32, f32)> { Vec::new() }
+    fn noise_floor(&self, _prefix_range: (u8, u8)) -> f32 {
+        0.0
+    }
+    fn nars_surface(&self) -> Vec<(u8, String, f32, f32)> {
+        Vec::new()
+    }
 }
 
 // ============================================================================
@@ -419,11 +421,14 @@ mod tests {
 
     impl MemSubstrate {
         fn new() -> Self {
-            Self { nodes: HashMap::new() }
+            Self {
+                nodes: HashMap::new(),
+            }
         }
 
         fn insert(&mut self, addr: u16, fp: [u64; 256], label: &str, freq: f32, conf: f32) {
-            self.nodes.insert(addr, (fp, Some(label.to_string()), Some((freq, conf))));
+            self.nodes
+                .insert(addr, (fp, Some(label.to_string()), Some((freq, conf))));
         }
     }
 
@@ -443,17 +448,24 @@ mod tests {
             }
         }
         fn hamming_search(
-            &self, query: &[u64; 256], prefix_range: (u8, u8),
-            top_k: usize, threshold: f32,
+            &self,
+            query: &[u64; 256],
+            prefix_range: (u8, u8),
+            top_k: usize,
+            threshold: f32,
         ) -> Vec<SubstrateMatch> {
-            let mut results: Vec<SubstrateMatch> = self.nodes.iter()
+            let mut results: Vec<SubstrateMatch> = self
+                .nodes
+                .iter()
                 .filter(|(&addr, _)| {
                     let prefix = (addr >> 8) as u8;
                     prefix >= prefix_range.0 && prefix <= prefix_range.1
                 })
                 .map(|(&addr, (fp, label, truth))| {
                     // Simple hamming similarity: count matching words
-                    let matching: u32 = fp.iter().zip(query.iter())
+                    let matching: u32 = fp
+                        .iter()
+                        .zip(query.iter())
                         .map(|(a, b)| (a ^ b).count_zeros())
                         .sum();
                     let total_bits = 256 * 64;
@@ -472,7 +484,10 @@ mod tests {
             results
         }
         fn write_fingerprint(&mut self, addr: u16, fingerprint: [u64; 256]) -> bool {
-            self.nodes.entry(addr).or_insert(([0u64; 256], None, None)).0 = fingerprint;
+            self.nodes
+                .entry(addr)
+                .or_insert(([0u64; 256], None, None))
+                .0 = fingerprint;
             true
         }
         fn xor_delta(&mut self, addr: u16, delta: [u64; 256]) {
@@ -482,8 +497,12 @@ mod tests {
                 }
             }
         }
-        fn noise_floor(&self, _prefix_range: (u8, u8)) -> f32 { 0.3 }
-        fn nars_surface(&self) -> Vec<(u8, String, f32, f32)> { Vec::new() }
+        fn noise_floor(&self, _prefix_range: (u8, u8)) -> f32 {
+            0.3
+        }
+        fn nars_surface(&self) -> Vec<(u8, String, f32, f32)> {
+            Vec::new()
+        }
     }
 
     #[test]

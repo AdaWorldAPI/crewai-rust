@@ -81,7 +81,6 @@ pub struct UnifiedStep {
     pub finished_at: Option<DateTime<Utc>>,
 
     // ----- Decision Trail (crew.agent steps) -----
-
     /// Reasoning trace from the AI agent (crew.* steps).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reasoning: Option<String>,
@@ -209,7 +208,6 @@ pub struct UnifiedExecution {
     pub steps: Vec<UnifiedStep>,
 
     // ----- Fork tracking (ladybug what-if spectator) -----
-
     /// Fork identifier for what-if branching.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fork_id: Option<String>,
@@ -284,7 +282,6 @@ pub struct EnvelopeMetadata {
     pub version: Option<String>,
 
     // --- 10-Layer Cognitive Awareness (backward-compatible) ---
-
     /// Dominant cognitive layer (0-9 → L1-L10) that produced this output.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub dominant_layer: Option<u8>,
@@ -465,7 +462,10 @@ mod tests {
 
         let json = serde_json::to_string(&step).unwrap();
         let back: UnifiedStep = serde_json::from_str(&json).unwrap();
-        assert_eq!(back.reasoning.as_deref(), Some("Used web search to find latest papers"));
+        assert_eq!(
+            back.reasoning.as_deref(),
+            Some("Used web search to find latest papers")
+        );
         assert_eq!(back.confidence, Some(0.92));
         assert!(back.alternatives.is_some());
     }

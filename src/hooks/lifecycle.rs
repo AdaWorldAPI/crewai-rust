@@ -73,22 +73,14 @@ pub trait AgentHook: Send + Sync + 'static {
     /// - Update typing indicators on channels
     /// - Log the conversation state
     /// - Inject additional context
-    fn before_think(
-        &self,
-        _agent_id: &str,
-        _messages: &[LLMMessage],
-    ) -> Result<(), HookError> {
+    fn before_think(&self, _agent_id: &str, _messages: &[LLMMessage]) -> Result<(), HookError> {
         Ok(())
     }
 
     /// Called after the agent receives an LLM response.
     ///
     /// The response string can be observed (not modified — use a guardrail for that).
-    fn after_think(
-        &self,
-        _agent_id: &str,
-        _response: &str,
-    ) -> Result<(), HookError> {
+    fn after_think(&self, _agent_id: &str, _response: &str) -> Result<(), HookError> {
         Ok(())
     }
 
@@ -117,11 +109,7 @@ pub trait AgentHook: Send + Sync + 'static {
     }
 
     /// Called when an agent starts executing a task.
-    fn on_task_start(
-        &self,
-        _agent_id: &str,
-        _task_description: &str,
-    ) -> Result<(), HookError> {
+    fn on_task_start(&self, _agent_id: &str, _task_description: &str) -> Result<(), HookError> {
         Ok(())
     }
 
@@ -180,11 +168,7 @@ pub trait MemoryHook: Send + Sync + 'static {
     }
 
     /// Called when memories are recalled.
-    fn on_recall(
-        &self,
-        _query: &str,
-        _results: &[Value],
-    ) -> Result<(), HookError> {
+    fn on_recall(&self, _query: &str, _results: &[Value]) -> Result<(), HookError> {
         Ok(())
     }
 }
@@ -361,11 +345,7 @@ impl HookRegistry {
     }
 
     /// Invoke all agent hooks: before_think.
-    pub fn invoke_before_think(
-        &self,
-        agent_id: &str,
-        messages: &[LLMMessage],
-    ) {
+    pub fn invoke_before_think(&self, agent_id: &str, messages: &[LLMMessage]) {
         for hook in &self.agent_hooks {
             if let Err(e) = hook.before_think(agent_id, messages) {
                 log::warn!("AgentHook.before_think error: {}", e);
@@ -374,11 +354,7 @@ impl HookRegistry {
     }
 
     /// Invoke all agent hooks: after_think.
-    pub fn invoke_after_think(
-        &self,
-        agent_id: &str,
-        response: &str,
-    ) {
+    pub fn invoke_after_think(&self, agent_id: &str, response: &str) {
         for hook in &self.agent_hooks {
             if let Err(e) = hook.after_think(agent_id, response) {
                 log::warn!("AgentHook.after_think error: {}", e);
@@ -416,12 +392,7 @@ impl HookRegistry {
     }
 
     /// Invoke all agent hooks: on_stream_chunk.
-    pub fn invoke_on_stream_chunk(
-        &self,
-        agent_id: &str,
-        chunk: &str,
-        is_final: bool,
-    ) {
+    pub fn invoke_on_stream_chunk(&self, agent_id: &str, chunk: &str, is_final: bool) {
         for hook in &self.agent_hooks {
             if let Err(e) = hook.on_stream_chunk(agent_id, chunk, is_final) {
                 log::warn!("AgentHook.on_stream_chunk error: {}", e);
@@ -452,12 +423,7 @@ impl HookRegistry {
     }
 
     /// Invoke all model hooks: before_llm_call.
-    pub fn invoke_before_llm_call(
-        &self,
-        model: &str,
-        provider: &str,
-        message_count: usize,
-    ) {
+    pub fn invoke_before_llm_call(&self, model: &str, provider: &str, message_count: usize) {
         for hook in &self.model_hooks {
             if let Err(e) = hook.before_llm_call(model, provider, message_count) {
                 log::warn!("ModelHook.before_llm_call error: {}", e);
@@ -475,7 +441,9 @@ impl HookRegistry {
         success: bool,
     ) {
         for hook in &self.model_hooks {
-            if let Err(e) = hook.after_llm_call(model, provider, prompt_tokens, completion_tokens, success) {
+            if let Err(e) =
+                hook.after_llm_call(model, provider, prompt_tokens, completion_tokens, success)
+            {
                 log::warn!("ModelHook.after_llm_call error: {}", e);
             }
         }
@@ -562,18 +530,10 @@ mod tests {
             deny_tool: Some("dangerous_tool".into()),
         });
 
-        let action = registry.invoke_on_tool_request(
-            "agent-1",
-            "dangerous_tool",
-            &Value::Null,
-        );
+        let action = registry.invoke_on_tool_request("agent-1", "dangerous_tool", &Value::Null);
         assert!(matches!(action, ToolAction::Deny(_)));
 
-        let action = registry.invoke_on_tool_request(
-            "agent-1",
-            "safe_tool",
-            &Value::Null,
-        );
+        let action = registry.invoke_on_tool_request("agent-1", "safe_tool", &Value::Null);
         assert!(matches!(action, ToolAction::Allow));
     }
 

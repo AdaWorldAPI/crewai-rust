@@ -39,7 +39,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::thinking_style::{ThinkingStyle, StyleCluster, STYLE_VECTORS, STYLE_TO_TAU};
+use super::thinking_style::{StyleCluster, ThinkingStyle, STYLE_TO_TAU, STYLE_VECTORS};
 
 // ============================================================================
 // JIT Template types
@@ -139,7 +139,8 @@ impl JitProfile {
             }
 
             // Find the best-matching style in this cluster
-            let cluster_styles = ThinkingStyle::ALL.iter()
+            let cluster_styles = ThinkingStyle::ALL
+                .iter()
                 .filter(|s| s.cluster() == *cluster);
 
             let best = cluster_styles
@@ -167,7 +168,8 @@ impl JitProfile {
         templates.sort_by(|a, b| b.weight.partial_cmp(&a.weight).unwrap());
 
         // Determine dominant cluster
-        let dominant_cluster = templates.first()
+        let dominant_cluster = templates
+            .first()
             .map(|t| t.cluster)
             .unwrap_or(StyleCluster::Analytical);
 
@@ -195,7 +197,10 @@ impl JitProfile {
 
     /// Get templates for a specific cluster.
     pub fn by_cluster(&self, cluster: StyleCluster) -> Vec<&JitTemplate> {
-        self.templates.iter().filter(|t| t.cluster == cluster).collect()
+        self.templates
+            .iter()
+            .filter(|t| t.cluster == cluster)
+            .collect()
     }
 
     /// Check if recompilation is needed (config hash changed).
@@ -224,11 +229,11 @@ impl JitProfile {
 /// [9] crystallization → Meta + Exploratory
 /// ```
 fn compute_cluster_affinities(style: &[f32; 10]) -> Vec<(StyleCluster, f32)> {
-    let analytical = (style[0] * 0.3 + style[2] * 0.25 + style[3] * 0.15
-        + style[8] * 0.2 + style[9] * 0.1).min(1.0);
+    let analytical =
+        (style[0] * 0.3 + style[2] * 0.25 + style[3] * 0.15 + style[8] * 0.2 + style[9] * 0.1)
+            .min(1.0);
 
-    let creative = (style[1] * 0.3 + style[4] * 0.25 + style[6] * 0.25
-        + style[7] * 0.2).min(1.0);
+    let creative = (style[1] * 0.3 + style[4] * 0.25 + style[6] * 0.25 + style[7] * 0.2).min(1.0);
 
     let empathic = (style[1] * 0.4 + style[7] * 0.35 + style[5] * 0.25).min(1.0);
 
@@ -236,8 +241,9 @@ fn compute_cluster_affinities(style: &[f32; 10]) -> Vec<(StyleCluster, f32)> {
 
     let exploratory = (style[0] * 0.2 + style[6] * 0.4 + style[9] * 0.4).min(1.0);
 
-    let meta = (style[2] * 0.15 + style[5] * 0.2 + style[7] * 0.2
-        + style[8] * 0.2 + style[9] * 0.25).min(1.0);
+    let meta =
+        (style[2] * 0.15 + style[5] * 0.2 + style[7] * 0.2 + style[8] * 0.2 + style[9] * 0.25)
+            .min(1.0);
 
     vec![
         (StyleCluster::Analytical, analytical),
@@ -256,40 +262,60 @@ fn style_affinity(style: &ThinkingStyle, module_style: &[f32; 10]) -> f32 {
     let vec = style.vector();
 
     // Project 23D → 10-axis via dimension affinities
-    let recognition = *vec.get("analytical").unwrap_or(&0.0) * 0.5
-        + *vec.get("intuitive").unwrap_or(&0.0) * 0.5;
-    let resonance = *vec.get("emotional").unwrap_or(&0.0) * 0.5
-        + *vec.get("relational").unwrap_or(&0.0) * 0.5;
-    let appraisal = *vec.get("dialectic").unwrap_or(&0.0) * 0.5
-        + *vec.get("cognitive").unwrap_or(&0.0) * 0.5;
+    let recognition =
+        *vec.get("analytical").unwrap_or(&0.0) * 0.5 + *vec.get("intuitive").unwrap_or(&0.0) * 0.5;
+    let resonance =
+        *vec.get("emotional").unwrap_or(&0.0) * 0.5 + *vec.get("relational").unwrap_or(&0.0) * 0.5;
+    let appraisal =
+        *vec.get("dialectic").unwrap_or(&0.0) * 0.5 + *vec.get("cognitive").unwrap_or(&0.0) * 0.5;
     let routing = *vec.get("instrumental").unwrap_or(&0.0) * 0.7
         + *vec.get("analytical").unwrap_or(&0.0) * 0.3;
-    let execution = *vec.get("instrumental").unwrap_or(&0.0) * 0.5
-        + *vec.get("creative").unwrap_or(&0.0) * 0.5;
-    let delegation = *vec.get("meta").unwrap_or(&0.0) * 0.5
-        + *vec.get("autonomy").unwrap_or(&0.0) * 0.5;
+    let execution =
+        *vec.get("instrumental").unwrap_or(&0.0) * 0.5 + *vec.get("creative").unwrap_or(&0.0) * 0.5;
+    let delegation =
+        *vec.get("meta").unwrap_or(&0.0) * 0.5 + *vec.get("autonomy").unwrap_or(&0.0) * 0.5;
     let contingency = *vec.get("creative").unwrap_or(&0.0) * 0.4
         + *vec.get("spontaneity").unwrap_or(&0.0) * 0.3
         + *vec.get("existential").unwrap_or(&0.0) * 0.3;
-    let integration = *vec.get("receptivity").unwrap_or(&0.0) * 0.5
-        + *vec.get("meta").unwrap_or(&0.0) * 0.5;
-    let validation = *vec.get("analytical").unwrap_or(&0.0) * 0.5
-        + *vec.get("meta").unwrap_or(&0.0) * 0.5;
-    let crystallization = *vec.get("transcendent").unwrap_or(&0.0) * 0.5
-        + *vec.get("meta").unwrap_or(&0.0) * 0.5;
+    let integration =
+        *vec.get("receptivity").unwrap_or(&0.0) * 0.5 + *vec.get("meta").unwrap_or(&0.0) * 0.5;
+    let validation =
+        *vec.get("analytical").unwrap_or(&0.0) * 0.5 + *vec.get("meta").unwrap_or(&0.0) * 0.5;
+    let crystallization =
+        *vec.get("transcendent").unwrap_or(&0.0) * 0.5 + *vec.get("meta").unwrap_or(&0.0) * 0.5;
 
     let projected = [
-        recognition, resonance, appraisal, routing, execution,
-        delegation, contingency, integration, validation, crystallization,
+        recognition,
+        resonance,
+        appraisal,
+        routing,
+        execution,
+        delegation,
+        contingency,
+        integration,
+        validation,
+        crystallization,
     ];
 
     // Dot product (cosine-like affinity)
-    let dot: f32 = projected.iter().zip(module_style.iter())
+    let dot: f32 = projected
+        .iter()
+        .zip(module_style.iter())
         .map(|(a, b)| a * b)
         .sum();
 
-    let mag_a: f32 = projected.iter().map(|x| x * x).sum::<f32>().sqrt().max(0.001);
-    let mag_b: f32 = module_style.iter().map(|x| x * x).sum::<f32>().sqrt().max(0.001);
+    let mag_a: f32 = projected
+        .iter()
+        .map(|x| x * x)
+        .sum::<f32>()
+        .sqrt()
+        .max(0.001);
+    let mag_b: f32 = module_style
+        .iter()
+        .map(|x| x * x)
+        .sum::<f32>()
+        .sqrt()
+        .max(0.001);
 
     dot / (mag_a * mag_b)
 }
@@ -399,13 +425,14 @@ mod tests {
         // All τ addresses should be in valid ranges
         for &tau in &taus {
             assert!(
-                (0x20..=0x25).contains(&tau) ||
-                (0x40..=0x45).contains(&tau) ||
-                (0x60..=0x65).contains(&tau) ||
-                (0x80..=0x85).contains(&tau) ||
-                (0xA0..=0xA5).contains(&tau) ||
-                (0xC0..=0xC5).contains(&tau),
-                "Invalid τ address: {:#x}", tau,
+                (0x20..=0x25).contains(&tau)
+                    || (0x40..=0x45).contains(&tau)
+                    || (0x60..=0x65).contains(&tau)
+                    || (0x80..=0x85).contains(&tau)
+                    || (0xA0..=0xA5).contains(&tau)
+                    || (0xC0..=0xC5).contains(&tau),
+                "Invalid τ address: {:#x}",
+                tau,
             );
         }
     }

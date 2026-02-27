@@ -41,7 +41,11 @@ pub trait Converter {
 /// Validate a JSON string against a schema (represented as `Value`).
 ///
 /// Returns the parsed value if valid.
-pub fn validate_model(result: &str, _schema: &Value, is_json_output: bool) -> Result<Value, ConverterError> {
+pub fn validate_model(
+    result: &str,
+    _schema: &Value,
+    is_json_output: bool,
+) -> Result<Value, ConverterError> {
     let parsed: Value = serde_json::from_str(result)
         .map_err(|e| ConverterError::new(format!("JSON parse error: {}", e)))?;
 
@@ -53,7 +57,11 @@ pub fn validate_model(result: &str, _schema: &Value, is_json_output: bool) -> Re
 }
 
 /// Attempt to extract and parse partial JSON from a result string.
-pub fn handle_partial_json(result: &str, _schema: &Value, is_json_output: bool) -> Result<Value, ConverterError> {
+pub fn handle_partial_json(
+    result: &str,
+    _schema: &Value,
+    is_json_output: bool,
+) -> Result<Value, ConverterError> {
     // Try to find JSON object in the result
     if let Some(start) = result.find('{') {
         if let Some(end) = result.rfind('}') {

@@ -78,10 +78,7 @@ impl LongTermMemory {
     /// * `item` - The LongTermMemoryItem to save.
     pub fn save(&self, item: &LongTermMemoryItem) -> Result<(), anyhow::Error> {
         let mut metadata = item.metadata.clone();
-        metadata.insert(
-            "agent".to_string(),
-            Value::String(item.agent.clone()),
-        );
+        metadata.insert("agent".to_string(), Value::String(item.agent.clone()));
         metadata.insert(
             "expected_output".to_string(),
             Value::String(item.expected_output.clone()),
@@ -99,10 +96,7 @@ impl LongTermMemory {
     /// Save an item to long-term memory asynchronously.
     pub async fn asave(&self, item: &LongTermMemoryItem) -> Result<(), anyhow::Error> {
         let mut metadata = item.metadata.clone();
-        metadata.insert(
-            "agent".to_string(),
-            Value::String(item.agent.clone()),
-        );
+        metadata.insert("agent".to_string(), Value::String(item.agent.clone()));
         metadata.insert(
             "expected_output".to_string(),
             Value::String(item.expected_output.clone()),

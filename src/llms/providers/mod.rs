@@ -30,5 +30,5 @@ pub mod azure;
 pub mod bedrock;
 pub mod gemini;
 pub mod openai;
-pub mod xai;
 pub mod utils;
+pub mod xai;

@@ -98,7 +98,11 @@ pub struct SchemaVersion {
 
 impl SchemaVersion {
     pub fn new(major: u32, minor: u32, patch: u32) -> Self {
-        Self { major, minor, patch }
+        Self {
+            major,
+            minor,
+            patch,
+        }
     }
 
     /// Check compatibility: same major version is compatible.
@@ -238,8 +242,7 @@ impl DtoEnvelope {
     /// Create an envelope from an AgentFeedback.
     pub fn from_feedback(feedback: &AgentFeedback) -> Self {
         let payload = serde_json::to_value(feedback).unwrap_or_default();
-        Self::new("agent_feedback", DtoContentType::Json, payload)
-            .from_agent(&feedback.agent_id)
+        Self::new("agent_feedback", DtoContentType::Json, payload).from_agent(&feedback.agent_id)
     }
 
     /// Create an envelope from a SkillDescriptor.
@@ -333,11 +336,18 @@ impl DtoRegistry {
             content_type: DtoContentType::Delegation,
             description: "Request from one agent to delegate a sub-task to another".to_string(),
             required_fields: vec![
-                "id".into(), "from_agent".into(), "task_description".into(), "priority".into(),
+                "id".into(),
+                "from_agent".into(),
+                "task_description".into(),
+                "priority".into(),
             ],
             optional_fields: vec![
-                "to_agent".into(), "target_domain".into(), "required_skills".into(),
-                "context".into(), "max_turns".into(), "metadata".into(),
+                "to_agent".into(),
+                "target_domain".into(),
+                "required_skills".into(),
+                "context".into(),
+                "max_turns".into(),
+                "metadata".into(),
             ],
             domain: None,
             example: None,
@@ -348,12 +358,13 @@ impl DtoRegistry {
             version: SchemaVersion::new(1, 0, 0),
             content_type: DtoContentType::Delegation,
             description: "Response from a delegate agent back to the orchestrator".to_string(),
-            required_fields: vec![
-                "request_id".into(), "from_agent".into(), "success".into(),
-            ],
+            required_fields: vec!["request_id".into(), "from_agent".into(), "success".into()],
             optional_fields: vec![
-                "result".into(), "error".into(), "skills_used".into(),
-                "iterations_used".into(), "metadata".into(),
+                "result".into(),
+                "error".into(),
+                "skills_used".into(),
+                "iterations_used".into(),
+                "metadata".into(),
             ],
             domain: None,
             example: None,
@@ -365,12 +376,20 @@ impl DtoRegistry {
             content_type: DtoContentType::TaskResult,
             description: "A task managed by the meta-orchestrator".to_string(),
             required_fields: vec![
-                "id".into(), "description".into(), "status".into(), "priority".into(),
+                "id".into(),
+                "description".into(),
+                "status".into(),
+                "priority".into(),
             ],
             optional_fields: vec![
-                "context".into(), "dependencies".into(), "required_skills".into(),
-                "preferred_domain".into(), "assigned_agent".into(), "output".into(),
-                "error".into(), "metadata".into(),
+                "context".into(),
+                "dependencies".into(),
+                "required_skills".into(),
+                "preferred_domain".into(),
+                "assigned_agent".into(),
+                "output".into(),
+                "error".into(),
+                "metadata".into(),
             ],
             domain: None,
             example: None,
@@ -382,11 +401,17 @@ impl DtoRegistry {
             content_type: DtoContentType::Json,
             description: "Performance feedback for an agent's task execution".to_string(),
             required_fields: vec![
-                "id".into(), "agent_id".into(), "task_id".into(), "outcome".into(),
+                "id".into(),
+                "agent_id".into(),
+                "task_id".into(),
+                "outcome".into(),
             ],
             optional_fields: vec![
-                "relevant_skills".into(), "missing_skills".into(), "suggested_skills".into(),
-                "proficiency_deltas".into(), "notes".into(),
+                "relevant_skills".into(),
+                "missing_skills".into(),
+                "suggested_skills".into(),
+                "proficiency_deltas".into(),
+                "notes".into(),
             ],
             domain: None,
             example: None,
@@ -399,8 +424,12 @@ impl DtoRegistry {
             description: "Describes a specific skill that an agent possesses".to_string(),
             required_fields: vec!["id".into(), "name".into(), "description".into()],
             optional_fields: vec![
-                "tags".into(), "input_modes".into(), "output_modes".into(),
-                "proficiency".into(), "required_tools".into(), "max_concurrent".into(),
+                "tags".into(),
+                "input_modes".into(),
+                "output_modes".into(),
+                "proficiency".into(),
+                "required_tools".into(),
+                "max_concurrent".into(),
             ],
             domain: None,
             example: None,
@@ -412,8 +441,11 @@ impl DtoRegistry {
             content_type: DtoContentType::Capability,
             description: "Notification that an agent's capabilities have changed".to_string(),
             required_fields: vec![
-                "agent_id".into(), "skills".into(), "performance_score".into(),
-                "domain".into(), "trigger".into(),
+                "agent_id".into(),
+                "skills".into(),
+                "performance_score".into(),
+                "domain".into(),
+                "trigger".into(),
             ],
             optional_fields: vec![],
             domain: None,
@@ -437,12 +469,19 @@ impl DtoRegistry {
             content_type: DtoContentType::Json,
             description: "Template for spawning an agent with specific capabilities".to_string(),
             required_fields: vec![
-                "id".into(), "role".into(), "goal".into(), "backstory".into(),
-                "llm".into(), "domain".into(),
+                "id".into(),
+                "role".into(),
+                "goal".into(),
+                "backstory".into(),
+                "llm".into(),
+                "domain".into(),
             ],
             optional_fields: vec![
-                "skills".into(), "tools".into(), "max_iter".into(),
-                "allow_delegation".into(), "config".into(),
+                "skills".into(),
+                "tools".into(),
+                "max_iter".into(),
+                "allow_delegation".into(),
+                "config".into(),
             ],
             domain: None,
             example: None,
@@ -454,11 +493,17 @@ impl DtoRegistry {
             content_type: DtoContentType::Json,
             description: "A registered savant instance with live state".to_string(),
             required_fields: vec![
-                "id".into(), "domain".into(), "skills".into(), "blueprint_id".into(),
-                "busy".into(), "performance_score".into(),
+                "id".into(),
+                "domain".into(),
+                "skills".into(),
+                "blueprint_id".into(),
+                "busy".into(),
+                "performance_score".into(),
             ],
             optional_fields: vec![
-                "current_task".into(), "delegation_targets".into(), "auto_spawned".into(),
+                "current_task".into(),
+                "delegation_targets".into(),
+                "auto_spawned".into(),
             ],
             domain: None,
             example: None,
@@ -470,8 +515,12 @@ impl DtoRegistry {
             content_type: DtoContentType::Delegation,
             description: "Record of a cross-domain delegation between savants".to_string(),
             required_fields: vec![
-                "id".into(), "from_savant".into(), "from_domain".into(),
-                "to_savant".into(), "to_domain".into(), "task_description".into(),
+                "id".into(),
+                "from_savant".into(),
+                "from_domain".into(),
+                "to_savant".into(),
+                "to_domain".into(),
+                "task_description".into(),
             ],
             optional_fields: vec!["success".into(), "result".into()],
             domain: None,
@@ -483,9 +532,7 @@ impl DtoRegistry {
             version: SchemaVersion::new(1, 0, 0),
             content_type: DtoContentType::Json,
             description: "Result of skill-based routing to a savant".to_string(),
-            required_fields: vec![
-                "savant_id".into(), "match_score".into(), "domain".into(),
-            ],
+            required_fields: vec!["savant_id".into(), "match_score".into(), "domain".into()],
             optional_fields: vec!["matched_skills".into(), "auto_spawned".into()],
             domain: None,
             example: None,
@@ -524,12 +571,14 @@ impl DtoRegistry {
     pub fn validate(&self, schema_name: &str, data: &Value) -> ValidationResult {
         let schema = match self.schemas.get(schema_name) {
             Some(s) => s,
-            None => return ValidationResult {
-                valid: false,
-                schema: schema_name.to_string(),
-                errors: vec![format!("Schema '{}' not registered", schema_name)],
-                warnings: Vec::new(),
-            },
+            None => {
+                return ValidationResult {
+                    valid: false,
+                    schema: schema_name.to_string(),
+                    errors: vec![format!("Schema '{}' not registered", schema_name)],
+                    warnings: Vec::new(),
+                }
+            }
         };
 
         let mut errors = Vec::new();
@@ -544,7 +593,9 @@ impl DtoRegistry {
             }
 
             // Warn about unknown fields
-            let all_known: Vec<&str> = schema.required_fields.iter()
+            let all_known: Vec<&str> = schema
+                .required_fields
+                .iter()
                 .chain(schema.optional_fields.iter())
                 .map(|s| s.as_str())
                 .collect();
@@ -596,11 +647,7 @@ impl DtoRegistry {
     }
 
     /// Check if an agent's output schema is compatible with another agent's input.
-    pub fn agents_compatible(
-        &mut self,
-        output_schema: &str,
-        input_schema: &str,
-    ) -> bool {
+    pub fn agents_compatible(&mut self, output_schema: &str, input_schema: &str) -> bool {
         self.schemas_compatible(output_schema, input_schema)
     }
 
@@ -671,14 +718,16 @@ impl DtoRegistry {
 
     /// Get schemas for a specific content type.
     pub fn schemas_for_type(&self, content_type: DtoContentType) -> Vec<&DtoSchema> {
-        self.schemas.values()
+        self.schemas
+            .values()
             .filter(|s| s.content_type == content_type)
             .collect()
     }
 
     /// Get schemas for a specific domain.
     pub fn schemas_for_domain(&self, domain: SavantDomain) -> Vec<&DtoSchema> {
-        self.schemas.values()
+        self.schemas
+            .values()
             .filter(|s| s.domain == Some(domain))
             .collect()
     }
@@ -706,9 +755,7 @@ impl std::fmt::Debug for DtoRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::meta_agents::delegation::{
-        CapabilityUpdateTrigger, TaskOutcome,
-    };
+    use crate::meta_agents::delegation::{CapabilityUpdateTrigger, TaskOutcome};
     use crate::meta_agents::types::TaskPriority;
 
     #[test]
@@ -838,7 +885,11 @@ mod tests {
             "priority": "high"
         });
         let result = registry.validate("delegation_request", &data);
-        assert!(result.valid, "Expected valid, got errors: {:?}", result.errors);
+        assert!(
+            result.valid,
+            "Expected valid, got errors: {:?}",
+            result.errors
+        );
     }
 
     #[test]
@@ -865,11 +916,14 @@ mod tests {
     #[test]
     fn test_validate_envelope() {
         let registry = DtoRegistry::new();
-        let task = OrchestratedTask::new("Test task")
-            .with_priority(TaskPriority::High);
+        let task = OrchestratedTask::new("Test task").with_priority(TaskPriority::High);
         let envelope = DtoEnvelope::from_task(&task);
         let result = registry.validate_envelope(&envelope);
-        assert!(result.valid, "Expected valid, got errors: {:?}", result.errors);
+        assert!(
+            result.valid,
+            "Expected valid, got errors: {:?}",
+            result.errors
+        );
     }
 
     #[test]
@@ -913,7 +967,10 @@ mod tests {
     fn test_content_type_display() {
         assert_eq!(DtoContentType::Json.to_string(), "application/json");
         assert_eq!(DtoContentType::Text.to_string(), "text/plain");
-        assert_eq!(DtoContentType::Delegation.to_string(), "application/x-delegation");
+        assert_eq!(
+            DtoContentType::Delegation.to_string(),
+            "application/x-delegation"
+        );
         assert_eq!(DtoContentType::Event.to_string(), "application/x-event");
     }
 
@@ -944,7 +1001,10 @@ mod tests {
         assert_eq!(env.source_agent, Some("agent-1".to_string()));
         assert_eq!(env.target_agent, Some("agent-2".to_string()));
         assert_eq!(env.source_domain, Some(SavantDomain::Engineering));
-        assert_eq!(env.metadata.get("key"), Some(&Value::String("value".to_string())));
+        assert_eq!(
+            env.metadata.get("key"),
+            Some(&Value::String("value".to_string()))
+        );
     }
 
     #[test]

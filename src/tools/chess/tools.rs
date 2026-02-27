@@ -51,28 +51,32 @@ pub fn chess_evaluate_tool() -> CrewStructuredTool {
          and position flags (check, checkmate, stalemate).",
         chess_evaluate_schema(),
         Arc::new(|args: HashMap<String, Value>| {
-            let fen = args.get("fen")
+            let fen = args
+                .get("fen")
                 .and_then(|v| v.as_str())
                 .unwrap_or("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-            let depth = args.get("depth")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(5) as u8;
+            let depth = args.get("depth").and_then(|v| v.as_u64()).unwrap_or(5) as u8;
 
-            let board = Board::from_str(fen)
-                .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
+            let board =
+                Board::from_str(fen).map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
                     format!("Invalid FEN: {}", e).into()
                 })?;
 
             let analysis = stonksfish::uci::analyze_position(&board, depth);
 
-            let top_moves: Vec<Value> = analysis.legal_moves.iter().take(10).map(|m| {
-                json!({
-                    "uci": m.uci,
-                    "eval_cp": m.eval_cp,
-                    "is_capture": m.is_capture,
-                    "is_check": m.is_check,
+            let top_moves: Vec<Value> = analysis
+                .legal_moves
+                .iter()
+                .take(10)
+                .map(|m| {
+                    json!({
+                        "uci": m.uci,
+                        "eval_cp": m.eval_cp,
+                        "is_capture": m.is_capture,
+                        "is_check": m.is_check,
+                    })
                 })
-            }).collect();
+                .collect();
 
             Ok(json!({
                 "fen": analysis.fen,
@@ -127,15 +131,14 @@ pub fn chess_legal_moves_tool() -> CrewStructuredTool {
          Returns array of moves in UCI format with metadata (capture, check, promotion).",
         chess_legal_moves_schema(),
         Arc::new(|args: HashMap<String, Value>| {
-            let fen = args.get("fen")
+            let fen = args
+                .get("fen")
                 .and_then(|v| v.as_str())
                 .unwrap_or("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-            let filter = args.get("filter")
-                .and_then(|v| v.as_str())
-                .unwrap_or("all");
+            let filter = args.get("filter").and_then(|v| v.as_str()).unwrap_or("all");
 
-            let board = Board::from_str(fen)
-                .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
+            let board =
+                Board::from_str(fen).map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
                     format!("Invalid FEN: {}", e).into()
                 })?;
 
@@ -157,11 +160,16 @@ pub fn chess_legal_moves_tool() -> CrewStructuredTool {
                 };
 
                 if include {
-                    let promo = chess_move.get_promotion().map(|p| match p {
-                        Piece::Queen => "q", Piece::Rook => "r",
-                        Piece::Bishop => "b", Piece::Knight => "n",
-                        _ => "",
-                    }).unwrap_or("");
+                    let promo = chess_move
+                        .get_promotion()
+                        .map(|p| match p {
+                            Piece::Queen => "q",
+                            Piece::Rook => "r",
+                            Piece::Bishop => "b",
+                            Piece::Knight => "n",
+                            _ => "",
+                        })
+                        .unwrap_or("");
                     let uci = format!(
                         "{}{}{}",
                         chess_move.get_source(),
@@ -298,17 +306,20 @@ fn parse_call_cypher(
     params: &Value,
 ) -> Result<(String, Vec<neo4j_rs::Value>), Box<dyn std::error::Error + Send + Sync>> {
     // Extract: CALL chess.evaluate($fen) or CALL chess.similar('fen', 10)
-    let call_start = cypher.find("chess.")
+    let call_start = cypher
+        .find("chess.")
         .ok_or("No chess procedure found in query")?;
     let after_chess = &cypher[call_start..];
 
     // Find procedure name (up to '(')
-    let paren = after_chess.find('(')
+    let paren = after_chess
+        .find('(')
         .ok_or("Missing '(' in CALL statement")?;
     let proc_name = after_chess[..paren].to_string();
 
     // Extract arguments between ( and )
-    let close_paren = after_chess.find(')')
+    let close_paren = after_chess
+        .find(')')
         .ok_or("Missing ')' in CALL statement")?;
     let args_str = after_chess[paren + 1..close_paren].trim();
 
@@ -326,9 +337,7 @@ fn parse_call_cypher(
                 }
             } else if arg.starts_with('\'') && arg.ends_with('\'') {
                 // String literal
-                proc_args.push(neo4j_rs::Value::String(
-                    arg[1..arg.len()-1].to_string()
-                ));
+                proc_args.push(neo4j_rs::Value::String(arg[1..arg.len() - 1].to_string()));
             } else if let Ok(n) = arg.parse::<i64>() {
                 proc_args.push(neo4j_rs::Value::Int(n));
             } else if let Ok(f) = arg.parse::<f64>() {
@@ -415,51 +424,52 @@ pub fn ladybug_similarity_tool() -> CrewStructuredTool {
          and position metadata (eval, phase, opening).",
         ladybug_similarity_schema(),
         Arc::new(|args: HashMap<String, Value>| {
-            let fen = args.get("fen")
+            let fen = args
+                .get("fen")
                 .and_then(|v| v.as_str())
                 .unwrap_or("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-            let k = args.get("k")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(10) as usize;
-            let threshold = args.get("threshold")
+            let k = args.get("k").and_then(|v| v.as_u64()).unwrap_or(10) as usize;
+            let threshold = args
+                .get("threshold")
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.7);
 
             use ladybug::chess::ChessFingerprint;
 
-            let query_fp = ChessFingerprint::from_fen(fen)
-                .ok_or_else(|| -> Box<dyn std::error::Error + Send + Sync> {
+            let query_fp = ChessFingerprint::from_fen(fen).ok_or_else(
+                || -> Box<dyn std::error::Error + Send + Sync> {
                     format!("Invalid FEN for fingerprinting: {}", fen).into()
-                })?;
+                },
+            )?;
 
             // Reference positions — seed corpus for similarity comparison.
             // In production this is populated from aiwar-neo4j-harvest Opening nodes
             // stored in ladybug LanceDB. For now, canonical opening positions.
             let reference_fens = [
-                "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",  // 1.e4
-                "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1",   // 1.d4
-                "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq c3 0 1",   // 1.c4
-                "rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2",  // Alekhine
-                "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",  // French
+                "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", // 1.e4
+                "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq d3 0 1", // 1.d4
+                "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq c3 0 1", // 1.c4
+                "rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2", // Alekhine
+                "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2", // French
                 "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2", // Sicilian
-                "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1",    // 1.Nf3
+                "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1",  // 1.Nf3
                 "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2", // 1...e5
                 "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2", // Ruy Lopez
                 "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", // Italian
-                "rnbqkbnr/pppp1ppp/8/4p3/3PP3/8/PPP2PPP/RNBQKBNR b KQkq d3 0 2",  // Center Game
-                "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2",  // QGD
+                "rnbqkbnr/pppp1ppp/8/4p3/3PP3/8/PPP2PPP/RNBQKBNR b KQkq d3 0 2", // Center Game
+                "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2", // QGD
             ];
 
-            let candidates: Vec<(String, _)> = reference_fens.iter()
+            let candidates: Vec<(String, _)> = reference_fens
+                .iter()
                 .filter(|&&f| f != fen)
-                .filter_map(|&f| {
-                    ChessFingerprint::from_fen(f).map(|fp| (f.to_string(), fp))
-                })
+                .filter_map(|&f| ChessFingerprint::from_fen(f).map(|fp| (f.to_string(), fp)))
                 .collect();
 
             let results = ChessFingerprint::resonate(&query_fp, &candidates, k);
 
-            let result_json: Vec<Value> = results.iter()
+            let result_json: Vec<Value> = results
+                .iter()
                 .filter(|(_, sim, _)| *sim >= threshold as f32)
                 .map(|(result_fen, similarity, hamming_dist)| {
                     json!({
@@ -540,23 +550,24 @@ pub fn chess_whatif_tool() -> CrewStructuredTool {
          Each branch can be independently evaluated by specialist agents.",
         chess_whatif_schema(),
         Arc::new(|args: HashMap<String, Value>| {
-            let fen = args.get("fen")
+            let fen = args
+                .get("fen")
                 .and_then(|v| v.as_str())
                 .unwrap_or("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-            let mode = args.get("mode")
+            let mode = args
+                .get("mode")
                 .and_then(|v| v.as_str())
                 .unwrap_or("normal");
-            let depth = args.get("depth")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(32) as u8;
-            let width = args.get("width")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(3) as usize;
-            let budget = args.get("budget")
+            let depth = args.get("depth").and_then(|v| v.as_u64()).unwrap_or(32) as u8;
+            let width = args.get("width").and_then(|v| v.as_u64()).unwrap_or(3) as usize;
+            let budget = args
+                .get("budget")
                 .and_then(|v| v.as_u64())
                 .unwrap_or(10_000) as usize;
 
-            use stonksfish::whatif::{BranchConfig, generate_branch_tree, tree_to_json, tree_summary};
+            use stonksfish::whatif::{
+                generate_branch_tree, tree_summary, tree_to_json, BranchConfig,
+            };
 
             let config = match mode {
                 "quick" => BranchConfig::quick(),
@@ -569,10 +580,11 @@ pub fn chess_whatif_tool() -> CrewStructuredTool {
                 },
             };
 
-            let tree = generate_branch_tree(fen, &config)
-                .ok_or_else(|| -> Box<dyn std::error::Error + Send + Sync> {
+            let tree = generate_branch_tree(fen, &config).ok_or_else(
+                || -> Box<dyn std::error::Error + Send + Sync> {
                     format!("Invalid FEN for branching: {}", fen).into()
-                })?;
+                },
+            )?;
 
             let summary = tree_summary(&tree);
             let tree_json = tree_to_json(&tree);
@@ -643,19 +655,19 @@ pub fn chess_vsa_encode_tool() -> CrewStructuredTool {
         Arc::new(|args: HashMap<String, Value>| {
             use ladybug::core::{Fingerprint, VsaOps};
 
-            let moves = args.get("moves")
-                .and_then(|v| v.as_array())
-                .ok_or_else(|| -> Box<dyn std::error::Error + Send + Sync> {
-                    "Missing 'moves' array".into()
-                })?;
+            let moves = args.get("moves").and_then(|v| v.as_array()).ok_or_else(
+                || -> Box<dyn std::error::Error + Send + Sync> { "Missing 'moves' array".into() },
+            )?;
 
-            let fen = args.get("fen")
+            let fen = args
+                .get("fen")
                 .and_then(|v| v.as_str())
                 .unwrap_or("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
             // Encode each move as a fingerprint using content-based hashing.
             // The move UCI string becomes a unique hypervector.
-            let move_fps: Vec<Fingerprint> = moves.iter()
+            let move_fps: Vec<Fingerprint> = moves
+                .iter()
                 .filter_map(|m| m.as_str())
                 .map(|uci| Fingerprint::from_content(&format!("chess_move:{}", uci)))
                 .collect();
@@ -673,14 +685,18 @@ pub fn chess_vsa_encode_tool() -> CrewStructuredTool {
             let anchored_fp = sequence_fp.bind(&pos_fp);
 
             // Compute some stats
-            let individual_sims: Vec<Value> = move_fps.iter().enumerate().map(|(i, fp)| {
-                json!({
-                    "move_index": i,
-                    "move": moves[i],
-                    "similarity_to_sequence": fp.similarity(&sequence_fp),
-                    "popcount": fp.popcount(),
+            let individual_sims: Vec<Value> = move_fps
+                .iter()
+                .enumerate()
+                .map(|(i, fp)| {
+                    json!({
+                        "move_index": i,
+                        "move": moves[i],
+                        "similarity_to_sequence": fp.similarity(&sequence_fp),
+                        "popcount": fp.popcount(),
+                    })
                 })
-            }).collect();
+                .collect();
 
             Ok(json!({
                 "move_count": move_fps.len(),
@@ -854,13 +870,12 @@ pub fn thinking_style_tool() -> CrewStructuredTool {
         Arc::new(|args: HashMap<String, Value>| {
             use ladybug::cognitive::ThinkingStyle;
 
-            let style_name = args.get("style")
+            let style_name = args
+                .get("style")
                 .and_then(|v| v.as_str())
                 .unwrap_or("deliberate");
 
-            let context = args.get("context")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
+            let context = args.get("context").and_then(|v| v.as_str()).unwrap_or("");
 
             let style = match style_name {
                 "analytical" => ThinkingStyle::Analytical,

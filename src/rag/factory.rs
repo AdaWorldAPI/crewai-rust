@@ -29,12 +29,8 @@ use crate::rag::qdrant::QdrantClient;
 /// ```
 pub fn create_client(config: &RagConfigType) -> Result<Box<dyn BaseClient>, anyhow::Error> {
     match config.provider() {
-        SupportedProvider::Chromadb => {
-            create_chromadb_client(config)
-        }
-        SupportedProvider::Qdrant => {
-            create_qdrant_client(config)
-        }
+        SupportedProvider::Chromadb => create_chromadb_client(config),
+        SupportedProvider::Qdrant => create_qdrant_client(config),
     }
 }
 

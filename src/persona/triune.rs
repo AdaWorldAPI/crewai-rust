@@ -592,7 +592,11 @@ mod tests {
             let composite = facet.default_composite();
             assert!(!composite.components.is_empty());
             let sum: f32 = composite.components.iter().map(|(_, w)| w).sum();
-            assert!((sum - 1.0).abs() < 0.01, "{:?} weights don't sum to 1.0", facet);
+            assert!(
+                (sum - 1.0).abs() < 0.01,
+                "{:?} weights don't sum to 1.0",
+                facet
+            );
         }
     }
 
@@ -629,7 +633,11 @@ mod tests {
     fn test_yaml_uses_triune_namespace() {
         for facet in Facet::ALL {
             let yaml = facet.default_module_yaml();
-            assert!(yaml.contains("triune:"), "{:?} YAML should use triune namespace", facet);
+            assert!(
+                yaml.contains("triune:"),
+                "{:?} YAML should use triune namespace",
+                facet
+            );
         }
     }
 }

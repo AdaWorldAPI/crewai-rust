@@ -98,10 +98,7 @@ impl BaseEmbedding for RoboflowEmbedding {
     }
 
     async fn embed_documents(&self, documents: &[String]) -> Vec<EmbeddingResult> {
-        log::debug!(
-            "Roboflow embed_documents: {} documents",
-            documents.len()
-        );
+        log::debug!("Roboflow embed_documents: {} documents", documents.len());
         documents.iter().map(|_| Vec::new()).collect()
     }
 }

@@ -35,7 +35,11 @@ pub struct BlackboardSlot {
 
 impl BlackboardSlot {
     /// Create a new slot from raw bytes.
-    pub fn from_bytes(payload: bytes::Bytes, source: impl Into<String>, step_type: impl Into<String>) -> Self {
+    pub fn from_bytes(
+        payload: bytes::Bytes,
+        source: impl Into<String>,
+        step_type: impl Into<String>,
+    ) -> Self {
         Self {
             payload,
             structured: None,
@@ -54,7 +58,11 @@ impl BlackboardSlot {
     ///
     /// Serializes the value to bytes for zero-copy sharing, and keeps
     /// the structured view.
-    pub fn from_value(value: Value, source: impl Into<String>, step_type: impl Into<String>) -> Self {
+    pub fn from_value(
+        value: Value,
+        source: impl Into<String>,
+        step_type: impl Into<String>,
+    ) -> Self {
         let payload = bytes::Bytes::from(serde_json::to_vec(&value).unwrap_or_default());
         Self {
             payload,
@@ -129,8 +137,7 @@ mod tests {
     #[test]
     fn test_slot_confidence() {
         let data = bytes::Bytes::from_static(b"data");
-        let slot = BlackboardSlot::from_bytes(data, "test", "oc.agent.think")
-            .with_confidence(0.85);
+        let slot = BlackboardSlot::from_bytes(data, "test", "oc.agent.think").with_confidence(0.85);
         assert_eq!(slot.meta.confidence, 0.85);
     }
 }

@@ -26,7 +26,7 @@ use crate::a2a::client::{
     A2AMessage, A2ATask, A2ATaskState, A2ATaskStatus, AgentCapabilities, AgentCard, AgentProvider,
     AgentSkill,
 };
-use crate::a2a::errors::{A2AErrorCode, create_error_response};
+use crate::a2a::errors::{create_error_response, A2AErrorCode};
 use crate::a2a::types::PartsDict;
 
 // ---------------------------------------------------------------------------
@@ -101,7 +101,11 @@ fn build_agent_card() -> AgentCard {
                 ),
                 input_modes: vec!["application/json".to_string()],
                 output_modes: vec!["application/json".to_string()],
-                tags: vec!["crew".to_string(), "agent".to_string(), "execution".to_string()],
+                tags: vec![
+                    "crew".to_string(),
+                    "agent".to_string(),
+                    "execution".to_string(),
+                ],
             },
             AgentSkill {
                 id: "barrier.check".to_string(),
@@ -124,12 +128,15 @@ fn build_agent_card() -> AgentCard {
                 id: "barrier.topology".to_string(),
                 name: "Triune Topology".to_string(),
                 description: Some(
-                    "Guardian/Driver/Catalyst facet intensities, strategy, and balance"
-                        .to_string(),
+                    "Guardian/Driver/Catalyst facet intensities, strategy, and balance".to_string(),
                 ),
                 input_modes: vec!["application/json".to_string()],
                 output_modes: vec!["application/json".to_string()],
-                tags: vec!["barrier".to_string(), "triune".to_string(), "topology".to_string()],
+                tags: vec![
+                    "barrier".to_string(),
+                    "triune".to_string(),
+                    "topology".to_string(),
+                ],
             },
             AgentSkill {
                 id: "chat".to_string(),
@@ -186,7 +193,10 @@ async fn jsonrpc_handler(
         }
     };
 
-    let params = body.get("params").cloned().unwrap_or(Value::Object(Default::default()));
+    let params = body
+        .get("params")
+        .cloned()
+        .unwrap_or(Value::Object(Default::default()));
 
     match method {
         "message/send" => handle_message_send(&state, params, request_id),
@@ -205,11 +215,7 @@ async fn jsonrpc_handler(
 // method: message/send
 // ---------------------------------------------------------------------------
 
-fn handle_message_send(
-    state: &A2AState,
-    params: Value,
-    request_id: Option<Value>,
-) -> Json<Value> {
+fn handle_message_send(state: &A2AState, params: Value, request_id: Option<Value>) -> Json<Value> {
     // Parse the message from params
     let message = match params.get("message") {
         Some(msg_val) => {
@@ -224,10 +230,12 @@ fn handle_message_send(
                 .map(|arr| {
                     arr.iter()
                         .filter_map(|p| {
-                            p.get("text").and_then(|t| t.as_str()).map(|text| PartsDict {
-                                text: text.to_string(),
-                                metadata: None,
-                            })
+                            p.get("text")
+                                .and_then(|t| t.as_str())
+                                .map(|text| PartsDict {
+                                    text: text.to_string(),
+                                    metadata: None,
+                                })
                         })
                         .collect::<Vec<_>>()
                 })
@@ -317,12 +325,12 @@ fn handle_message_send(
 // method: tasks/get
 // ---------------------------------------------------------------------------
 
-fn handle_tasks_get(
-    state: &A2AState,
-    params: Value,
-    request_id: Option<Value>,
-) -> Json<Value> {
-    let task_id = match params.get("task_id").or_else(|| params.get("id")).and_then(|v| v.as_str()) {
+fn handle_tasks_get(state: &A2AState, params: Value, request_id: Option<Value>) -> Json<Value> {
+    let task_id = match params
+        .get("task_id")
+        .or_else(|| params.get("id"))
+        .and_then(|v| v.as_str())
+    {
         Some(id) => id.to_string(),
         None => {
             return Json(create_error_response(
@@ -368,12 +376,12 @@ fn handle_tasks_get(
 // method: tasks/cancel
 // ---------------------------------------------------------------------------
 
-fn handle_tasks_cancel(
-    state: &A2AState,
-    params: Value,
-    request_id: Option<Value>,
-) -> Json<Value> {
-    let task_id = match params.get("task_id").or_else(|| params.get("id")).and_then(|v| v.as_str()) {
+fn handle_tasks_cancel(state: &A2AState, params: Value, request_id: Option<Value>) -> Json<Value> {
+    let task_id = match params
+        .get("task_id")
+        .or_else(|| params.get("id"))
+        .and_then(|v| v.as_str())
+    {
         Some(id) => id.to_string(),
         None => {
             return Json(create_error_response(

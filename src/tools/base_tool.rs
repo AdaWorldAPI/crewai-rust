@@ -187,8 +187,11 @@ pub trait BaseTool: Send + Sync + fmt::Debug {
 // ---------------------------------------------------------------------------
 
 /// Type alias for a boxed synchronous tool function.
-pub type ToolFn =
-    Arc<dyn Fn(HashMap<String, Value>) -> Result<Value, Box<dyn std::error::Error + Send + Sync>> + Send + Sync>;
+pub type ToolFn = Arc<
+    dyn Fn(HashMap<String, Value>) -> Result<Value, Box<dyn std::error::Error + Send + Sync>>
+        + Send
+        + Sync,
+>;
 
 /// Concrete tool that wraps a callable function.
 ///
@@ -228,11 +231,7 @@ impl fmt::Debug for Tool {
 
 impl Tool {
     /// Create a new Tool wrapping the given function.
-    pub fn new(
-        name: impl Into<String>,
-        description: impl Into<String>,
-        func: ToolFn,
-    ) -> Self {
+    pub fn new(name: impl Into<String>, description: impl Into<String>, func: ToolFn) -> Self {
         Self {
             tool_name: name.into(),
             tool_description: description.into(),

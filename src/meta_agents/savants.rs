@@ -366,21 +366,36 @@ pub fn chess_tactician_savant(llm: &str) -> AgentBlueprint {
         SavantDomain::Chess,
     )
     .with_skill(
-        SkillDescriptor::new("tactical_calculation", "Tactical Calculation", "Calculate forcing sequences: checks, captures, threats")
-            .with_tags(vec!["chess".into(), "tactics".into(), "calculation".into(), "combination".into(), "sacrifice".into()])
-            .with_tools(vec!["chess_evaluate".into(), "chess_legal_moves".into()])
-            .with_proficiency(0.95)
+        SkillDescriptor::new(
+            "tactical_calculation",
+            "Tactical Calculation",
+            "Calculate forcing sequences: checks, captures, threats",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "tactics".into(),
+            "calculation".into(),
+            "combination".into(),
+            "sacrifice".into(),
+        ])
+        .with_tools(vec!["chess_evaluate".into(), "chess_legal_moves".into()])
+        .with_proficiency(0.95),
     )
     .with_skill(
-        SkillDescriptor::new("move_verification", "Move Verification", "Verify candidate moves for tactical correctness")
-            .with_tags(vec!["chess".into(), "verification".into(), "blunder_check".into()])
-            .with_tools(vec!["chess_evaluate".into()])
-            .with_proficiency(0.9)
+        SkillDescriptor::new(
+            "move_verification",
+            "Move Verification",
+            "Verify candidate moves for tactical correctness",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "verification".into(),
+            "blunder_check".into(),
+        ])
+        .with_tools(vec!["chess_evaluate".into()])
+        .with_proficiency(0.9),
     )
-    .with_tools(vec![
-        "chess_evaluate".into(),
-        "chess_legal_moves".into(),
-    ])
+    .with_tools(vec!["chess_evaluate".into(), "chess_legal_moves".into()])
 }
 
 #[cfg(feature = "chess")]
@@ -401,15 +416,33 @@ pub fn chess_endgame_savant(llm: &str) -> AgentBlueprint {
         SavantDomain::Chess,
     )
     .with_skill(
-        SkillDescriptor::new("endgame_theory", "Endgame Theory", "Apply theoretical endgame knowledge and tablebase results")
-            .with_tags(vec!["chess".into(), "endgame".into(), "tablebase".into(), "technique".into()])
-            .with_tools(vec!["chess_evaluate".into(), "neo4j_query".into()])
-            .with_proficiency(0.9)
+        SkillDescriptor::new(
+            "endgame_theory",
+            "Endgame Theory",
+            "Apply theoretical endgame knowledge and tablebase results",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "endgame".into(),
+            "tablebase".into(),
+            "technique".into(),
+        ])
+        .with_tools(vec!["chess_evaluate".into(), "neo4j_query".into()])
+        .with_proficiency(0.9),
     )
     .with_skill(
-        SkillDescriptor::new("pawn_endgame", "Pawn Endgame Analysis", "Evaluate pawn structures and promotion races in endgames")
-            .with_tags(vec!["chess".into(), "pawn".into(), "promotion".into(), "opposition".into()])
-            .with_proficiency(0.85)
+        SkillDescriptor::new(
+            "pawn_endgame",
+            "Pawn Endgame Analysis",
+            "Evaluate pawn structures and promotion races in endgames",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "pawn".into(),
+            "promotion".into(),
+            "opposition".into(),
+        ])
+        .with_proficiency(0.85),
     )
     .with_tools(vec![
         "chess_evaluate".into(),
@@ -439,15 +472,33 @@ pub fn chess_psychologist_savant(llm: &str) -> AgentBlueprint {
         SavantDomain::Chess,
     )
     .with_skill(
-        SkillDescriptor::new("opponent_modeling", "Opponent Modeling", "Analyze opponent game history and behavioral patterns")
-            .with_tags(vec!["chess".into(), "opponent".into(), "psychology".into(), "modeling".into(), "history".into()])
-            .with_tools(vec!["neo4j_query".into()])
-            .with_proficiency(0.8)
+        SkillDescriptor::new(
+            "opponent_modeling",
+            "Opponent Modeling",
+            "Analyze opponent game history and behavioral patterns",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "opponent".into(),
+            "psychology".into(),
+            "modeling".into(),
+            "history".into(),
+        ])
+        .with_tools(vec!["neo4j_query".into()])
+        .with_proficiency(0.8),
     )
     .with_skill(
-        SkillDescriptor::new("practical_play", "Practical Decision Making", "Choose moves that maximize practical winning chances")
-            .with_tags(vec!["chess".into(), "practical".into(), "winning_chances".into()])
-            .with_proficiency(0.8)
+        SkillDescriptor::new(
+            "practical_play",
+            "Practical Decision Making",
+            "Choose moves that maximize practical winning chances",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "practical".into(),
+            "winning_chances".into(),
+        ])
+        .with_proficiency(0.8),
     )
     .with_tools(vec!["neo4j_query".into()])
 }
@@ -470,21 +521,36 @@ pub fn chess_critic_savant(llm: &str) -> AgentBlueprint {
         SavantDomain::Chess,
     )
     .with_skill(
-        SkillDescriptor::new("refutation_search", "Refutation Search", "Find refutations and counterplay against proposed moves")
-            .with_tags(vec!["chess".into(), "refutation".into(), "counterplay".into(), "defense".into()])
-            .with_tools(vec!["chess_evaluate".into(), "chess_legal_moves".into()])
-            .with_proficiency(0.85)
+        SkillDescriptor::new(
+            "refutation_search",
+            "Refutation Search",
+            "Find refutations and counterplay against proposed moves",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "refutation".into(),
+            "counterplay".into(),
+            "defense".into(),
+        ])
+        .with_tools(vec!["chess_evaluate".into(), "chess_legal_moves".into()])
+        .with_proficiency(0.85),
     )
     .with_skill(
-        SkillDescriptor::new("danger_detection", "Danger Detection", "Identify hidden tactical and positional dangers")
-            .with_tags(vec!["chess".into(), "danger".into(), "trap".into(), "threat".into()])
-            .with_tools(vec!["chess_evaluate".into()])
-            .with_proficiency(0.85)
+        SkillDescriptor::new(
+            "danger_detection",
+            "Danger Detection",
+            "Identify hidden tactical and positional dangers",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "danger".into(),
+            "trap".into(),
+            "threat".into(),
+        ])
+        .with_tools(vec!["chess_evaluate".into()])
+        .with_proficiency(0.85),
     )
-    .with_tools(vec![
-        "chess_evaluate".into(),
-        "chess_legal_moves".into(),
-    ])
+    .with_tools(vec!["chess_evaluate".into(), "chess_legal_moves".into()])
 }
 
 #[cfg(feature = "chess")]
@@ -515,22 +581,55 @@ pub fn chess_advocatus_diaboli_savant(llm: &str) -> AgentBlueprint {
         SavantDomain::Chess,
     )
     .with_skill(
-        SkillDescriptor::new("opponent_simulation", "Opponent Simulation", "Role-play as the opponent to find their best plans and counterplay")
-            .with_tags(vec!["chess".into(), "opponent".into(), "simulation".into(), "adversarial".into(), "counterplan".into()])
-            .with_tools(vec!["chess_evaluate".into(), "chess_whatif".into(), "chess_legal_moves".into()])
-            .with_proficiency(0.9)
+        SkillDescriptor::new(
+            "opponent_simulation",
+            "Opponent Simulation",
+            "Role-play as the opponent to find their best plans and counterplay",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "opponent".into(),
+            "simulation".into(),
+            "adversarial".into(),
+            "counterplan".into(),
+        ])
+        .with_tools(vec![
+            "chess_evaluate".into(),
+            "chess_whatif".into(),
+            "chess_legal_moves".into(),
+        ])
+        .with_proficiency(0.9),
     )
     .with_skill(
-        SkillDescriptor::new("danger_scoring", "Danger Scoring", "Rate how dangerous each candidate move is from the opponent's perspective")
-            .with_tags(vec!["chess".into(), "danger".into(), "risk".into(), "scoring".into(), "adversarial".into()])
-            .with_tools(vec!["chess_evaluate".into()])
-            .with_proficiency(0.85)
+        SkillDescriptor::new(
+            "danger_scoring",
+            "Danger Scoring",
+            "Rate how dangerous each candidate move is from the opponent's perspective",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "danger".into(),
+            "risk".into(),
+            "scoring".into(),
+            "adversarial".into(),
+        ])
+        .with_tools(vec!["chess_evaluate".into()])
+        .with_proficiency(0.85),
     )
     .with_skill(
-        SkillDescriptor::new("counterplan_generation", "Counterplan Generation", "Generate concrete opponent counterplans using what-if branching")
-            .with_tags(vec!["chess".into(), "counterplan".into(), "whatif".into(), "branching".into()])
-            .with_tools(vec!["chess_whatif".into(), "neo4j_query".into()])
-            .with_proficiency(0.85)
+        SkillDescriptor::new(
+            "counterplan_generation",
+            "Counterplan Generation",
+            "Generate concrete opponent counterplans using what-if branching",
+        )
+        .with_tags(vec![
+            "chess".into(),
+            "counterplan".into(),
+            "whatif".into(),
+            "branching".into(),
+        ])
+        .with_tools(vec!["chess_whatif".into(), "neo4j_query".into()])
+        .with_proficiency(0.85),
     )
     .with_tools(vec![
         "chess_evaluate".into(),
@@ -575,16 +674,42 @@ pub fn programming_awareness_savant(llm: &str) -> AgentBlueprint {
         SavantDomain::ProgrammingAwareness,
     )
     .with_skill(
-        SkillDescriptor::new("code_understanding", "Code Understanding", "Parse and reason about code structure, types, and semantics")
-            .with_tags(vec!["code".into(), "analysis".into(), "AST".into(), "semantics".into()])
+        SkillDescriptor::new(
+            "code_understanding",
+            "Code Understanding",
+            "Parse and reason about code structure, types, and semantics",
+        )
+        .with_tags(vec![
+            "code".into(),
+            "analysis".into(),
+            "AST".into(),
+            "semantics".into(),
+        ]),
     )
     .with_skill(
-        SkillDescriptor::new("problem_decomposition", "Problem Decomposition", "Break complex programming problems into structured sub-problems")
-            .with_tags(vec!["decomposition".into(), "planning".into(), "architecture".into()])
+        SkillDescriptor::new(
+            "problem_decomposition",
+            "Problem Decomposition",
+            "Break complex programming problems into structured sub-problems",
+        )
+        .with_tags(vec![
+            "decomposition".into(),
+            "planning".into(),
+            "architecture".into(),
+        ]),
     )
     .with_skill(
-        SkillDescriptor::new("meta_reasoning", "Meta-Reasoning", "Reason about the reasoning process — evaluate approach quality, detect blind spots")
-            .with_tags(vec!["meta".into(), "reasoning".into(), "reflection".into(), "awareness".into()])
+        SkillDescriptor::new(
+            "meta_reasoning",
+            "Meta-Reasoning",
+            "Reason about the reasoning process — evaluate approach quality, detect blind spots",
+        )
+        .with_tags(vec![
+            "meta".into(),
+            "reasoning".into(),
+            "reflection".into(),
+            "awareness".into(),
+        ]),
     )
     .with_delegation()
 }
@@ -607,16 +732,37 @@ pub fn meta_orchestration_savant(llm: &str) -> AgentBlueprint {
         SavantDomain::MetaOrchestration,
     )
     .with_skill(
-        SkillDescriptor::new("task_routing", "Task Routing", "Route tasks to best-matching agents based on skills and availability")
-            .with_tags(vec!["routing".into(), "a2a".into(), "coordination".into()])
+        SkillDescriptor::new(
+            "task_routing",
+            "Task Routing",
+            "Route tasks to best-matching agents based on skills and availability",
+        )
+        .with_tags(vec!["routing".into(), "a2a".into(), "coordination".into()]),
     )
     .with_skill(
-        SkillDescriptor::new("agent_lifecycle", "Agent Lifecycle", "Spawn, monitor, adjust, and retire agents based on performance")
-            .with_tags(vec!["lifecycle".into(), "agents".into(), "management".into()])
+        SkillDescriptor::new(
+            "agent_lifecycle",
+            "Agent Lifecycle",
+            "Spawn, monitor, adjust, and retire agents based on performance",
+        )
+        .with_tags(vec![
+            "lifecycle".into(),
+            "agents".into(),
+            "management".into(),
+        ]),
     )
     .with_skill(
-        SkillDescriptor::new("workflow_optimization", "Workflow Optimization", "Optimize multi-agent workflow topology and communication patterns")
-            .with_tags(vec!["optimization".into(), "workflow".into(), "a2a".into(), "patterns".into()])
+        SkillDescriptor::new(
+            "workflow_optimization",
+            "Workflow Optimization",
+            "Optimize multi-agent workflow topology and communication patterns",
+        )
+        .with_tags(vec![
+            "optimization".into(),
+            "workflow".into(),
+            "a2a".into(),
+            "patterns".into(),
+        ]),
     )
     .with_delegation()
 }
@@ -639,16 +785,41 @@ pub fn problem_solving_savant(llm: &str) -> AgentBlueprint {
         SavantDomain::ProblemSolving,
     )
     .with_skill(
-        SkillDescriptor::new("hypothesis_generation", "Hypothesis Generation", "Generate plausible hypotheses for observed problems")
-            .with_tags(vec!["hypothesis".into(), "reasoning".into(), "generation".into()])
+        SkillDescriptor::new(
+            "hypothesis_generation",
+            "Hypothesis Generation",
+            "Generate plausible hypotheses for observed problems",
+        )
+        .with_tags(vec![
+            "hypothesis".into(),
+            "reasoning".into(),
+            "generation".into(),
+        ]),
     )
     .with_skill(
-        SkillDescriptor::new("evidence_evaluation", "Evidence Evaluation", "Evaluate evidence for/against hypotheses using NARS-style truth values")
-            .with_tags(vec!["evidence".into(), "evaluation".into(), "nars".into(), "truth".into()])
+        SkillDescriptor::new(
+            "evidence_evaluation",
+            "Evidence Evaluation",
+            "Evaluate evidence for/against hypotheses using NARS-style truth values",
+        )
+        .with_tags(vec![
+            "evidence".into(),
+            "evaluation".into(),
+            "nars".into(),
+            "truth".into(),
+        ]),
     )
     .with_skill(
-        SkillDescriptor::new("systematic_debugging", "Systematic Debugging", "Apply binary search and elimination strategies to isolate root causes")
-            .with_tags(vec!["debugging".into(), "elimination".into(), "root_cause".into()])
+        SkillDescriptor::new(
+            "systematic_debugging",
+            "Systematic Debugging",
+            "Apply binary search and elimination strategies to isolate root causes",
+        )
+        .with_tags(vec![
+            "debugging".into(),
+            "elimination".into(),
+            "root_cause".into(),
+        ]),
     )
     .with_delegation()
 }
@@ -820,7 +991,11 @@ mod tests {
     fn test_savant_skills_have_tags() {
         let bp = research_savant("openai/gpt-4o");
         for skill in &bp.skills {
-            assert!(!skill.tags.is_empty(), "Skill {} should have tags", skill.id);
+            assert!(
+                !skill.tags.is_empty(),
+                "Skill {} should have tags",
+                skill.id
+            );
         }
     }
 }

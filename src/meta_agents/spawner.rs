@@ -15,13 +15,12 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use super::delegation::{
-    DelegationDispatch, DelegationRequest, DelegationResponse, DelegationResult,
-    OrchestrationEvent,
+    DelegationDispatch, DelegationRequest, DelegationResponse, DelegationResult, OrchestrationEvent,
 };
 use super::savants;
 use super::types::{
-    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain,
-    SkillDescriptor, SpawnedAgentState, TaskPriority,
+    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain, SkillDescriptor,
+    SpawnedAgentState, TaskPriority,
 };
 
 // ---------------------------------------------------------------------------
@@ -84,41 +83,149 @@ impl SpawnerAgent {
         let blueprints = savants::all_savants(&llm);
 
         let mut domain_keywords = HashMap::new();
-        domain_keywords.insert(SavantDomain::Research, vec![
-            "research", "find", "search", "investigate", "discover", "explore",
-            "analyze", "study", "survey", "review literature", "look up", "information",
-        ]);
-        domain_keywords.insert(SavantDomain::Engineering, vec![
-            "code", "implement", "build", "develop", "program", "software",
-            "debug", "fix", "refactor", "architect", "design system", "deploy",
-            "api", "database", "backend", "frontend", "function", "class",
-        ]);
-        domain_keywords.insert(SavantDomain::DataAnalysis, vec![
-            "data", "analyze", "statistics", "metrics", "visualization", "chart",
-            "graph", "trend", "pattern", "correlation", "regression", "dashboard",
-            "csv", "dataset", "aggregate",
-        ]);
-        domain_keywords.insert(SavantDomain::ContentCreation, vec![
-            "write", "content", "document", "article", "blog", "essay", "report",
-            "copy", "draft", "edit", "proofread", "summarize", "narrative",
-        ]);
-        domain_keywords.insert(SavantDomain::Planning, vec![
-            "plan", "strategy", "organize", "roadmap", "timeline", "milestone",
-            "decompose", "prioritize", "schedule", "coordinate", "allocate",
-        ]);
-        domain_keywords.insert(SavantDomain::QualityAssurance, vec![
-            "test", "quality", "qa", "verify", "validate", "check", "review",
-            "regression", "edge case", "integration test", "unit test",
-        ]);
-        domain_keywords.insert(SavantDomain::Security, vec![
-            "security", "vulnerability", "audit", "penetration", "threat",
-            "authentication", "authorization", "encryption", "owasp", "secure",
-            "credential", "injection", "xss",
-        ]);
-        domain_keywords.insert(SavantDomain::DevOps, vec![
-            "deploy", "ci/cd", "docker", "kubernetes", "infrastructure",
-            "monitoring", "logging", "pipeline", "container", "cloud",
-        ]);
+        domain_keywords.insert(
+            SavantDomain::Research,
+            vec![
+                "research",
+                "find",
+                "search",
+                "investigate",
+                "discover",
+                "explore",
+                "analyze",
+                "study",
+                "survey",
+                "review literature",
+                "look up",
+                "information",
+            ],
+        );
+        domain_keywords.insert(
+            SavantDomain::Engineering,
+            vec![
+                "code",
+                "implement",
+                "build",
+                "develop",
+                "program",
+                "software",
+                "debug",
+                "fix",
+                "refactor",
+                "architect",
+                "design system",
+                "deploy",
+                "api",
+                "database",
+                "backend",
+                "frontend",
+                "function",
+                "class",
+            ],
+        );
+        domain_keywords.insert(
+            SavantDomain::DataAnalysis,
+            vec![
+                "data",
+                "analyze",
+                "statistics",
+                "metrics",
+                "visualization",
+                "chart",
+                "graph",
+                "trend",
+                "pattern",
+                "correlation",
+                "regression",
+                "dashboard",
+                "csv",
+                "dataset",
+                "aggregate",
+            ],
+        );
+        domain_keywords.insert(
+            SavantDomain::ContentCreation,
+            vec![
+                "write",
+                "content",
+                "document",
+                "article",
+                "blog",
+                "essay",
+                "report",
+                "copy",
+                "draft",
+                "edit",
+                "proofread",
+                "summarize",
+                "narrative",
+            ],
+        );
+        domain_keywords.insert(
+            SavantDomain::Planning,
+            vec![
+                "plan",
+                "strategy",
+                "organize",
+                "roadmap",
+                "timeline",
+                "milestone",
+                "decompose",
+                "prioritize",
+                "schedule",
+                "coordinate",
+                "allocate",
+            ],
+        );
+        domain_keywords.insert(
+            SavantDomain::QualityAssurance,
+            vec![
+                "test",
+                "quality",
+                "qa",
+                "verify",
+                "validate",
+                "check",
+                "review",
+                "regression",
+                "edge case",
+                "integration test",
+                "unit test",
+            ],
+        );
+        domain_keywords.insert(
+            SavantDomain::Security,
+            vec![
+                "security",
+                "vulnerability",
+                "audit",
+                "penetration",
+                "threat",
+                "authentication",
+                "authorization",
+                "encryption",
+                "owasp",
+                "secure",
+                "credential",
+                "injection",
+                "xss",
+            ],
+        );
+        domain_keywords.insert(
+            SavantDomain::DevOps,
+            vec![
+                "deploy",
+                "ci/cd",
+                "docker",
+                "kubernetes",
+                "infrastructure",
+                "monitoring",
+                "logging",
+                "pipeline",
+                "container",
+                "cloud",
+            ],
+        );
 
         Self {
             default_llm: llm,
@@ -147,7 +254,8 @@ impl SpawnerAgent {
     pub fn decompose(&self, objective: &str) -> DecompositionPlan {
         // Pass 1: Detect domains with scoring
         let domain_scores = self.score_domains(objective);
-        let active_domains: Vec<SavantDomain> = domain_scores.iter()
+        let active_domains: Vec<SavantDomain> = domain_scores
+            .iter()
             .filter(|(_, score)| **score > 0.0)
             .map(|(domain, _)| *domain)
             .collect();
@@ -178,7 +286,10 @@ impl SpawnerAgent {
         if has_synthesis {
             let dep_indices: Vec<usize> = (0..tasks.len()).collect();
             tasks.push(DecomposedTask {
-                description: format!("Synthesize all results into final deliverable for: {}", objective),
+                description: format!(
+                    "Synthesize all results into final deliverable for: {}",
+                    objective
+                ),
                 domain: if active_domains.contains(&SavantDomain::ContentCreation) {
                     SavantDomain::ContentCreation
                 } else {
@@ -222,11 +333,7 @@ impl SpawnerAgent {
     }
 
     /// Extract tasks from the objective, one per active domain.
-    fn extract_tasks(
-        &self,
-        objective: &str,
-        domains: &[SavantDomain],
-    ) -> Vec<DecomposedTask> {
+    fn extract_tasks(&self, objective: &str, domains: &[SavantDomain]) -> Vec<DecomposedTask> {
         if domains.is_empty() {
             // Single general task
             return vec![DecomposedTask {
@@ -245,15 +352,18 @@ impl SpawnerAgent {
 
         for domain in domains {
             // Find the best matching clause for this domain
-            let domain_keywords: &[&str] = self.domain_keywords
+            let domain_keywords: &[&str] = self
+                .domain_keywords
                 .get(domain)
                 .map(|v| v.as_slice())
                 .unwrap_or(&[]);
 
-            let best_clause = clauses.iter()
+            let best_clause = clauses
+                .iter()
                 .max_by_key(|clause| {
                     let lower = clause.to_lowercase();
-                    domain_keywords.iter()
+                    domain_keywords
+                        .iter()
                         .filter(|kw| lower.contains(*kw))
                         .count()
                 })
@@ -261,13 +371,17 @@ impl SpawnerAgent {
                 .unwrap_or(objective);
 
             // Get suggested tools from the domain's savant blueprint
-            let tools = self.blueprints.iter()
+            let tools = self
+                .blueprints
+                .iter()
                 .find(|bp| bp.domain == *domain)
                 .map(|bp| bp.tools.clone())
                 .unwrap_or_default();
 
             // Get required skills from the domain's savant
-            let skills: Vec<String> = self.blueprints.iter()
+            let skills: Vec<String> = self
+                .blueprints
+                .iter()
                 .find(|bp| bp.domain == *domain)
                 .map(|bp| bp.skills.iter().map(|s| s.id.clone()).collect())
                 .unwrap_or_default();
@@ -314,7 +428,9 @@ impl SpawnerAgent {
                 .with_required_skills(decomposed.required_skills.clone());
 
             // Map dependency indices to task IDs
-            let deps: Vec<String> = decomposed.depends_on.iter()
+            let deps: Vec<String> = decomposed
+                .depends_on
+                .iter()
                 .filter_map(|idx| id_map.get(idx).cloned())
                 .collect();
             if !deps.is_empty() {
@@ -360,7 +476,10 @@ impl SpawnerAgent {
             // Required skills check
             if !request.required_skills.is_empty() {
                 let agent_skills: Vec<&str> = state.skills.iter().map(|s| s.id.as_str()).collect();
-                let has_all = request.required_skills.iter().all(|rs| agent_skills.contains(&rs.as_str()));
+                let has_all = request
+                    .required_skills
+                    .iter()
+                    .all(|rs| agent_skills.contains(&rs.as_str()));
                 if has_all {
                     score += 2.0;
                 }
@@ -394,7 +513,10 @@ impl SpawnerAgent {
         // No suitable agent found — select the best blueprint to spawn
         let domain = request.target_domain.unwrap_or(SavantDomain::General);
         let bp = savants::savant_for_domain(domain, &self.default_llm);
-        let agent_id = format!("delegate-{}", Uuid::new_v4().to_string().split('-').next().unwrap_or("x"));
+        let agent_id = format!(
+            "delegate-{}",
+            Uuid::new_v4().to_string().split('-').next().unwrap_or("x")
+        );
 
         self.events.push(OrchestrationEvent::AgentSpawned {
             agent_id: agent_id.clone(),
@@ -418,7 +540,8 @@ impl SpawnerAgent {
 
     /// Get the best blueprint for a given domain.
     pub fn blueprint_for_domain(&self, domain: SavantDomain) -> AgentBlueprint {
-        self.blueprints.iter()
+        self.blueprints
+            .iter()
             .find(|bp| bp.domain == domain)
             .cloned()
             .unwrap_or_else(|| savants::savant_for_domain(domain, &self.default_llm))
@@ -461,7 +584,8 @@ mod tests {
     #[test]
     fn test_domain_scoring() {
         let spawner = SpawnerAgent::new("openai/gpt-4o-mini");
-        let scores = spawner.score_domains("research and implement a secure web application with tests");
+        let scores =
+            spawner.score_domains("research and implement a secure web application with tests");
 
         assert!(scores[&SavantDomain::Research] > 0.0);
         assert!(scores[&SavantDomain::Engineering] > 0.0);
@@ -481,7 +605,8 @@ mod tests {
     #[test]
     fn test_decompose_multi_domain() {
         let spawner = SpawnerAgent::new("openai/gpt-4o-mini");
-        let plan = spawner.decompose("research Rust patterns, implement a web scraper, and write documentation");
+        let plan = spawner
+            .decompose("research Rust patterns, implement a web scraper, and write documentation");
 
         // Should have: planning + research + engineering + content + synthesis
         assert!(plan.tasks.len() >= 3);
@@ -538,7 +663,8 @@ mod tests {
     #[test]
     fn test_split_into_clauses() {
         let spawner = SpawnerAgent::new("openai/gpt-4o-mini");
-        let clauses = spawner.split_into_clauses("research patterns, implement code, and write docs");
+        let clauses =
+            spawner.split_into_clauses("research patterns, implement code, and write docs");
         assert!(clauses.len() >= 2);
     }
 
@@ -546,8 +672,8 @@ mod tests {
     fn test_events_from_delegation() {
         let mut spawner = SpawnerAgent::new("openai/gpt-4o-mini");
 
-        let request = DelegationRequest::new("agent-1", "do something")
-            .with_domain(SavantDomain::General);
+        let request =
+            DelegationRequest::new("agent-1", "do something").with_domain(SavantDomain::General);
         spawner.handle_delegation(&request, &HashMap::new());
 
         let events = spawner.drain_events();

@@ -73,10 +73,7 @@ Be precise. This is phenomenological analysis, not sentiment analysis."#;
 /// Build the felt-parse request body for the XAI API.
 ///
 /// Uses grok-3-fast for speed, with structured JSON output.
-pub fn build_felt_parse_request(
-    user_message: &str,
-    api_key: &str,
-) -> serde_json::Value {
+pub fn build_felt_parse_request(user_message: &str, api_key: &str) -> serde_json::Value {
     serde_json::json!({
         "model": "grok-3-fast",
         "messages": [

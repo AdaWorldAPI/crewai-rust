@@ -27,9 +27,7 @@ use async_trait::async_trait;
 use serde_json::Value;
 use std::collections::HashMap;
 
-use super::super::adapter::{
-    AdapterError, AdapterHealth, AdapterOperation, InterfaceAdapter,
-};
+use super::super::adapter::{AdapterError, AdapterHealth, AdapterOperation, InterfaceAdapter};
 use super::super::gateway::AdapterFactory;
 
 /// MCP Bridge adapter
@@ -95,10 +93,7 @@ impl InterfaceAdapter for McpBridgeAdapter {
             })
             .unwrap_or_default();
 
-        self.url = config
-            .get("url")
-            .and_then(|v| v.as_str())
-            .map(String::from);
+        self.url = config.get("url").and_then(|v| v.as_str()).map(String::from);
 
         // In a full implementation, this would:
         // 1. Start the MCP server process (for stdio) or connect to URL

@@ -21,7 +21,9 @@ use super::types::{AgentBlueprint, SkillDescriptor, SpawnedAgentState};
 /// * `blueprint` - The agent blueprint to convert.
 /// * `base_url` - Base URL where the agent is reachable.
 pub fn build_card_from_blueprint(blueprint: &AgentBlueprint, base_url: &str) -> AgentCard {
-    let skills = blueprint.skills.iter()
+    let skills = blueprint
+        .skills
+        .iter()
         .map(|s| skill_descriptor_to_a2a_skill(s))
         .collect();
 
@@ -61,7 +63,9 @@ pub fn build_card_from_blueprint(blueprint: &AgentBlueprint, base_url: &str) -> 
 /// * `state` - The current spawned agent state.
 /// * `base_url` - Base URL where the agent is reachable.
 pub fn build_card_from_state(state: &SpawnedAgentState, base_url: &str) -> AgentCard {
-    let skills = state.skills.iter()
+    let skills = state
+        .skills
+        .iter()
         .map(|s| skill_descriptor_to_a2a_skill(s))
         .collect();
 
@@ -69,7 +73,9 @@ pub fn build_card_from_state(state: &SpawnedAgentState, base_url: &str) -> Agent
         name: state.id.clone(),
         description: Some(format!(
             "Agent in {} domain. Performance: {:.0}%. Tasks completed: {}.",
-            state.domain, state.performance_score * 100.0, state.tasks_completed,
+            state.domain,
+            state.performance_score * 100.0,
+            state.tasks_completed,
         )),
         url: format!("{}/agents/{}", base_url, state.id),
         version: Some("1.0.0".to_string()),
@@ -107,14 +113,18 @@ fn skill_descriptor_to_a2a_skill(skill: &SkillDescriptor) -> AgentSkill {
 /// This is used when the orchestrator dynamically adjusts an agent's
 /// skills (adding or removing capabilities based on task performance).
 pub fn update_card_skills(card: &mut AgentCard, state: &SpawnedAgentState) {
-    card.skills = state.skills.iter()
+    card.skills = state
+        .skills
+        .iter()
         .map(|s| skill_descriptor_to_a2a_skill(s))
         .collect();
 
     // Update description to reflect performance changes
     card.description = Some(format!(
         "Agent in {} domain. Performance: {:.0}%. Tasks completed: {}.",
-        state.domain, state.performance_score * 100.0, state.tasks_completed,
+        state.domain,
+        state.performance_score * 100.0,
+        state.tasks_completed,
     ));
 }
 
@@ -125,7 +135,7 @@ pub fn update_card_skills(card: &mut AgentCard, state: &SpawnedAgentState) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::meta_agents::types::{SavantDomain};
+    use crate::meta_agents::types::SavantDomain;
 
     #[test]
     fn test_build_card_from_blueprint() {
@@ -136,8 +146,16 @@ mod tests {
             "openai/gpt-4o",
             SavantDomain::Engineering,
         )
-        .with_skill(SkillDescriptor::new("code_review", "Code Review", "Review source code"))
-        .with_skill(SkillDescriptor::new("security_audit", "Security Audit", "Check for vulnerabilities"));
+        .with_skill(SkillDescriptor::new(
+            "code_review",
+            "Code Review",
+            "Review source code",
+        ))
+        .with_skill(SkillDescriptor::new(
+            "security_audit",
+            "Security Audit",
+            "Check for vulnerabilities",
+        ));
 
         let card = build_card_from_blueprint(&bp, "https://crew.local");
 
@@ -151,7 +169,13 @@ mod tests {
 
     #[test]
     fn test_build_card_from_state() {
-        let bp = AgentBlueprint::new("Worker", "Do work", "Backstory", "openai/gpt-4o-mini", SavantDomain::General);
+        let bp = AgentBlueprint::new(
+            "Worker",
+            "Do work",
+            "Backstory",
+            "openai/gpt-4o-mini",
+            SavantDomain::General,
+        );
         let mut state = SpawnedAgentState::new("agent-42", &bp);
         state.add_skill(SkillDescriptor::new("s1", "Skill One", "First skill"));
         state.tasks_completed = 5;
@@ -167,14 +191,24 @@ mod tests {
 
     #[test]
     fn test_update_card_skills() {
-        let bp = AgentBlueprint::new("Worker", "Do work", "Backstory", "openai/gpt-4o-mini", SavantDomain::General);
+        let bp = AgentBlueprint::new(
+            "Worker",
+            "Do work",
+            "Backstory",
+            "openai/gpt-4o-mini",
+            SavantDomain::General,
+        );
         let mut state = SpawnedAgentState::new("agent-1", &bp);
 
         let mut card = build_card_from_state(&state, "https://local");
         assert_eq!(card.skills.len(), 0);
 
         // Add skills and update
-        state.add_skill(SkillDescriptor::new("new_skill", "New Skill", "Added at runtime"));
+        state.add_skill(SkillDescriptor::new(
+            "new_skill",
+            "New Skill",
+            "Added at runtime",
+        ));
         update_card_skills(&mut card, &state);
 
         assert_eq!(card.skills.len(), 1);

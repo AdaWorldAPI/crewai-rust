@@ -161,10 +161,7 @@ impl LiteAgent {
     ///
     /// In the full implementation, this drives the LLM conversation
     /// loop with tool calling, guardrails, and hooks.
-    pub fn kickoff(
-        &mut self,
-        messages: Vec<LLMMessage>,
-    ) -> Result<LiteAgentOutput, String> {
+    pub fn kickoff(&mut self, messages: Vec<LLMMessage>) -> Result<LiteAgentOutput, String> {
         self.messages = messages;
         self.iterations = 0;
 

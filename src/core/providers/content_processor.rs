@@ -21,11 +21,7 @@ pub trait ContentProcessorProvider: Send + Sync {
     ///
     /// # Returns
     /// The processed content.
-    fn process(
-        &self,
-        content: &str,
-        context: Option<&HashMap<String, String>>,
-    ) -> String;
+    fn process(&self, content: &str, context: Option<&HashMap<String, String>>) -> String;
 }
 
 // ---------------------------------------------------------------------------
@@ -36,11 +32,7 @@ pub trait ContentProcessorProvider: Send + Sync {
 pub struct NoOpContentProcessor;
 
 impl ContentProcessorProvider for NoOpContentProcessor {
-    fn process(
-        &self,
-        content: &str,
-        _context: Option<&HashMap<String, String>>,
-    ) -> String {
+    fn process(&self, content: &str, _context: Option<&HashMap<String, String>>) -> String {
         content.to_string()
     }
 }
@@ -52,8 +44,7 @@ impl ContentProcessorProvider for NoOpContentProcessor {
 static PROCESSOR: Lazy<Arc<Mutex<Option<Box<dyn ContentProcessorProvider>>>>> =
     Lazy::new(|| Arc::new(Mutex::new(None)));
 
-static DEFAULT_PROCESSOR: Lazy<NoOpContentProcessor> =
-    Lazy::new(|| NoOpContentProcessor);
+static DEFAULT_PROCESSOR: Lazy<NoOpContentProcessor> = Lazy::new(|| NoOpContentProcessor);
 
 /// Get the current content processor.
 ///
@@ -69,10 +60,7 @@ pub fn set_processor(processor: Box<dyn ContentProcessorProvider>) {
 }
 
 /// Process content using the registered processor (or default no-op).
-pub fn process_content(
-    content: &str,
-    context: Option<&HashMap<String, String>>,
-) -> String {
+pub fn process_content(content: &str, context: Option<&HashMap<String, String>>) -> String {
     let guard = PROCESSOR.lock().unwrap();
     match guard.as_ref() {
         Some(processor) => processor.process(content, context),

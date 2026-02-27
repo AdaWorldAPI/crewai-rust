@@ -20,10 +20,7 @@ pub fn resolve_refs(schema: &Value, definitions: &Map<String, Value>) -> Value {
             // Handle $ref
             if let Some(Value::String(ref_path)) = obj.get("$ref") {
                 // Extract definition name from "#/$defs/Name" or "#/definitions/Name"
-                let def_name = ref_path
-                    .rsplit('/')
-                    .next()
-                    .unwrap_or(ref_path);
+                let def_name = ref_path.rsplit('/').next().unwrap_or(ref_path);
                 if let Some(def) = definitions.get(def_name) {
                     return resolve_refs(def, definitions);
                 }
@@ -94,9 +91,7 @@ pub fn generate_model_description(schema: &Value) -> Value {
 ///
 /// # Arguments
 /// * `fields` - Map of field names to their types/descriptions.
-pub fn create_model_from_schema(
-    fields: &HashMap<String, (String, String)>,
-) -> Value {
+pub fn create_model_from_schema(fields: &HashMap<String, (String, String)>) -> Value {
     let mut properties = Map::new();
     for (name, (type_name, description)) in fields {
         let mut prop = Map::new();

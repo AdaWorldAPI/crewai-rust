@@ -166,11 +166,7 @@ pub async fn ahandle_knowledge_retrieval(
 /// # Returns
 ///
 /// The task prompt with training data applied.
-pub fn apply_training_data(
-    agent_role: &str,
-    task_prompt: &str,
-    is_training: bool,
-) -> String {
+pub fn apply_training_data(agent_role: &str, task_prompt: &str, is_training: bool) -> String {
     log::debug!(
         "apply_training_data: agent='{}', training={}",
         agent_role,

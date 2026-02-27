@@ -9,7 +9,10 @@ use serde_json::Value;
 /// In the full implementation, this makes an HTTP GET request to
 /// `{endpoint}/.well-known/agent-card.json`.
 pub async fn fetch_agent_card(endpoint: &str) -> Result<Value, String> {
-    let url = format!("{}/.well-known/agent-card.json", endpoint.trim_end_matches('/'));
+    let url = format!(
+        "{}/.well-known/agent-card.json",
+        endpoint.trim_end_matches('/')
+    );
     // Stub: in production this would use reqwest
     Err(format!(
         "fetch_agent_card not yet implemented for URL: {}",
@@ -19,7 +22,10 @@ pub async fn fetch_agent_card(endpoint: &str) -> Result<Value, String> {
 
 /// Extract the agent name from an agent card.
 pub fn get_agent_name(agent_card: &Value) -> Option<String> {
-    agent_card.get("name").and_then(|v| v.as_str()).map(|s| s.to_string())
+    agent_card
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
 }
 
 /// Extract skills from an agent card.
