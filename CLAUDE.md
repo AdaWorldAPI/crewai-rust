@@ -426,22 +426,49 @@ Agent executes with compiled thinking textures
   │  Recompiled only on cognitive profile change
 ```
 
-### Integration TODO
+---
 
-| Task | Status |
-|------|--------|
-| SubstrateView trait + BindBridge | **Done** |
-| JitProfile (AgentCard → τ addresses) | **Done** |
-| MarkovBarrier (XOR budget) | **Done** |
-| ProgrammingAwareness / MetaOrchestration / ProblemSolving domains | **Done** |
-| ladybug-rs implements SubstrateView for BindSpace | Planned |
-| BERT embedding model for inbound barrier translation | Planned |
-| n8n-rs workflow orchestration for outbound API sequencing | Planned |
-| Wire JitProfile into ModuleRuntime activation | Planned |
+## OPEN TODOs — Wiring Checklist (SESSION-DURABLE)
 
-### Branch
+> **READ THIS EVERY SESSION.** Do NOT invent new code. Wire EXISTING.
+> Mark items DONE with date. If you skip an item, explain why.
 
-All work on: `claude/compare-rustynum-ndarray-5ePRn`
+### P0 — BindSpace Integration
+
+- [ ] **ladybug-rs implements SubstrateView for BindSpace**
+  - SubstrateView trait defined in `src/blackboard/bind_bridge.rs:55-103`
+  - ladybug-rs needs to impl: `read_fingerprint()`, `hamming_search()`, `read_truth()`, `write_truth()`, `xor_delta()`
+  - This connects crewai-rust agents to ladybug-rs storage without HTTP
+  - BindBridge already done: `hydrate()` (line 173), `writeback_nars()` (line 277), `flush_deltas()` (line 312)
+
+- [ ] **Wire JitProfile into ModuleRuntime activation**
+  - JitProfile produces JitScanParams (threshold, top_k, prefetch_ahead, filter_mask)
+  - `src/persona/jit_link.rs:79-94` defines JitScanParams
+  - `src/persona/jit_link.rs:298-335` maps cognitive axes to scan params
+  - These params need to flow to n8n-rs CompiledStyleRegistry → jitson compile
+  - Currently: JitProfile exists but is not called during agent activation
+
+### P1 — Data Flow
+
+- [ ] **n8n-rs workflow orchestration for outbound API sequencing**
+  - n8n-rs wire_bridge.rs already handles CogPacket routing
+  - crewai-rust needs to emit workflow steps via `StepDelegationRequest`
+  - crew_router.rs and ladybug_router.rs in n8n-contract handle HTTP delegation
+
+- [ ] **BERT embedding model for inbound barrier translation**
+  - MarkovBarrier (XOR budget) is done
+  - Need embedding model to translate natural language → tau address space
+
+### DONE
+
+- [x] SubstrateView trait + BindBridge
+- [x] JitProfile (AgentCard → τ addresses)
+- [x] JitScanParams (cognitive axes → Cranelift immediates)
+- [x] MarkovBarrier (XOR budget)
+- [x] ProgrammingAwareness / MetaOrchestration / ProblemSolving domains
+- [x] Storage Strategy (Arrow zero-copy backend documented)
+- [x] JIT Compilation Pipeline documented
+- [x] CI workflow with lint + miri (5 min timeout)
 
 ---
 
