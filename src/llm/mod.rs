@@ -715,7 +715,7 @@ impl LLM {
     /// Corresponds to `LLM.get_context_window_size` in Python.
     pub fn get_context_window_size(&self) -> i64 {
         if self.context_window_size > 0 {
-            return self.context_window_size.max(MIN_CONTEXT).min(MAX_CONTEXT);
+            return self.context_window_size.clamp(MIN_CONTEXT, MAX_CONTEXT);
         }
 
         let sizes = llm_context_window_sizes();

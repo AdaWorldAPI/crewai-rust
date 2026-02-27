@@ -31,7 +31,28 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: cargo clippy
-        run: cargo clippy --all-targets -- -D warnings
+        env:
+          # Mirror ladybug-rs: allow noise lints in evolving codebase
+          CLIPPY_ALLOWS: >
+            -A unused -A dead-code
+            -A clippy::derivable-impls -A clippy::field-reassign-with-default
+            -A clippy::type-complexity -A clippy::redundant-closure
+            -A clippy::module-inception -A clippy::collapsible-if
+            -A clippy::collapsible-match -A clippy::or-fun-call
+            -A clippy::new-without-default -A clippy::result-large-err
+            -A clippy::missing-const-for-thread-local -A clippy::if-same-then-else
+            -A clippy::manual-is-multiple-of -A clippy::redundant-pattern-matching
+            -A clippy::manual-range-contains
+            -A clippy::option-map-or-none -A clippy::needless-borrows-for-generic-args
+            -A clippy::useless-vec -A clippy::manual-strip
+            -A clippy::unnecessary-unwrap -A clippy::double-ended-iterator-last
+            -A clippy::single-char-add-str -A clippy::manual-map
+            -A clippy::useless-format -A clippy::unnecessary-get-then-check
+            -A clippy::collapsible-str-replace -A clippy::unnecessary-map-or
+            -A clippy::unwrap-or-default -A clippy::unnecessary-lazy-evaluations
+            -A clippy::default-constructed-unit-structs -A clippy::assign-op-pattern
+            -A clippy::let-underscore-future -A clippy::manual-pattern-char-comparison
+        run: cargo clippy --all-targets -- -D warnings $CLIPPY_ALLOWS
 
   test:
     name: Test

@@ -216,10 +216,7 @@ impl BaseLLM for XAIGrpcCompletion {
         let mut client = self.client.lock().await;
         let response = client.chat.get_completion(request).await.map_err(
             |e| -> Box<dyn std::error::Error + Send + Sync> {
-                Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("xAI gRPC error: {}", e),
-                ))
+                Box::new(std::io::Error::other(format!("xAI gRPC error: {}", e)))
             },
         )?;
 
