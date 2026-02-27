@@ -75,11 +75,31 @@ Blackboard TypedSlots (in-process)
 - XOR deltas from agents flow through `flush_deltas()` → BindSpace, not direct writes
 - Use rustynum's `DeltaLayer` / `LayerStack` / `CollapseGate` for multi-agent state
 
+### JIT Compilation: Thinking Styles Are Compiled Workflows
+
+**Thinking styles are NOT parameters.** "Einstein" or "Hegel" is a composed
+chain of reasoning operations compiled by jitson/Cranelift into native
+AVX-512 scan kernels. crewai-rust defines the styles; n8n-rs compiles them.
+
+```
+crewai-rust: AgentCard (YAML) -> JitProfile -> tau address
+    |                (src/persona/jit_link.rs)
+n8n-rs: CompiledStyleRegistry -> jitson compile
+    |                (n8n-contract, cached in n8n-core)
+jitson: YAML/JSON -> Cranelift -> native function pointer
+    |                (rustynum/jitson/, AVX-512 patched wasmtime)
+Arrow buffer (zero-copy) -> compiled kernel executes -> BindSpace result
+```
+
+Key files:
+- `src/persona/jit_link.rs` — AgentCard -> ThinkingStyle -> JitTemplate mapping
+- `src/blackboard/bind_bridge.rs` — SubstrateView trait (ladybug-rs implements)
+
 **Cross-repo references:**
 
 - `ladybug-rs/CLAUDE.md` § "The Rustynum Acceleration Contract"
 - `rustynum/CLAUDE.md` § 12 "The Lance Zero-Copy Contract"
-- `n8n-rs/CLAUDE.md` § "Arrow Zero-Copy Chain"
+- `n8n-rs/CLAUDE.md` § "JIT / JITSON Compilation Pipeline"
 
 ---
 
