@@ -562,21 +562,15 @@ impl LLM {
 
         let result = match provider.as_str() {
             "openai" => {
-                let completion = OpenAICompletion::new(
-                    &self.model,
-                    self.api_key.clone(),
-                    self.api_base.clone(),
-                );
+                let completion =
+                    OpenAICompletion::new(&self.model, self.api_key.clone(), self.api_base.clone());
                 completion
                     .call(llm_messages, tools_vec, None)
                     .map_err(|e| e.to_string())
             }
             "xai" => {
-                let completion = XAICompletion::new(
-                    &self.model,
-                    self.api_key.clone(),
-                    self.api_base.clone(),
-                );
+                let completion =
+                    XAICompletion::new(&self.model, self.api_key.clone(), self.api_base.clone());
                 completion
                     .call(llm_messages, tools_vec, None)
                     .map_err(|e| e.to_string())
@@ -624,22 +618,16 @@ impl LLM {
 
         let result = match provider.as_str() {
             "openai" => {
-                let completion = OpenAICompletion::new(
-                    &self.model,
-                    self.api_key.clone(),
-                    self.api_base.clone(),
-                );
+                let completion =
+                    OpenAICompletion::new(&self.model, self.api_key.clone(), self.api_base.clone());
                 completion
                     .acall(llm_messages, tools_vec, None)
                     .await
                     .map_err(|e| e.to_string())
             }
             "xai" => {
-                let completion = XAICompletion::new(
-                    &self.model,
-                    self.api_key.clone(),
-                    self.api_base.clone(),
-                );
+                let completion =
+                    XAICompletion::new(&self.model, self.api_key.clone(), self.api_base.clone());
                 completion
                     .acall(llm_messages, tools_vec, None)
                     .await
@@ -727,7 +715,7 @@ impl LLM {
     /// Corresponds to `LLM.get_context_window_size` in Python.
     pub fn get_context_window_size(&self) -> i64 {
         if self.context_window_size > 0 {
-            return self.context_window_size.max(MIN_CONTEXT).min(MAX_CONTEXT);
+            return self.context_window_size.clamp(MIN_CONTEXT, MAX_CONTEXT);
         }
 
         let sizes = llm_context_window_sizes();
@@ -958,7 +946,9 @@ mod tests {
     #[test]
     fn test_is_anthropic_model() {
         assert!(LLM::_is_anthropic_model("claude-opus-4-5-20251101"));
-        assert!(LLM::_is_anthropic_model("anthropic/claude-opus-4-5-20251101"));
+        assert!(LLM::_is_anthropic_model(
+            "anthropic/claude-opus-4-5-20251101"
+        ));
         assert!(LLM::_is_anthropic_model("claude/claude-3"));
         assert!(!LLM::_is_anthropic_model("gpt-4o"));
         assert!(!LLM::_is_anthropic_model("gemini-2.0-flash"));
@@ -1010,9 +1000,15 @@ mod tests {
     fn test_matches_provider_pattern() {
         assert!(LLM::matches_provider_pattern("gpt-4o", "openai"));
         assert!(LLM::matches_provider_pattern("o3-mini", "openai"));
-        assert!(LLM::matches_provider_pattern("claude-opus-4-5-20251101", "anthropic"));
+        assert!(LLM::matches_provider_pattern(
+            "claude-opus-4-5-20251101",
+            "anthropic"
+        ));
         assert!(LLM::matches_provider_pattern("gemini-2.0-flash", "gemini"));
-        assert!(LLM::matches_provider_pattern("anthropic.claude-3", "bedrock"));
+        assert!(LLM::matches_provider_pattern(
+            "anthropic.claude-3",
+            "bedrock"
+        ));
         assert!(!LLM::matches_provider_pattern("gpt-4o", "anthropic"));
     }
 

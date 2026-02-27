@@ -94,11 +94,7 @@ impl XorBudget {
     /// style_scale = 0.5 + style_factor × 0.5
     /// budget = base × rung_scale × style_scale
     /// ```
-    pub fn compute(
-        confidence: f32,
-        rung_level: u8,
-        style_factor: f32,
-    ) -> Self {
+    pub fn compute(confidence: f32, rung_level: u8, style_factor: f32) -> Self {
         let base = Self::TOTAL_BITS as f32 * (1.0 - confidence.clamp(0.0, 1.0)) * 0.1;
         let rung_scale = 1.0 + rung_level.min(8) as f32 * 0.5;
         let style_scale = 0.5 + style_factor.clamp(0.0, 1.0) * 0.5;
@@ -341,7 +337,8 @@ impl MarkovBarrier {
             self.cumulative_drift += damped_distance;
         }
 
-        self.history.push((tx_id.to_string(), decision, xor_distance));
+        self.history
+            .push((tx_id.to_string(), decision, xor_distance));
 
         decision
     }
@@ -484,7 +481,10 @@ fn dampen_fingerprint(delta: &[u64; 256], damping: f32) -> [u64; 256] {
 
 /// Compute XOR distance (Hamming distance in bit-space) between two fingerprints.
 pub fn xor_distance(a: &[u64; 256], b: &[u64; 256]) -> u32 {
-    a.iter().zip(b.iter()).map(|(x, y)| (x ^ y).count_ones()).sum()
+    a.iter()
+        .zip(b.iter())
+        .map(|(x, y)| (x ^ y).count_ones())
+        .sum()
 }
 
 // ============================================================================
@@ -520,7 +520,7 @@ mod tests {
     #[test]
     fn test_xor_budget_style_scaling() {
         let budget_analytical = XorBudget::compute(0.5, 0, 0.1); // tight
-        let budget_creative = XorBudget::compute(0.5, 0, 0.9);   // loose
+        let budget_creative = XorBudget::compute(0.5, 0, 0.9); // loose
         assert!(budget_creative.max_distance > budget_analytical.max_distance);
     }
 

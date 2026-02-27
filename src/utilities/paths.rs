@@ -41,9 +41,7 @@ pub fn db_storage_path() -> String {
             .join(app_author)
             .join(&app_name)
     } else {
-        PathBuf::from("/tmp")
-            .join(app_author)
-            .join(&app_name)
+        PathBuf::from("/tmp").join(app_author).join(&app_name)
     };
 
     // Create the directory if it doesn't exist
@@ -60,10 +58,7 @@ pub fn get_project_directory_name() -> String {
     env::var("CREWAI_STORAGE_DIR").unwrap_or_else(|_| {
         env::current_dir()
             .ok()
-            .and_then(|p| {
-                p.file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-            })
+            .and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_string()))
             .unwrap_or_else(|| "crewai_default".to_string())
     })
 }

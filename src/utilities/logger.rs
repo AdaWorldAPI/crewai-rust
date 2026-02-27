@@ -54,12 +54,7 @@ impl Logger {
         if self.verbose {
             let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
             let color = color.unwrap_or(self.default_color);
-            let formatted = format!(
-                "\n[{}][{}]: {}",
-                timestamp,
-                level.to_uppercase(),
-                message
-            );
+            let formatted = format!("\n[{}][{}]: {}", timestamp, level.to_uppercase(), message);
             self.printer.print(&formatted, color);
         }
     }

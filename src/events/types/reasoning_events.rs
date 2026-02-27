@@ -56,7 +56,13 @@ pub struct AgentReasoningCompletedEvent {
 }
 
 impl AgentReasoningCompletedEvent {
-    pub fn new(agent_role: String, task_id: String, attempt: i64, plan: String, ready: bool) -> Self {
+    pub fn new(
+        agent_role: String,
+        task_id: String,
+        attempt: i64,
+        plan: String,
+        ready: bool,
+    ) -> Self {
         let mut evt = Self {
             base: BaseEventData::new("agent_reasoning_completed"),
             attempt,

@@ -98,8 +98,13 @@ pub struct Crew {
     pub task_callback: Option<Box<dyn Fn(&TaskOutput) + Send + Sync>>,
     /// List of callbacks to be executed before crew kickoff.
     #[serde(skip)]
-    pub before_kickoff_callbacks:
-        Vec<Box<dyn Fn(Option<HashMap<String, String>>) -> Option<HashMap<String, String>> + Send + Sync>>,
+    pub before_kickoff_callbacks: Vec<
+        Box<
+            dyn Fn(Option<HashMap<String, String>>) -> Option<HashMap<String, String>>
+                + Send
+                + Sync,
+        >,
+    >,
     /// List of callbacks to be executed after crew kickoff.
     #[serde(skip)]
     pub after_kickoff_callbacks: Vec<Box<dyn Fn(CrewOutput) -> CrewOutput + Send + Sync>>,
@@ -237,10 +242,7 @@ impl Crew {
         let agent_roles: Vec<String> = agents.iter().map(|a| a.role.clone()).collect();
         let mut agent_objects = HashMap::new();
         for agent in agents {
-            agent_objects.insert(
-                agent.role.clone(),
-                Arc::new(std::sync::RwLock::new(agent)),
-            );
+            agent_objects.insert(agent.role.clone(), Arc::new(std::sync::RwLock::new(agent)));
         }
         Self {
             name: Some("crew".to_string()),
@@ -293,7 +295,8 @@ impl Crew {
         if !self.agents.contains(&role) {
             self.agents.push(role.clone());
         }
-        self.agent_objects.insert(role, Arc::new(std::sync::RwLock::new(agent)));
+        self.agent_objects
+            .insert(role, Arc::new(std::sync::RwLock::new(agent)));
     }
 
     /// Get an agent by role.
@@ -522,7 +525,10 @@ impl Crew {
 
     /// Create the manager agent for hierarchical process.
     fn create_manager_agent(&mut self) -> Result<(), String> {
-        let manager_role = self.manager_agent.clone().unwrap_or_else(|| "Crew Manager".to_string());
+        let manager_role = self
+            .manager_agent
+            .clone()
+            .unwrap_or_else(|| "Crew Manager".to_string());
         let manager_llm = self.manager_llm.clone();
 
         // Build the manager agent
@@ -574,14 +580,12 @@ impl Crew {
 
             // In hierarchical mode, unassigned tasks go to the manager
             let agent_role = task.agent.clone().or_else(|| {
-                self.manager_agent.clone().or_else(|| Some("Crew Manager".to_string()))
+                self.manager_agent
+                    .clone()
+                    .or_else(|| Some("Crew Manager".to_string()))
             });
 
-            let task_output = task.execute_sync(
-                agent_role.as_deref(),
-                context.as_deref(),
-                None,
-            )?;
+            let task_output = task.execute_sync(agent_role.as_deref(), context.as_deref(), None)?;
 
             // Invoke task callback if set
             if let Some(ref callback) = self.task_callback {
@@ -596,10 +600,14 @@ impl Crew {
 
     /// Wire up agent executors for hierarchical mode.
     fn wire_all_task_executors_hierarchical(&mut self) {
-        let manager_role = self.manager_agent.clone().unwrap_or_else(|| "Crew Manager".to_string());
+        let manager_role = self
+            .manager_agent
+            .clone()
+            .unwrap_or_else(|| "Crew Manager".to_string());
 
         // Collect role -> agent_lock mappings first
-        let agent_locks: HashMap<String, Arc<std::sync::RwLock<Agent>>> = self.agent_objects.clone();
+        let agent_locks: HashMap<String, Arc<std::sync::RwLock<Agent>>> =
+            self.agent_objects.clone();
 
         for task in &mut self.tasks {
             let role = task.agent.clone().unwrap_or_else(|| manager_role.clone());
@@ -629,11 +637,7 @@ impl Crew {
 
             let agent_role = task.agent.clone();
 
-            let task_output = task.execute_sync(
-                agent_role.as_deref(),
-                context.as_deref(),
-                None,
-            )?;
+            let task_output = task.execute_sync(agent_role.as_deref(), context.as_deref(), None)?;
 
             // Invoke task callback if set
             if let Some(ref callback) = self.task_callback {
@@ -649,7 +653,8 @@ impl Crew {
     /// Wire up agent executors for all tasks.
     fn wire_all_task_executors(&mut self) {
         // Clone the agent_objects map to avoid borrow conflicts
-        let agent_locks: HashMap<String, Arc<std::sync::RwLock<Agent>>> = self.agent_objects.clone();
+        let agent_locks: HashMap<String, Arc<std::sync::RwLock<Agent>>> =
+            self.agent_objects.clone();
 
         for task in &mut self.tasks {
             // Clone the role to avoid borrowing task immutably while passing it mutably
@@ -673,29 +678,32 @@ impl Crew {
             let agent_clone = agent_lock.clone();
 
             // Create the executor callback
-            task.set_agent_executor(move |prompt: &str, context: Option<&str>, tools: &[String]| {
-                let mut agent = agent_clone.write().map_err(|e| format!("Failed to lock agent: {}", e))?;
+            task.set_agent_executor(
+                move |prompt: &str, context: Option<&str>, tools: &[String]| {
+                    let mut agent = agent_clone
+                        .write()
+                        .map_err(|e| format!("Failed to lock agent: {}", e))?;
 
-                // Execute the task through the agent
-                let result = agent.execute_task(
-                    prompt,
-                    context,
-                    if tools.is_empty() { None } else { Some(tools) },
-                )?;
+                    // Execute the task through the agent
+                    let result = agent.execute_task(
+                        prompt,
+                        context,
+                        if tools.is_empty() { None } else { Some(tools) },
+                    )?;
 
-                // Convert agent's last_messages to LLMMessage structs
-                let messages: Vec<LLMMessage> = agent.last_messages
-                    .iter()
-                    .map(|m| {
-                        LLMMessage {
+                    // Convert agent's last_messages to LLMMessage structs
+                    let messages: Vec<LLMMessage> = agent
+                        .last_messages
+                        .iter()
+                        .map(|m| LLMMessage {
                             role: m.get("role").cloned().unwrap_or_default(),
                             content: m.get("content").cloned().unwrap_or_default(),
-                        }
-                    })
-                    .collect();
+                        })
+                        .collect();
 
-                Ok((result, messages))
-            });
+                    Ok((result, messages))
+                },
+            );
 
             log::debug!("Wired agent executor for task: agent={}", role);
         } else {

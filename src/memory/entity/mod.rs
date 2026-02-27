@@ -39,10 +39,7 @@ impl EntityMemoryItem {
         relationships: String,
     ) -> Self {
         let mut metadata = HashMap::new();
-        metadata.insert(
-            "relationships".to_string(),
-            Value::String(relationships),
-        );
+        metadata.insert("relationships".to_string(), Value::String(relationships));
         Self {
             name,
             entity_type,
@@ -89,12 +86,8 @@ impl EntityMemory {
                 .and_then(|c| c.get("config"))
                 .and_then(|c| serde_json::from_value::<HashMap<String, Value>>(c.clone()).ok());
             Box::new(
-                crate::memory::storage::mem0_storage::Mem0Storage::new(
-                    "entities",
-                    None,
-                    config,
-                )
-                .expect("Failed to create Mem0Storage"),
+                crate::memory::storage::mem0_storage::Mem0Storage::new("entities", None, config)
+                    .expect("Failed to create Mem0Storage"),
             )
         } else {
             Box::new(RAGStorage::new(
@@ -134,10 +127,7 @@ impl EntityMemory {
                     item.name, item.entity_type, item.description
                 )
             } else {
-                format!(
-                    "{}({}): {}",
-                    item.name, item.entity_type, item.description
-                )
+                format!("{}({}): {}", item.name, item.entity_type, item.description)
             };
 
             match self.memory.save(&data, Some(item.metadata.clone())) {
@@ -173,10 +163,7 @@ impl EntityMemory {
                     item.name, item.entity_type, item.description
                 )
             } else {
-                format!(
-                    "{}({}): {}",
-                    item.name, item.entity_type, item.description
-                )
+                format!("{}({}): {}", item.name, item.entity_type, item.description)
             };
 
             if let Err(e) = self.memory.asave(&data, Some(item.metadata.clone())).await {

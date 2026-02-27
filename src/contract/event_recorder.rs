@@ -204,10 +204,7 @@ mod tests {
         // Crew starts
         let exec_id = recorder.on_crew_started("my-crew");
         assert!(recorder.executions.contains_key(&exec_id));
-        assert_eq!(
-            recorder.executions[&exec_id].status,
-            StepStatus::Running
-        );
+        assert_eq!(recorder.executions[&exec_id].status, StepStatus::Running);
 
         // Task 1 starts
         let step_id = recorder
@@ -215,10 +212,7 @@ mod tests {
             .unwrap();
         assert!(recorder.steps.contains_key(&step_id));
         assert_eq!(recorder.steps[&step_id].status, StepStatus::Running);
-        assert_eq!(
-            recorder.steps[&step_id].step_type,
-            "crew.agent.researcher"
-        );
+        assert_eq!(recorder.steps[&step_id].step_type, "crew.agent.researcher");
 
         // Task 1 completes
         recorder.on_task_completed(

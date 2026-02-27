@@ -53,11 +53,7 @@ impl Default for CrewOutput {
 
 impl CrewOutput {
     /// Create a new CrewOutput.
-    pub fn new(
-        raw: String,
-        tasks_output: Vec<TaskOutput>,
-        token_usage: UsageMetrics,
-    ) -> Self {
+    pub fn new(raw: String, tasks_output: Vec<TaskOutput>, token_usage: UsageMetrics) -> Self {
         Self {
             raw,
             pydantic: None,

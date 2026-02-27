@@ -75,7 +75,10 @@ impl std::fmt::Debug for MCPServerStdio {
             .field("command", &self.command)
             .field("args", &self.args)
             .field("env", &self.env)
-            .field("tool_filter", &self.tool_filter.as_ref().map(|_| "<filter>"))
+            .field(
+                "tool_filter",
+                &self.tool_filter.as_ref().map(|_| "<filter>"),
+            )
             .field("cache_tools_list", &self.cache_tools_list)
             .finish()
     }
@@ -190,12 +193,20 @@ impl std::fmt::Debug for MCPServerHTTP {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MCPServerHTTP")
             .field("url", &self.url)
-            .field("headers", &self.headers.as_ref().map(|h| {
-                // Mask header values for security.
-                h.keys().map(|k| format!("{}=<masked>", k)).collect::<Vec<_>>()
-            }))
+            .field(
+                "headers",
+                &self.headers.as_ref().map(|h| {
+                    // Mask header values for security.
+                    h.keys()
+                        .map(|k| format!("{}=<masked>", k))
+                        .collect::<Vec<_>>()
+                }),
+            )
             .field("streamable", &self.streamable)
-            .field("tool_filter", &self.tool_filter.as_ref().map(|_| "<filter>"))
+            .field(
+                "tool_filter",
+                &self.tool_filter.as_ref().map(|_| "<filter>"),
+            )
             .field("cache_tools_list", &self.cache_tools_list)
             .finish()
     }
@@ -297,11 +308,19 @@ impl std::fmt::Debug for MCPServerSSE {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MCPServerSSE")
             .field("url", &self.url)
-            .field("headers", &self.headers.as_ref().map(|h| {
-                // Mask header values for security.
-                h.keys().map(|k| format!("{}=<masked>", k)).collect::<Vec<_>>()
-            }))
-            .field("tool_filter", &self.tool_filter.as_ref().map(|_| "<filter>"))
+            .field(
+                "headers",
+                &self.headers.as_ref().map(|h| {
+                    // Mask header values for security.
+                    h.keys()
+                        .map(|k| format!("{}=<masked>", k))
+                        .collect::<Vec<_>>()
+                }),
+            )
+            .field(
+                "tool_filter",
+                &self.tool_filter.as_ref().map(|_| "<filter>"),
+            )
             .field("cache_tools_list", &self.cache_tools_list)
             .finish()
     }
@@ -456,14 +475,16 @@ mod tests {
 
         assert_eq!(config.command, "npx");
         assert_eq!(config.args.len(), 2);
-        assert_eq!(config.env.as_ref().unwrap().get("API_KEY").unwrap(), "secret");
+        assert_eq!(
+            config.env.as_ref().unwrap().get("API_KEY").unwrap(),
+            "secret"
+        );
         assert!(config.cache_tools_list);
     }
 
     #[test]
     fn test_stdio_config_clone() {
-        let config = MCPServerStdio::new("node")
-            .with_args(vec!["server.js".to_string()]);
+        let config = MCPServerStdio::new("node").with_args(vec!["server.js".to_string()]);
         let cloned = config.clone();
         assert_eq!(cloned.command, "node");
         assert_eq!(cloned.args, vec!["server.js"]);
@@ -479,8 +500,7 @@ mod tests {
 
     #[test]
     fn test_stdio_config_server_identifier() {
-        let config = MCPServerStdio::new("python")
-            .with_args(vec!["server.py".to_string()]);
+        let config = MCPServerStdio::new("python").with_args(vec!["server.py".to_string()]);
         assert_eq!(config.server_identifier(), "stdio:python:server.py");
     }
 
@@ -527,8 +547,7 @@ mod tests {
 
     #[test]
     fn test_sse_config_builder() {
-        let config = MCPServerSSE::new("https://example.com/sse")
-            .with_cache_tools_list(true);
+        let config = MCPServerSSE::new("https://example.com/sse").with_cache_tools_list(true);
         assert!(config.cache_tools_list);
     }
 
@@ -580,8 +599,7 @@ mod tests {
                 .unwrap_or(false)
         });
 
-        let config = MCPServerStdio::new("python")
-            .with_tool_filter(filter);
+        let config = MCPServerStdio::new("python").with_tool_filter(filter);
 
         assert!(config.tool_filter.is_some());
         let f = config.tool_filter.as_ref().unwrap();
@@ -621,8 +639,7 @@ mod tests {
 
     #[test]
     fn test_sse_config_serde_roundtrip() {
-        let config = MCPServerSSE::new("https://example.com/sse")
-            .with_cache_tools_list(true);
+        let config = MCPServerSSE::new("https://example.com/sse").with_cache_tools_list(true);
 
         let json = serde_json::to_string(&config).unwrap();
         let deserialized: MCPServerSSE = serde_json::from_str(&json).unwrap();
@@ -634,10 +651,12 @@ mod tests {
     #[test]
     fn test_http_config_debug_masks_headers() {
         let mut headers = HashMap::new();
-        headers.insert("Authorization".to_string(), "Bearer secret_token".to_string());
+        headers.insert(
+            "Authorization".to_string(),
+            "Bearer secret_token".to_string(),
+        );
 
-        let config = MCPServerHTTP::new("https://example.com")
-            .with_headers(headers);
+        let config = MCPServerHTTP::new("https://example.com").with_headers(headers);
 
         let debug_str = format!("{:?}", config);
         // The debug output should mask header values.

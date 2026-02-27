@@ -96,10 +96,7 @@ impl LTMSQLiteStorage {
             }
             Err(e) => {
                 if self.verbose {
-                    log::error!(
-                        "MEMORY ERROR: An error occurred while saving to LTM: {}",
-                        e
-                    );
+                    log::error!("MEMORY ERROR: An error occurred while saving to LTM: {}", e);
                 }
                 Err(e.into())
             }
@@ -123,25 +120,20 @@ impl LTMSQLiteStorage {
         let datetime = datetime.to_string();
         let verbose = self.verbose;
 
-        tokio::task::spawn_blocking(move || {
-            match Connection::open(&db_path) {
-                Ok(conn) => {
-                    conn.execute(
-                        "INSERT INTO long_term_memories (task_description, metadata, datetime, score)
+        tokio::task::spawn_blocking(move || match Connection::open(&db_path) {
+            Ok(conn) => {
+                conn.execute(
+                    "INSERT INTO long_term_memories (task_description, metadata, datetime, score)
                          VALUES (?1, ?2, ?3, ?4)",
-                        params![task_description, metadata_json, datetime, score],
-                    )?;
-                    Ok(())
+                    params![task_description, metadata_json, datetime, score],
+                )?;
+                Ok(())
+            }
+            Err(e) => {
+                if verbose {
+                    log::error!("MEMORY ERROR: An error occurred while saving to LTM: {}", e);
                 }
-                Err(e) => {
-                    if verbose {
-                        log::error!(
-                            "MEMORY ERROR: An error occurred while saving to LTM: {}",
-                            e
-                        );
-                    }
-                    Err(anyhow::anyhow!(e))
-                }
+                Err(anyhow::anyhow!(e))
             }
         })
         .await?
@@ -186,10 +178,7 @@ impl LTMSQLiteStorage {
                     let mut entry = HashMap::new();
                     entry.insert("metadata".to_string(), metadata);
                     entry.insert("datetime".to_string(), Value::String(datetime));
-                    entry.insert(
-                        "score".to_string(),
-                        serde_json::to_value(score)?,
-                    );
+                    entry.insert("score".to_string(), serde_json::to_value(score)?);
                     results.push(entry);
                 }
 
@@ -201,10 +190,7 @@ impl LTMSQLiteStorage {
             }
             Err(e) => {
                 if self.verbose {
-                    log::error!(
-                        "MEMORY ERROR: An error occurred while querying LTM: {}",
-                        e
-                    );
+                    log::error!("MEMORY ERROR: An error occurred while querying LTM: {}", e);
                 }
                 Ok(None)
             }
@@ -221,55 +207,50 @@ impl LTMSQLiteStorage {
         let task_description = task_description.to_string();
         let verbose = self.verbose;
 
-        tokio::task::spawn_blocking(move || {
-            match Connection::open(&db_path) {
-                Ok(conn) => {
-                    let mut stmt = conn.prepare(&format!(
-                        "SELECT metadata, datetime, score
+        tokio::task::spawn_blocking(move || match Connection::open(&db_path) {
+            Ok(conn) => {
+                let mut stmt = conn.prepare(&format!(
+                    "SELECT metadata, datetime, score
                          FROM long_term_memories
                          WHERE task_description = ?1
                          ORDER BY datetime DESC, score ASC
                          LIMIT {}",
-                        latest_n
-                    ))?;
+                    latest_n
+                ))?;
 
-                    let rows = stmt.query_map(params![&task_description], |row| {
-                        let metadata_str: String = row.get(0)?;
-                        let datetime: String = row.get(1)?;
-                        let score: f64 = row.get(2)?;
-                        Ok((metadata_str, datetime, score))
-                    })?;
+                let rows = stmt.query_map(params![&task_description], |row| {
+                    let metadata_str: String = row.get(0)?;
+                    let datetime: String = row.get(1)?;
+                    let score: f64 = row.get(2)?;
+                    Ok((metadata_str, datetime, score))
+                })?;
 
-                    let mut results = Vec::new();
-                    for row in rows {
-                        let (metadata_str, datetime, score) = row?;
-                        let metadata: Value =
-                            serde_json::from_str(&metadata_str).unwrap_or(Value::Null);
-                        let mut entry = HashMap::new();
-                        entry.insert("metadata".to_string(), metadata);
-                        entry.insert("datetime".to_string(), Value::String(datetime));
-                        entry.insert(
-                            "score".to_string(),
-                            serde_json::to_value(score).unwrap_or(Value::Null),
-                        );
-                        results.push(entry);
-                    }
-
-                    if results.is_empty() {
-                        Ok(None)
-                    } else {
-                        Ok(Some(results))
-                    }
+                let mut results = Vec::new();
+                for row in rows {
+                    let (metadata_str, datetime, score) = row?;
+                    let metadata: Value =
+                        serde_json::from_str(&metadata_str).unwrap_or(Value::Null);
+                    let mut entry = HashMap::new();
+                    entry.insert("metadata".to_string(), metadata);
+                    entry.insert("datetime".to_string(), Value::String(datetime));
+                    entry.insert(
+                        "score".to_string(),
+                        serde_json::to_value(score).unwrap_or(Value::Null),
+                    );
+                    results.push(entry);
                 }
-                Err(e) => {
-                    if verbose {
-                        log::error!(
-                            "MEMORY ERROR: An error occurred while querying LTM: {}",
-                            e
-                        );
-                    }
+
+                if results.is_empty() {
                     Ok(None)
+                } else {
+                    Ok(Some(results))
                 }
+            }
+            Err(e) => {
+                if verbose {
+                    log::error!("MEMORY ERROR: An error occurred while querying LTM: {}", e);
+                }
+                Ok(None)
             }
         })
         .await?
@@ -299,21 +280,19 @@ impl LTMSQLiteStorage {
         let db_path = self.db_path.clone();
         let verbose = self.verbose;
 
-        tokio::task::spawn_blocking(move || {
-            match Connection::open(&db_path) {
-                Ok(conn) => {
-                    conn.execute("DELETE FROM long_term_memories", [])?;
-                    Ok(())
+        tokio::task::spawn_blocking(move || match Connection::open(&db_path) {
+            Ok(conn) => {
+                conn.execute("DELETE FROM long_term_memories", [])?;
+                Ok(())
+            }
+            Err(e) => {
+                if verbose {
+                    log::error!(
+                        "MEMORY ERROR: An error occurred while deleting all rows in LTM: {}",
+                        e
+                    );
                 }
-                Err(e) => {
-                    if verbose {
-                        log::error!(
-                            "MEMORY ERROR: An error occurred while deleting all rows in LTM: {}",
-                            e
-                        );
-                    }
-                    Err(anyhow::anyhow!(e))
-                }
+                Err(anyhow::anyhow!(e))
             }
         })
         .await?

@@ -33,7 +33,9 @@ pub struct TLSConfig {
     pub verify: bool,
 }
 
-fn default_true() -> bool { true }
+fn default_true() -> bool {
+    true
+}
 
 impl Default for TLSConfig {
     fn default() -> Self {
@@ -138,8 +140,12 @@ pub struct APIKeyAuth {
     pub tls: Option<TLSConfig>,
 }
 
-fn default_header() -> APIKeyLocation { APIKeyLocation::Header }
-fn default_api_key_name() -> String { "X-API-Key".to_string() }
+fn default_header() -> APIKeyLocation {
+    APIKeyLocation::Header
+}
+fn default_api_key_name() -> String {
+    "X-API-Key".to_string()
+}
 
 /// Where to send the API key.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -70,9 +70,7 @@ impl LLMGuardrail {
 
         // TODO: Implement actual LLM call through the agent system.
         // For now, return a placeholder indicating validation is pending.
-        log::warn!(
-            "LLMGuardrail.call() is a stub -- actual LLM validation not yet implemented"
-        );
+        log::warn!("LLMGuardrail.call() is a stub -- actual LLM validation not yet implemented");
         (true, task_output.raw.clone())
     }
 }

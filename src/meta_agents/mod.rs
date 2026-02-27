@@ -84,15 +84,17 @@ pub mod types;
 // Re-exports for convenience.
 pub use delegation::{
     AgentFeedback, CapabilityUpdate, CapabilityUpdateTrigger, DelegationDispatch,
-    DelegationRequest, DelegationResponse, DelegationResult, OrchestrationEvent,
-    SkillAdjustment, SkillAdjustmentType, TaskOutcome,
+    DelegationRequest, DelegationResponse, DelegationResult, OrchestrationEvent, SkillAdjustment,
+    SkillAdjustmentType, TaskOutcome,
 };
-pub use dto_meta::{DtoContentType, DtoEnvelope, DtoRegistry, DtoSchema, SchemaVersion, ValidationResult};
-pub use orchestrator::{MetaOrchestrator, OrchestratorConfig, OrchestrationResult, PoolStats};
+pub use dto_meta::{
+    DtoContentType, DtoEnvelope, DtoRegistry, DtoSchema, SchemaVersion, ValidationResult,
+};
+pub use orchestrator::{MetaOrchestrator, OrchestrationResult, OrchestratorConfig, PoolStats};
 pub use savant_meta::{CrossDomainDelegation, RoutingDecision, SavantCoordinator, SavantEntry};
 pub use skill_engine::{SkillEngine, SkillEngineConfig};
 pub use spawner::{DecomposedTask, DecompositionPlan, SpawnerAgent};
 pub use types::{
-    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain,
-    SkillDescriptor, SpawnedAgentState, TaskPriority,
+    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain, SkillDescriptor,
+    SpawnedAgentState, TaskPriority,
 };

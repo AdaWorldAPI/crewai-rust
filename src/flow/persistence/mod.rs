@@ -158,9 +158,10 @@ impl SQLiteFlowPersistence {
 
 impl FlowPersistence for SQLiteFlowPersistence {
     fn init_db(&self) -> Result<(), anyhow::Error> {
-        let conn = self.conn.lock().map_err(|e| {
-            anyhow::anyhow!("Failed to acquire database lock: {}", e)
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| anyhow::anyhow!("Failed to acquire database lock: {}", e))?;
 
         // Main state table.
         conn.execute(
@@ -209,9 +210,10 @@ impl FlowPersistence for SQLiteFlowPersistence {
         method_name: &str,
         state_data: &Value,
     ) -> Result<(), anyhow::Error> {
-        let conn = self.conn.lock().map_err(|e| {
-            anyhow::anyhow!("Failed to acquire database lock: {}", e)
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| anyhow::anyhow!("Failed to acquire database lock: {}", e))?;
 
         let state_json = serde_json::to_string(state_data)?;
         let now = Utc::now().to_rfc3339();
@@ -232,9 +234,10 @@ impl FlowPersistence for SQLiteFlowPersistence {
     }
 
     fn load_state(&self, flow_uuid: &str) -> Result<Option<Value>, anyhow::Error> {
-        let conn = self.conn.lock().map_err(|e| {
-            anyhow::anyhow!("Failed to acquire database lock: {}", e)
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| anyhow::anyhow!("Failed to acquire database lock: {}", e))?;
 
         let mut stmt = conn.prepare(
             "SELECT state_json FROM flow_states
@@ -243,9 +246,7 @@ impl FlowPersistence for SQLiteFlowPersistence {
              LIMIT 1",
         )?;
 
-        let result: Option<String> = stmt
-            .query_row(params![flow_uuid], |row| row.get(0))
-            .ok();
+        let result: Option<String> = stmt.query_row(params![flow_uuid], |row| row.get(0)).ok();
 
         match result {
             Some(json_str) => {
@@ -265,9 +266,10 @@ impl FlowPersistence for SQLiteFlowPersistence {
         // Also save to regular state table for consistency.
         self.save_state(flow_uuid, &context.method_name, state_data)?;
 
-        let conn = self.conn.lock().map_err(|e| {
-            anyhow::anyhow!("Failed to acquire database lock: {}", e)
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| anyhow::anyhow!("Failed to acquire database lock: {}", e))?;
 
         let context_json = serde_json::to_string(&context.to_dict())?;
         let state_json = serde_json::to_string(state_data)?;
@@ -293,9 +295,10 @@ impl FlowPersistence for SQLiteFlowPersistence {
         &self,
         flow_uuid: &str,
     ) -> Result<Option<(Value, PendingFeedbackContext)>, anyhow::Error> {
-        let conn = self.conn.lock().map_err(|e| {
-            anyhow::anyhow!("Failed to acquire database lock: {}", e)
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| anyhow::anyhow!("Failed to acquire database lock: {}", e))?;
 
         let mut stmt = conn.prepare(
             "SELECT state_json, context_json FROM pending_feedback
@@ -303,9 +306,7 @@ impl FlowPersistence for SQLiteFlowPersistence {
         )?;
 
         let result: Option<(String, String)> = stmt
-            .query_row(params![flow_uuid], |row| {
-                Ok((row.get(0)?, row.get(1)?))
-            })
+            .query_row(params![flow_uuid], |row| Ok((row.get(0)?, row.get(1)?)))
             .ok();
 
         match result {
@@ -322,9 +323,10 @@ impl FlowPersistence for SQLiteFlowPersistence {
     }
 
     fn clear_pending_feedback(&self, flow_uuid: &str) -> Result<(), anyhow::Error> {
-        let conn = self.conn.lock().map_err(|e| {
-            anyhow::anyhow!("Failed to acquire database lock: {}", e)
-        })?;
+        let conn = self
+            .conn
+            .lock()
+            .map_err(|e| anyhow::anyhow!("Failed to acquire database lock: {}", e))?;
 
         conn.execute(
             "DELETE FROM pending_feedback WHERE flow_uuid = ?1",
@@ -373,11 +375,7 @@ impl PersistenceDecorator {
         persistence
             .save_state(flow_uuid, method_name, state_data)
             .map_err(|e| {
-                log::error!(
-                    "Failed to persist state for method {}: {}",
-                    method_name,
-                    e
-                );
+                log::error!("Failed to persist state for method {}: {}", method_name, e);
                 anyhow::anyhow!("State persistence failed: {}", e)
             })
     }

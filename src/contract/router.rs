@@ -179,11 +179,7 @@ impl StepRouter {
     ///
     /// Returns an error if no handler is registered for the step's domain,
     /// or if the handler itself returns an error.
-    pub fn dispatch(
-        &self,
-        step: &mut UnifiedStep,
-        bb: &mut Blackboard,
-    ) -> StepResult {
+    pub fn dispatch(&self, step: &mut UnifiedStep, bb: &mut Blackboard) -> StepResult {
         let domain = StepDomain::from_step_type(&step.step_type).ok_or_else(|| {
             format!(
                 "Unknown step domain for step_type '{}'. Known domains: crew, lb, n8n, oc, chess",
@@ -212,11 +208,7 @@ impl StepRouter {
     ///
     /// Stops at the first failure. Each step gets a fresh phase in the
     /// blackboard trace.
-    pub fn dispatch_all(
-        &self,
-        steps: &mut [UnifiedStep],
-        bb: &mut Blackboard,
-    ) -> StepResult {
+    pub fn dispatch_all(&self, steps: &mut [UnifiedStep], bb: &mut Blackboard) -> StepResult {
         for step in steps.iter_mut() {
             if step.status != super::types::StepStatus::Pending {
                 continue; // Skip already-processed steps
@@ -264,7 +256,12 @@ mod tests {
             step.mark_running();
             // Write output to blackboard (zero-serde)
             let key = format!("{}:{}", step.step_type, step.sequence);
-            bb.put_typed(key, format!("output from {}", step.name), &step.step_type, &step.step_type);
+            bb.put_typed(
+                key,
+                format!("output from {}", step.name),
+                &step.step_type,
+                &step.step_type,
+            );
             step.mark_completed(serde_json::json!({"handled": true}));
             Ok(())
         }
@@ -291,18 +288,33 @@ mod tests {
 
     #[test]
     fn test_step_domain_from_step_type() {
-        assert_eq!(StepDomain::from_step_type("crew.agent"), Some(StepDomain::Crew));
-        assert_eq!(StepDomain::from_step_type("lb.resonate"), Some(StepDomain::Ladybug));
+        assert_eq!(
+            StepDomain::from_step_type("crew.agent"),
+            Some(StepDomain::Crew)
+        );
+        assert_eq!(
+            StepDomain::from_step_type("lb.resonate"),
+            Some(StepDomain::Ladybug)
+        );
         assert_eq!(StepDomain::from_step_type("n8n.set"), Some(StepDomain::N8n));
-        assert_eq!(StepDomain::from_step_type("oc.channel.receive"), Some(StepDomain::OpenClaw));
-        assert_eq!(StepDomain::from_step_type("chess.evaluate"), Some(StepDomain::Chess));
+        assert_eq!(
+            StepDomain::from_step_type("oc.channel.receive"),
+            Some(StepDomain::OpenClaw)
+        );
+        assert_eq!(
+            StepDomain::from_step_type("chess.evaluate"),
+            Some(StepDomain::Chess)
+        );
         assert_eq!(StepDomain::from_step_type("unknown.thing"), None);
         assert_eq!(StepDomain::from_step_type(""), None);
     }
 
     #[test]
     fn test_step_domain_sub_type() {
-        assert_eq!(StepDomain::sub_type("oc.channel.receive"), "channel.receive");
+        assert_eq!(
+            StepDomain::sub_type("oc.channel.receive"),
+            "channel.receive"
+        );
         assert_eq!(StepDomain::sub_type("crew.agent"), "agent");
         assert_eq!(StepDomain::sub_type("lb.resonate"), "resonate");
     }
@@ -317,8 +329,12 @@ mod tests {
     #[test]
     fn test_router_register_and_dispatch() {
         let mut router = StepRouter::new();
-        router.register(Box::new(TestHandler { domain: StepDomain::Crew }));
-        router.register(Box::new(TestHandler { domain: StepDomain::OpenClaw }));
+        router.register(Box::new(TestHandler {
+            domain: StepDomain::Crew,
+        }));
+        router.register(Box::new(TestHandler {
+            domain: StepDomain::OpenClaw,
+        }));
 
         assert!(router.has_handler(StepDomain::Crew));
         assert!(router.has_handler(StepDomain::OpenClaw));
@@ -362,8 +378,12 @@ mod tests {
     #[test]
     fn test_router_dispatch_all() {
         let mut router = StepRouter::new();
-        router.register(Box::new(TestHandler { domain: StepDomain::Crew }));
-        router.register(Box::new(TestHandler { domain: StepDomain::OpenClaw }));
+        router.register(Box::new(TestHandler {
+            domain: StepDomain::Crew,
+        }));
+        router.register(Box::new(TestHandler {
+            domain: StepDomain::OpenClaw,
+        }));
 
         let mut bb = Blackboard::new();
         let mut steps = vec![
@@ -382,7 +402,9 @@ mod tests {
     fn test_router_dispatch_all_stops_on_failure() {
         let mut router = StepRouter::new();
         router.register(Box::new(FailHandler)); // n8n handler that fails
-        router.register(Box::new(TestHandler { domain: StepDomain::Crew }));
+        router.register(Box::new(TestHandler {
+            domain: StepDomain::Crew,
+        }));
 
         let mut bb = Blackboard::new();
         let mut steps = vec![
@@ -402,7 +424,9 @@ mod tests {
     #[test]
     fn test_router_skips_non_pending() {
         let mut router = StepRouter::new();
-        router.register(Box::new(TestHandler { domain: StepDomain::Crew }));
+        router.register(Box::new(TestHandler {
+            domain: StepDomain::Crew,
+        }));
 
         let mut bb = Blackboard::new();
         let mut already_done = UnifiedStep::new("e1", "crew.agent", "Done", 0);

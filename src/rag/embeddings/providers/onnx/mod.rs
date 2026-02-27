@@ -90,10 +90,7 @@ impl BaseEmbedding for OnnxEmbedding {
     }
 
     async fn embed_documents(&self, documents: &[String]) -> Vec<EmbeddingResult> {
-        log::debug!(
-            "ONNX embed_documents: {} documents",
-            documents.len()
-        );
+        log::debug!("ONNX embed_documents: {} documents", documents.len());
         documents.iter().map(|_| Vec::new()).collect()
     }
 }

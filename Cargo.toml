@@ -112,10 +112,10 @@ tonic-prost-build = { version = "0.14", optional = true }
 [features]
 default = []
 postgres = ["sqlx"]
-# ladybug = ["dep:ladybug-contract"]  # activated by Docker sed (requires ladybug-contract dep)
+ladybug = []      # activated by Docker sed — guards ladybug-contract integration code
 wire_protocol = []  # Enable when ladybug-contract gains the wire module
+chess = []          # guards chess savant personalities (chess program tools extracted to separate crate)
 xai-grpc = ["dep:tonic", "dep:tonic-prost", "dep:prost", "dep:prost-types", "dep:tonic-build", "dep:tonic-prost-build"]
-# chess = ["dep:stonksfish", "dep:ladybug", "dep:chess", "dep:neo4j-rs"]  # see chess-savant branch
 # Vendor feature flags — activated by Docker sed
 # vendor-ladybug = ["dep:ladybug-vendor", "ladybug"]
 # vendor-n8n = ["dep:n8n-core", "dep:n8n-workflow", "dep:n8n-hamming"]

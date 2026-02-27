@@ -117,14 +117,12 @@ impl RPMController {
 
         thread::Builder::new()
             .name("rpm-controller-timer".to_string())
-            .spawn(move || {
-                loop {
-                    thread::sleep(Duration::from_secs(60));
-                    if shutdown_flag.load(Ordering::SeqCst) {
-                        break;
-                    }
-                    current_rpm.store(0, Ordering::SeqCst);
+            .spawn(move || loop {
+                thread::sleep(Duration::from_secs(60));
+                if shutdown_flag.load(Ordering::SeqCst) {
+                    break;
                 }
+                current_rpm.store(0, Ordering::SeqCst);
             })
             .expect("Failed to spawn RPM controller timer thread");
     }

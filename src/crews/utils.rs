@@ -174,9 +174,7 @@ pub fn setup_agents(
 /// # Returns
 ///
 /// The potentially modified inputs dictionary after before callbacks.
-pub fn prepare_kickoff(
-    inputs: Option<HashMap<String, String>>,
-) -> Option<HashMap<String, String>> {
+pub fn prepare_kickoff(inputs: Option<HashMap<String, String>>) -> Option<HashMap<String, String>> {
     // TODO: Implement full kickoff preparation logic:
     // 1. Normalize inputs to dict
     // 2. Run before_kickoff callbacks

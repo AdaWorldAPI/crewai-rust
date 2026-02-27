@@ -40,7 +40,7 @@ pub mod triune_dispatch;
 // Re-exports
 pub use composite::{CompositeStyle, PresetComposite};
 pub use inner_loop::{AgentState, InnerThoughtHook};
-pub use jit_link::{JitProfile, JitTemplate, JitScanParams};
+pub use jit_link::{JitProfile, JitScanParams, JitTemplate};
 pub use llm_modulation::{modulate_xai_params, CouncilWeights, XaiParamOverrides};
 pub use profile::{PersonaProfile, SelfModifyBounds};
 pub use qualia_prompt::{
@@ -50,11 +50,8 @@ pub use thinking_style::{
     ExecutableStyle, StyleCluster, StyleTexture, ThinkingStyle, STYLE_TEXTURES, STYLE_TO_TAU,
     STYLE_VECTORS,
 };
-pub use triune::{
-    CouncilResult, Facet, FacetOpinion, FacetState, Strategy, TriuneTopology,
-};
+pub use triune::{CouncilResult, Facet, FacetOpinion, FacetState, Strategy, TriuneTopology};
 pub use triune_dispatch::{
-    BarrierDecision, CollapseGate, TriuneDispatch,
-    facet_addr, facet_blackboard_addr, facet_channel_addr, facet_slot,
-    SLOT_GUARDIAN, SLOT_DRIVER, SLOT_CATALYST,
+    facet_addr, facet_blackboard_addr, facet_channel_addr, facet_slot, BarrierDecision,
+    CollapseGate, TriuneDispatch, SLOT_CATALYST, SLOT_DRIVER, SLOT_GUARDIAN,
 };

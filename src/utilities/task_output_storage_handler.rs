@@ -32,7 +32,9 @@ impl TaskOutputStorageHandler {
 
     /// Add a task output to storage.
     pub fn add(&self, task_id: &str, output: Value) -> std::io::Result<()> {
-        let mut data = self.load().unwrap_or_else(|| Value::Object(Default::default()));
+        let mut data = self
+            .load()
+            .unwrap_or_else(|| Value::Object(Default::default()));
 
         if let Value::Object(ref mut map) = data {
             map.insert(task_id.to_string(), output);

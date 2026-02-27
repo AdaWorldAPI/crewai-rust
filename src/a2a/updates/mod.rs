@@ -19,8 +19,12 @@ pub struct PollingConfig {
     pub history_length: u32,
 }
 
-fn default_interval() -> f64 { 2.0 }
-fn default_history_length() -> u32 { 100 }
+fn default_interval() -> f64 {
+    2.0
+}
+fn default_history_length() -> u32 {
+    100
+}
 
 impl Default for PollingConfig {
     fn default() -> Self {
@@ -56,8 +60,12 @@ pub struct PushNotificationConfig {
     pub signature_secret: Option<String>,
 }
 
-fn default_push_timeout() -> Option<f64> { Some(300.0) }
-fn default_push_interval() -> f64 { 2.0 }
+fn default_push_timeout() -> Option<f64> {
+    Some(300.0)
+}
+fn default_push_interval() -> f64 {
+    2.0
+}
 
 /// Enum representing the different update config types.
 #[derive(Debug, Clone, Serialize, Deserialize)]

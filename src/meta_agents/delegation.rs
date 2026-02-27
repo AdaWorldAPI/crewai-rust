@@ -63,14 +63,13 @@ pub struct DelegationRequest {
     pub metadata: HashMap<String, Value>,
 }
 
-fn default_max_turns() -> u32 { 10 }
+fn default_max_turns() -> u32 {
+    10
+}
 
 impl DelegationRequest {
     /// Create a new delegation request.
-    pub fn new(
-        from_agent: impl Into<String>,
-        task_description: impl Into<String>,
-    ) -> Self {
+    pub fn new(from_agent: impl Into<String>, task_description: impl Into<String>) -> Self {
         Self {
             id: Uuid::new_v4().to_string(),
             from_agent: from_agent.into(),
@@ -299,7 +298,8 @@ impl AgentFeedback {
 
     /// Builder: add a proficiency delta.
     pub fn with_proficiency_delta(mut self, skill_id: impl Into<String>, delta: f64) -> Self {
-        self.proficiency_deltas.insert(skill_id.into(), delta.clamp(-1.0, 1.0));
+        self.proficiency_deltas
+            .insert(skill_id.into(), delta.clamp(-1.0, 1.0));
         self
     }
 
@@ -326,10 +326,7 @@ pub enum OrchestrationEvent {
         skills: Vec<String>,
     },
     /// An agent was terminated from the pool.
-    AgentTerminated {
-        agent_id: String,
-        reason: String,
-    },
+    AgentTerminated { agent_id: String, reason: String },
     /// A task was added to the queue.
     TaskQueued {
         task_id: String,
@@ -343,10 +340,7 @@ pub enum OrchestrationEvent {
         match_score: f64,
     },
     /// A task started executing.
-    TaskStarted {
-        task_id: String,
-        agent_id: String,
-    },
+    TaskStarted { task_id: String, agent_id: String },
     /// A task completed successfully.
     TaskCompleted {
         task_id: String,

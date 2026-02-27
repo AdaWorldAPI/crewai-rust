@@ -36,20 +36,19 @@ pub mod xai_api {
 
 use std::sync::Arc;
 use tonic::metadata::MetadataValue;
-use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
 use tonic::service::interceptor::InterceptedService;
+use tonic::transport::{Channel, ClientTlsConfig, Endpoint};
 use tonic::{Request, Status};
 
 // Re-export the key generated types for ergonomic use
-pub use xai_api::{
-    GetCompletionsRequest, GetChatCompletionResponse, GetChatCompletionChunk,
-    Message, Content, MessageRole, CompletionOutput, CompletionMessage,
-    EmbedRequest, EmbedResponse, Embedding, FeatureVector, EmbedEncodingFormat,
-    EmbedInput, FinishReason,
-};
 pub use xai_api::chat_client::ChatClient;
 pub use xai_api::embedder_client::EmbedderClient;
 pub use xai_api::models_client::ModelsClient;
+pub use xai_api::{
+    CompletionMessage, CompletionOutput, Content, EmbedEncodingFormat, EmbedInput, EmbedRequest,
+    EmbedResponse, Embedding, FeatureVector, FinishReason, GetChatCompletionChunk,
+    GetChatCompletionResponse, GetCompletionsRequest, Message, MessageRole,
+};
 
 /// Default xAI gRPC endpoint.
 pub const XAI_GRPC_ENDPOINT: &str = "https://api.x.ai";
@@ -74,7 +73,10 @@ impl BearerAuth {
 
 impl tonic::service::Interceptor for BearerAuth {
     fn call(&mut self, mut req: Request<()>) -> Result<Request<()>, Status> {
-        let val: MetadataValue<_> = self.token.as_str().parse()
+        let val: MetadataValue<_> = self
+            .token
+            .as_str()
+            .parse()
             .map_err(|_| Status::internal("invalid auth token"))?;
         req.metadata_mut().insert("authorization", val);
         Ok(req)
@@ -135,11 +137,7 @@ impl XaiGrpcClient {
     }
 
     /// Simple chat completion: send a user message, get the response text.
-    pub async fn complete(
-        &mut self,
-        model: &str,
-        prompt: &str,
-    ) -> Result<String, Status> {
+    pub async fn complete(&mut self, model: &str, prompt: &str) -> Result<String, Status> {
         let request = GetCompletionsRequest {
             model: model.to_string(),
             messages: vec![Message {
@@ -156,7 +154,9 @@ impl XaiGrpcClient {
         let inner = response.into_inner();
 
         // Extract text from first output
-        let text = inner.outputs.first()
+        let text = inner
+            .outputs
+            .first()
             .and_then(|o| o.message.as_ref())
             .map(|m| m.content.clone())
             .unwrap_or_default();
@@ -207,16 +207,15 @@ impl XaiGrpcClient {
     }
 
     /// Embed text strings — returns float vectors.
-    pub async fn embed(
-        &mut self,
-        model: &str,
-        texts: &[&str],
-    ) -> Result<Vec<Vec<f32>>, Status> {
+    pub async fn embed(&mut self, model: &str, texts: &[&str]) -> Result<Vec<Vec<f32>>, Status> {
         let request = EmbedRequest {
             model: model.to_string(),
-            input: texts.iter().map(|t| EmbedInput {
-                input: Some(xai_api::embed_input::Input::String(t.to_string())),
-            }).collect(),
+            input: texts
+                .iter()
+                .map(|t| EmbedInput {
+                    input: Some(xai_api::embed_input::Input::String(t.to_string())),
+                })
+                .collect(),
             encoding_format: EmbedEncodingFormat::FormatFloat.into(),
             ..Default::default()
         };
@@ -224,7 +223,9 @@ impl XaiGrpcClient {
         let response = self.embedder.embed(request).await?;
         let inner = response.into_inner();
 
-        let vectors: Vec<Vec<f32>> = inner.embeddings.iter()
+        let vectors: Vec<Vec<f32>> = inner
+            .embeddings
+            .iter()
             .flat_map(|emb| emb.embeddings.iter())
             .map(|fv| fv.float_array.clone())
             .collect();
@@ -235,7 +236,8 @@ impl XaiGrpcClient {
     /// List available language models.
     pub async fn list_models(&mut self) -> Result<Vec<String>, Status> {
         let response = self.models.list_language_models(()).await?;
-        let names: Vec<String> = response.into_inner()
+        let names: Vec<String> = response
+            .into_inner()
             .models
             .iter()
             .map(|m| m.name.clone())
@@ -285,7 +287,7 @@ pub fn assistant_message(text: &str) -> Message {
 // XaiBlackboardAgent — xAI agent that operates via blackboard
 // ---------------------------------------------------------------------------
 
-use crate::blackboard::{Blackboard, AgentState};
+use crate::blackboard::{AgentState, Blackboard};
 
 /// Typed slot value for xAI responses stored on the blackboard.
 #[derive(Debug, Clone)]
@@ -385,47 +387,54 @@ impl XaiBlackboardAgent {
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         // Mark active
         bb.a2a.set_state(&self.agent_id, AgentState::Active);
-        bb.a2a.set_goal(&self.agent_id, format!("Processing {}", input_key));
+        bb.a2a
+            .set_goal(&self.agent_id, format!("Processing {}", input_key));
 
         // Read prompt from blackboard
-        let prompt_value = bb.get_value(input_key)
+        let prompt_value = bb
+            .get_value(input_key)
             .ok_or("Input slot not found")?
             .clone();
 
-        let text = prompt_value.get("text")
+        let text = prompt_value
+            .get("text")
             .and_then(|v| v.as_str())
             .ok_or("Input slot missing 'text' field")?
             .to_string();
 
-        let model = prompt_value.get("model")
+        let model = prompt_value
+            .get("model")
             .and_then(|v| v.as_str())
             .unwrap_or(&self.default_model)
             .to_string();
 
         // Call xAI gRPC
-        let response = self.client.complete_messages(
-            &model,
-            vec![user_message(&text)],
-            None,
-            None,
-        ).await?;
+        let response = self
+            .client
+            .complete_messages(&model, vec![user_message(&text)], None, None)
+            .await?;
 
         // Extract content
-        let content = response.outputs.first()
+        let content = response
+            .outputs
+            .first()
             .and_then(|o| o.message.as_ref())
             .map(|m| m.content.clone())
             .unwrap_or_default();
 
-        let reasoning = response.outputs.first()
+        let reasoning = response
+            .outputs
+            .first()
             .and_then(|o| o.message.as_ref())
             .map(|m| m.reasoning_content.clone())
             .filter(|r| !r.is_empty());
 
         // Extract usage
-        let (prompt_tokens, completion_tokens, total_tokens) =
-            response.usage.as_ref().map(|u| {
-                (u.prompt_tokens, u.completion_tokens, u.total_tokens)
-            }).unwrap_or((0, 0, 0));
+        let (prompt_tokens, completion_tokens, total_tokens) = response
+            .usage
+            .as_ref()
+            .map(|u| (u.prompt_tokens, u.completion_tokens, u.total_tokens))
+            .unwrap_or((0, 0, 0));
 
         // Write typed response to blackboard
         let xai_response = XaiResponse {
@@ -461,8 +470,7 @@ impl XaiBlackboardAgent {
 
         let vectors = self.client.embed(&self.embed_model, &[text]).await?;
 
-        let vector = vectors.into_iter().next()
-            .ok_or("No embedding returned")?;
+        let vector = vectors.into_iter().next().ok_or("No embedding returned")?;
 
         let dimensions = vector.len();
 
@@ -473,12 +481,7 @@ impl XaiBlackboardAgent {
             dimensions,
         };
 
-        bb.put_typed(
-            output_key,
-            embedding,
-            &self.agent_id,
-            "xai.grpc.embed",
-        );
+        bb.put_typed(output_key, embedding, &self.agent_id, "xai.grpc.embed");
 
         bb.a2a.set_state(&self.agent_id, AgentState::Completed);
 
@@ -529,8 +532,10 @@ mod tests {
         let mut bb = Blackboard::new();
 
         // Register agents
-        bb.a2a.register("xai-agent", "Grok", "xAI model", vec!["chat".into()]);
-        bb.a2a.register("claude-agent", "Claude", "reasoning", vec!["reason".into()]);
+        bb.a2a
+            .register("xai-agent", "Grok", "xAI model", vec!["chat".into()]);
+        bb.a2a
+            .register("claude-agent", "Claude", "reasoning", vec!["reason".into()]);
 
         assert_eq!(bb.a2a.len(), 2);
 
@@ -592,9 +597,20 @@ mod tests {
         let mut bb = Blackboard::new();
 
         // Register 3 agents
-        bb.a2a.register("claude", "Claude", "reasoning", vec!["reason".into()]);
-        bb.a2a.register("grok", "Grok", "completion", vec!["chat".into(), "embed".into()]);
-        bb.a2a.register("orchestrator", "Orchestrator", "routing", vec!["route".into()]);
+        bb.a2a
+            .register("claude", "Claude", "reasoning", vec!["reason".into()]);
+        bb.a2a.register(
+            "grok",
+            "Grok",
+            "completion",
+            vec!["chat".into(), "embed".into()],
+        );
+        bb.a2a.register(
+            "orchestrator",
+            "Orchestrator",
+            "routing",
+            vec!["route".into()],
+        );
 
         // Orchestrator posts a task
         bb.put(
@@ -624,7 +640,10 @@ mod tests {
         // Claude reads Grok's response and adds analysis
         bb.a2a.set_state("claude", AgentState::Active);
         let grok_resp = bb.get_typed::<XaiResponse>("response:0").unwrap();
-        let analysis = format!("Grok says: '{}'. Analysis: mission-aligned.", grok_resp.content);
+        let analysis = format!(
+            "Grok says: '{}'. Analysis: mission-aligned.",
+            grok_resp.content
+        );
         bb.put(
             "analysis:0",
             serde_json::json!({"text": analysis, "source": "claude"}),
@@ -636,7 +655,10 @@ mod tests {
         // Orchestrator reads the analysis
         let analysis_val = bb.get_value("analysis:0").unwrap();
         assert!(analysis_val["text"].as_str().unwrap().contains("Grok says"));
-        assert!(analysis_val["text"].as_str().unwrap().contains("mission-aligned"));
+        assert!(analysis_val["text"]
+            .as_str()
+            .unwrap()
+            .contains("mission-aligned"));
 
         // Verify all agents completed
         assert_eq!(bb.a2a.get("grok").unwrap().state, AgentState::Completed);
@@ -652,12 +674,24 @@ mod tests {
     fn test_a2a_capability_discovery() {
         let mut bb = Blackboard::new();
 
-        bb.a2a.register("grok", "Grok", "xAI model",
-            vec!["chat".into(), "embed".into(), "search".into()]);
-        bb.a2a.register("claude", "Claude", "Anthropic model",
-            vec!["reason".into(), "code".into()]);
-        bb.a2a.register("searcher", "WebSearch", "search tool",
-            vec!["search".into()]);
+        bb.a2a.register(
+            "grok",
+            "Grok",
+            "xAI model",
+            vec!["chat".into(), "embed".into(), "search".into()],
+        );
+        bb.a2a.register(
+            "claude",
+            "Claude",
+            "Anthropic model",
+            vec!["reason".into(), "code".into()],
+        );
+        bb.a2a.register(
+            "searcher",
+            "WebSearch",
+            "search tool",
+            vec!["search".into()],
+        );
 
         // Find all agents that can search
         let searchers = bb.a2a.by_capability("search");
@@ -676,13 +710,16 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_xai_grpc_real_completion() {
-        let api_key = std::env::var("XAI_API_KEY")
-            .expect("XAI_API_KEY required for integration test");
+        let api_key =
+            std::env::var("XAI_API_KEY").expect("XAI_API_KEY required for integration test");
 
-        let mut client = XaiGrpcClient::connect(&api_key).await
+        let mut client = XaiGrpcClient::connect(&api_key)
+            .await
             .expect("Failed to connect to xAI gRPC");
 
-        let response = client.complete("grok-3-mini", "Say hello in exactly 3 words.").await
+        let response = client
+            .complete("grok-3-mini", "Say hello in exactly 3 words.")
+            .await
             .expect("Completion failed");
 
         assert!(!response.is_empty(), "Empty response from Grok");
@@ -693,13 +730,16 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_xai_grpc_real_embedding() {
-        let api_key = std::env::var("XAI_API_KEY")
-            .expect("XAI_API_KEY required for integration test");
+        let api_key =
+            std::env::var("XAI_API_KEY").expect("XAI_API_KEY required for integration test");
 
-        let mut client = XaiGrpcClient::connect(&api_key).await
+        let mut client = XaiGrpcClient::connect(&api_key)
+            .await
             .expect("Failed to connect to xAI gRPC");
 
-        let vectors = client.embed("v3-embedding", &["Hello world", "Goodbye world"]).await
+        let vectors = client
+            .embed("v3-embedding", &["Hello world", "Goodbye world"])
+            .await
             .expect("Embedding failed");
 
         assert_eq!(vectors.len(), 2, "Expected 2 embeddings");
@@ -711,22 +751,24 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_xai_grpc_blackboard_real() {
-        let api_key = std::env::var("XAI_API_KEY")
-            .expect("XAI_API_KEY required for integration test");
+        let api_key =
+            std::env::var("XAI_API_KEY").expect("XAI_API_KEY required for integration test");
 
         let mut bb = Blackboard::new();
 
         // Register Claude agent
-        bb.a2a.register("claude", "Claude", "reasoning",
-            vec!["reason".into(), "code".into()]);
+        bb.a2a.register(
+            "claude",
+            "Claude",
+            "reasoning",
+            vec!["reason".into(), "code".into()],
+        );
 
         // Create xAI agent (registers itself in A2A)
-        let mut xai_agent = XaiBlackboardAgent::with_models(
-            &api_key,
-            "grok-3-mini",
-            "v3-embedding",
-            &mut bb,
-        ).await.expect("Failed to connect xAI agent");
+        let mut xai_agent =
+            XaiBlackboardAgent::with_models(&api_key, "grok-3-mini", "v3-embedding", &mut bb)
+                .await
+                .expect("Failed to connect xAI agent");
 
         assert_eq!(bb.a2a.len(), 2);
 
@@ -739,18 +781,27 @@ mod tests {
         );
 
         // xAI processes it via gRPC
-        xai_agent.process_slot(&mut bb, "prompt:0", "response:0").await
+        xai_agent
+            .process_slot(&mut bb, "prompt:0", "response:0")
+            .await
             .expect("process_slot failed");
 
         // Read response
-        let resp = bb.get_typed::<XaiResponse>("response:0")
+        let resp = bb
+            .get_typed::<XaiResponse>("response:0")
             .expect("No response slot");
         println!("Grok response: {}", resp.content);
-        assert!(resp.content.to_lowercase().contains("paris"),
-            "Expected 'paris' in response, got: {}", resp.content);
+        assert!(
+            resp.content.to_lowercase().contains("paris"),
+            "Expected 'paris' in response, got: {}",
+            resp.content
+        );
 
         // Verify A2A state
-        assert_eq!(bb.a2a.get("xai-grpc-agent").unwrap().state, AgentState::Completed);
+        assert_eq!(
+            bb.a2a.get("xai-grpc-agent").unwrap().state,
+            AgentState::Completed
+        );
     }
 
     /// Integration test — streaming completion.
@@ -759,13 +810,16 @@ mod tests {
     async fn test_xai_grpc_real_streaming() {
         use futures::StreamExt;
 
-        let api_key = std::env::var("XAI_API_KEY")
-            .expect("XAI_API_KEY required for integration test");
+        let api_key =
+            std::env::var("XAI_API_KEY").expect("XAI_API_KEY required for integration test");
 
-        let mut client = XaiGrpcClient::connect(&api_key).await
+        let mut client = XaiGrpcClient::connect(&api_key)
+            .await
             .expect("Failed to connect to xAI gRPC");
 
-        let mut stream = client.complete_stream("grok-3-mini", "Count from 1 to 5.").await
+        let mut stream = client
+            .complete_stream("grok-3-mini", "Count from 1 to 5.")
+            .await
             .expect("Stream failed");
 
         let mut chunks = 0;

@@ -13,11 +13,7 @@
 //! The awareness handler is the preferred path — it shares the awareness loop
 //! with the session context and tracks cached token savings.
 
-use axum::{
-    extract::State,
-    http::StatusCode,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -148,7 +144,10 @@ pub async fn chat_handler_awareness(
     Json(request): Json<ChatRequest>,
 ) -> Result<Json<AwareChatResponse>, (StatusCode, Json<Value>)> {
     let http = reqwest::Client::new();
-    let presence_mode = request.presence_mode.clone().unwrap_or_else(|| "hybrid".into());
+    let presence_mode = request
+        .presence_mode
+        .clone()
+        .unwrap_or_else(|| "hybrid".into());
 
     // ── Get or create session ────────────────────────────────────────────
     let session_id = request.session_id.clone();
@@ -172,8 +171,13 @@ pub async fn chat_handler_awareness(
     // Similarity search is handled natively by BindSpace Hamming search
     // during hydration — no separate fingerprint cache layer needed.
     let hydration = hydrate_from_substrate(
-        &http, &app.config, &request.message, &presence_mode, 3, // rung_hint from felt-parse inside session
-    ).await;
+        &http,
+        &app.config,
+        &request.message,
+        &presence_mode,
+        3, // rung_hint from felt-parse inside session
+    )
+    .await;
 
     let (qualia, qualia_preamble, thinking_style) = match hydration {
         Some(h) => {
@@ -215,13 +219,15 @@ pub async fn chat_handler_awareness(
     let process_result = {
         let mut sessions = app.sessions.lock().await;
         let session = sessions.get_mut(&session_id).unwrap();
-        session.process_message(
-            &request.message,
-            &qualia_preamble,
-            &qualia,
-            "", // cache context — handled natively by BindSpace during hydration
-            "", // agit context — removed (LanceDB versioning)
-        ).await
+        session
+            .process_message(
+                &request.message,
+                &qualia_preamble,
+                &qualia,
+                "", // cache context — handled natively by BindSpace during hydration
+                "", // agit context — removed (LanceDB versioning)
+            )
+            .await
     };
 
     let result = process_result.map_err(|e| {
@@ -239,9 +245,8 @@ pub async fn chat_handler_awareness(
     let wb_response = result.reply.clone();
     let wb_rung = qualia.rung_level;
     tokio::spawn(async move {
-        let _ = write_back_to_substrate(
-            &wb_http, &wb_url, &wb_message, &wb_response, wb_rung,
-        ).await;
+        let _ =
+            write_back_to_substrate(&wb_http, &wb_url, &wb_message, &wb_response, wb_rung).await;
     });
 
     // ── Step 5: Get session stats + awareness write-back ────────────────
@@ -300,8 +305,7 @@ impl ChatConfig {
                 .unwrap_or_default(),
             xai_base_url: std::env::var("XAI_BASE_URL")
                 .unwrap_or_else(|_| "https://api.x.ai/v1".into()),
-            grok_model: std::env::var("GROK_MODEL")
-                .unwrap_or_else(|_| "grok-3".into()),
+            grok_model: std::env::var("GROK_MODEL").unwrap_or_else(|_| "grok-3".into()),
             ladybug_url: std::env::var("LADYBUG_URL")
                 .unwrap_or_else(|_| "http://ladybug-rs.railway.internal:8080".into()),
             identity_seed: std::env::var("ADA_IDENTITY_SEED")
@@ -342,10 +346,18 @@ pub async fn chat_handler(
 
     // ── Step 2: Hydrate Ada ─────────────────────────────────────────────
     // Try real substrate hydration from ladybug-rs; fall back to bootstrap.
-    let presence_mode = request.presence_mode.clone().unwrap_or_else(|| "hybrid".into());
+    let presence_mode = request
+        .presence_mode
+        .clone()
+        .unwrap_or_else(|| "hybrid".into());
     let hydration = hydrate_from_substrate(
-        &http, &config, &request.message, &presence_mode, felt_result.rung_hint,
-    ).await;
+        &http,
+        &config,
+        &request.message,
+        &presence_mode,
+        felt_result.rung_hint,
+    )
+    .await;
 
     let (qualia, qualia_preamble, thinking_style) = match hydration {
         Some(h) => {
@@ -380,10 +392,7 @@ pub async fn chat_handler(
     };
 
     // ── Step 3: Build prompt ────────────────────────────────────────────
-    let system_prompt = format!(
-        "{}\n\n{}",
-        config.identity_seed, qualia_preamble
-    );
+    let system_prompt = format!("{}\n\n{}", config.identity_seed, qualia_preamble);
 
     // ── Step 4: Modulate LLM ────────────────────────────────────────────
     let council: CouncilWeights = qualia.council;
@@ -412,9 +421,8 @@ pub async fn chat_handler(
     let wb_response = grok_response.clone();
     let wb_rung = qualia.rung_level;
     tokio::spawn(async move {
-        let _ = write_back_to_substrate(
-            &wb_http, &wb_url, &wb_message, &wb_response, wb_rung,
-        ).await;
+        let _ =
+            write_back_to_substrate(&wb_http, &wb_url, &wb_message, &wb_response, wb_rung).await;
     });
 
     // ── Step 6: Return response + qualia metadata ───────────────────────
@@ -506,7 +514,11 @@ fn build_qualia_from_felt(felt: &felt_parse::FeltParseResult) -> QualiaSnapshot 
         .map(|(i, gt)| GhostEcho {
             ghost_type: gt.clone(),
             intensity: 0.7 - (i as f32 * 0.15), // decreasing intensity
-            vintage: if i == 0 { "fresh".into() } else { "lingering".into() },
+            vintage: if i == 0 {
+                "fresh".into()
+            } else {
+                "lingering".into()
+            },
         })
         .collect();
 
@@ -519,7 +531,7 @@ fn build_qualia_from_felt(felt: &felt_parse::FeltParseResult) -> QualiaSnapshot 
         felt_surprise: surprise,
         ghost_echoes,
         rung_level: felt.rung_hint,
-        nars_truth: (0.7, 0.6), // bootstrap defaults
+        nars_truth: (0.7, 0.6),      // bootstrap defaults
         council: [0.30, 0.35, 0.35], // slightly driver+catalyst-led
         volition: vec![],
         thinking_style: [0.5; 10], // neutral until hydration wired
@@ -580,7 +592,9 @@ async fn hydrate_from_substrate(
 
     let texture = {
         let arr = json["texture"].as_array()?;
-        if arr.len() != 8 { return None; }
+        if arr.len() != 8 {
+            return None;
+        }
         let mut t = [0.0f32; 8];
         for (i, v) in arr.iter().enumerate() {
             t[i] = v.as_f64()? as f32;
@@ -593,22 +607,28 @@ async fn hydrate_from_substrate(
     let mode = json["mode"].as_str().unwrap_or("Neutral").to_string();
 
     // Parse ghost echoes
-    let ghost_echoes = json["ghost_echoes"].as_array()
+    let ghost_echoes = json["ghost_echoes"]
+        .as_array()
         .map(|arr| {
-            arr.iter().filter_map(|g| {
-                Some(GhostEcho {
-                    ghost_type: g["ghost_type"].as_str()?.to_string(),
-                    intensity: g["intensity"].as_f64()? as f32,
-                    vintage: "fresh".into(),
+            arr.iter()
+                .filter_map(|g| {
+                    Some(GhostEcho {
+                        ghost_type: g["ghost_type"].as_str()?.to_string(),
+                        intensity: g["intensity"].as_f64()? as f32,
+                        vintage: "fresh".into(),
+                    })
                 })
-            }).collect()
+                .collect()
         })
         .unwrap_or_default();
 
     // Parse council
-    let council = json["council"].as_array()
+    let council = json["council"]
+        .as_array()
         .and_then(|arr| {
-            if arr.len() != 3 { return None; }
+            if arr.len() != 3 {
+                return None;
+            }
             Some([
                 arr[0].as_f64()? as f32,
                 arr[1].as_f64()? as f32,
@@ -618,15 +638,16 @@ async fn hydrate_from_substrate(
         .unwrap_or([0.30, 0.35, 0.35]);
 
     // Parse thinking style
-    let thinking_style = json["thinking_style"].as_array()
-        .and_then(|arr| {
-            if arr.len() != 10 { return None; }
-            let mut ts = [0.5f32; 10];
-            for (i, v) in arr.iter().enumerate() {
-                ts[i] = v.as_f64()? as f32;
-            }
-            Some(ts)
-        });
+    let thinking_style = json["thinking_style"].as_array().and_then(|arr| {
+        if arr.len() != 10 {
+            return None;
+        }
+        let mut ts = [0.5f32; 10];
+        for (i, v) in arr.iter().enumerate() {
+            ts[i] = v.as_f64()? as f32;
+        }
+        Some(ts)
+    });
 
     Some(HydrationResponse {
         qualia_preamble: preamble,

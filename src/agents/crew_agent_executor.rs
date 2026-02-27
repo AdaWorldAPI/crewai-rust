@@ -81,10 +81,25 @@ pub struct CrewAgentExecutor {
     pub log_error_after: u32,
     /// Callback to invoke the LLM with messages and optional tools.
     /// Returns the LLM response as a string.
-    pub llm_call: Option<Box<dyn Fn(&[LLMMessage], Option<&[Value]>) -> Result<String, Box<dyn std::error::Error + Send + Sync>> + Send + Sync>>,
+    pub llm_call: Option<
+        Box<
+            dyn Fn(
+                    &[LLMMessage],
+                    Option<&[Value]>,
+                ) -> Result<String, Box<dyn std::error::Error + Send + Sync>>
+                + Send
+                + Sync,
+        >,
+    >,
     /// Callback to execute a tool by name with the given input.
     /// Returns the tool result as a string.
-    pub tool_executor: Option<Box<dyn Fn(&str, &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> + Send + Sync>>,
+    pub tool_executor: Option<
+        Box<
+            dyn Fn(&str, &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>>
+                + Send
+                + Sync,
+        >,
+    >,
     /// Whether the LLM supports native function calling.
     pub supports_function_calling: bool,
 }
@@ -165,7 +180,13 @@ impl CrewAgentExecutor {
     /// Set the LLM call callback.
     pub fn set_llm_call<F>(&mut self, callback: F)
     where
-        F: Fn(&[LLMMessage], Option<&[Value]>) -> Result<String, Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+        F: Fn(
+                &[LLMMessage],
+                Option<&[Value]>,
+            ) -> Result<String, Box<dyn std::error::Error + Send + Sync>>
+            + Send
+            + Sync
+            + 'static,
     {
         self.llm_call = Some(Box::new(callback));
     }
@@ -173,7 +194,10 @@ impl CrewAgentExecutor {
     /// Set the tool executor callback.
     pub fn set_tool_executor<F>(&mut self, callback: F)
     where
-        F: Fn(&str, &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> + Send + Sync + 'static,
+        F: Fn(&str, &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>>
+            + Send
+            + Sync
+            + 'static,
     {
         self.tool_executor = Some(Box::new(callback));
     }
@@ -260,7 +284,9 @@ impl CrewAgentExecutor {
     fn invoke_loop(&mut self) -> Result<AgentFinish, Box<dyn std::error::Error + Send + Sync>> {
         // Check if LLM call is configured
         if self.llm_call.is_none() {
-            return Err("LLM call callback not configured. Use set_llm_call() to configure.".into());
+            return Err(
+                "LLM call callback not configured. Use set_llm_call() to configure.".into(),
+            );
         }
 
         // Check if LLM supports native function calling and we have tools
@@ -290,7 +316,9 @@ impl CrewAgentExecutor {
                 );
                 return Ok(AgentFinish {
                     thought: "Maximum iterations reached".to_string(),
-                    output: Value::String("Agent reached maximum iterations without completing the task.".to_string()),
+                    output: Value::String(
+                        "Agent reached maximum iterations without completing the task.".to_string(),
+                    ),
                     text: "".to_string(),
                 });
             }
@@ -304,13 +332,19 @@ impl CrewAgentExecutor {
             }
 
             // Get LLM callback
-            let llm_call = self.llm_call.as_ref()
+            let llm_call = self
+                .llm_call
+                .as_ref()
                 .ok_or("LLM call callback not configured")?;
 
             // Call LLM with current messages (no tools for ReAct - tools are in prompt)
             let response = llm_call(&self.messages, None)?;
 
-            log::debug!("LLM response (iteration {}): {}", self.iterations, &response[..response.len().min(200)]);
+            log::debug!(
+                "LLM response (iteration {}): {}",
+                self.iterations,
+                &response[..response.len().min(200)]
+            );
 
             // Parse the response
             let parse_result = match super::parser::parse(&response) {
@@ -341,7 +375,11 @@ impl CrewAgentExecutor {
                     return Ok(finish);
                 }
                 ParseResult::Action(mut action) => {
-                    log::debug!("Agent action: tool={}, input={}", action.tool, action.tool_input);
+                    log::debug!(
+                        "Agent action: tool={}, input={}",
+                        action.tool,
+                        action.tool_input
+                    );
 
                     // Execute the tool
                     let tool_result = self.execute_tool(&action.tool, &action.tool_input)?;
@@ -378,21 +416,25 @@ impl CrewAgentExecutor {
         &mut self,
     ) -> Result<AgentFinish, Box<dyn std::error::Error + Send + Sync>> {
         // Build tool schemas for the LLM
-        let tool_schemas: Vec<Value> = self.tools.iter().map(|t| {
-            let params = if t.args_schema.is_null() {
-                serde_json::json!({"type": "object", "properties": {}})
-            } else {
-                t.args_schema.clone()
-            };
-            serde_json::json!({
-                "type": "function",
-                "function": {
-                    "name": t.name,
-                    "description": t.description,
-                    "parameters": params
-                }
+        let tool_schemas: Vec<Value> = self
+            .tools
+            .iter()
+            .map(|t| {
+                let params = if t.args_schema.is_null() {
+                    serde_json::json!({"type": "object", "properties": {}})
+                } else {
+                    t.args_schema.clone()
+                };
+                serde_json::json!({
+                    "type": "function",
+                    "function": {
+                        "name": t.name,
+                        "description": t.description,
+                        "parameters": params
+                    }
+                })
             })
-        }).collect();
+            .collect();
 
         loop {
             // Check iteration limit
@@ -403,13 +445,17 @@ impl CrewAgentExecutor {
                 );
                 return Ok(AgentFinish {
                     thought: "Maximum iterations reached".to_string(),
-                    output: Value::String("Agent reached maximum iterations without completing the task.".to_string()),
+                    output: Value::String(
+                        "Agent reached maximum iterations without completing the task.".to_string(),
+                    ),
                     text: "".to_string(),
                 });
             }
 
             // Get LLM callback
-            let llm_call = self.llm_call.as_ref()
+            let llm_call = self
+                .llm_call
+                .as_ref()
                 .ok_or("LLM call callback not configured")?;
 
             // Call LLM with tools
@@ -426,17 +472,30 @@ impl CrewAgentExecutor {
                 if !tool_calls.is_empty() {
                     // Append assistant message with tool calls
                     let mut assistant_msg = HashMap::new();
-                    assistant_msg.insert("role".to_string(), Value::String("assistant".to_string()));
+                    assistant_msg
+                        .insert("role".to_string(), Value::String("assistant".to_string()));
                     assistant_msg.insert("content".to_string(), Value::Null);
-                    assistant_msg.insert("tool_calls".to_string(), Value::Array(tool_calls.clone()));
+                    assistant_msg
+                        .insert("tool_calls".to_string(), Value::Array(tool_calls.clone()));
                     self.messages.push(assistant_msg);
 
                     // Execute each tool call
                     for tool_call in tool_calls {
-                        let function = tool_call.get("function").ok_or("Missing function in tool_call")?;
-                        let tool_name = function.get("name").and_then(|v| v.as_str()).ok_or("Missing tool name")?;
-                        let tool_args = function.get("arguments").and_then(|v| v.as_str()).unwrap_or("{}");
-                        let call_id = tool_call.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
+                        let function = tool_call
+                            .get("function")
+                            .ok_or("Missing function in tool_call")?;
+                        let tool_name = function
+                            .get("name")
+                            .and_then(|v| v.as_str())
+                            .ok_or("Missing tool name")?;
+                        let tool_args = function
+                            .get("arguments")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("{}");
+                        let call_id = tool_call
+                            .get("id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("unknown");
 
                         log::debug!("Native tool call: {}({})", tool_name, tool_args);
 
@@ -453,7 +512,10 @@ impl CrewAgentExecutor {
                         // Append tool result message
                         let mut tool_msg = HashMap::new();
                         tool_msg.insert("role".to_string(), Value::String("tool".to_string()));
-                        tool_msg.insert("tool_call_id".to_string(), Value::String(call_id.to_string()));
+                        tool_msg.insert(
+                            "tool_call_id".to_string(),
+                            Value::String(call_id.to_string()),
+                        );
                         tool_msg.insert("content".to_string(), Value::String(tool_result));
                         self.messages.push(tool_msg);
                     }
@@ -464,7 +526,8 @@ impl CrewAgentExecutor {
             }
 
             // No tool calls - this is the final answer
-            let content = response_json.get("content")
+            let content = response_json
+                .get("content")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string())
                 .unwrap_or_else(|| {
@@ -484,16 +547,27 @@ impl CrewAgentExecutor {
     }
 
     /// Execute a tool by name with the given input.
-    fn execute_tool(&self, tool_name: &str, tool_input: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    fn execute_tool(
+        &self,
+        tool_name: &str,
+        tool_input: &str,
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         // Try tool executor callback first
         if let Some(ref executor) = self.tool_executor {
             return executor(tool_name, tool_input);
         }
 
         // Fall back to finding tool in self.tools and executing
-        let tool = self.tools.iter()
+        let tool = self
+            .tools
+            .iter()
             .find(|t| t.name == tool_name)
-            .ok_or_else(|| format!("Tool '{}' not found. Available tools: {}", tool_name, self.tools_names))?;
+            .ok_or_else(|| {
+                format!(
+                    "Tool '{}' not found. Available tools: {}",
+                    tool_name, self.tools_names
+                )
+            })?;
 
         // Execute the tool's func if available
         if let Some(ref func) = tool.func {

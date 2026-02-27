@@ -105,8 +105,7 @@ pub struct AgentState {
 ///     }
 /// });
 /// ```
-pub type InnerThoughtHook =
-    Box<dyn Fn(&AgentState) -> Option<[f32; 10]> + Send + Sync>;
+pub type InnerThoughtHook = Box<dyn Fn(&AgentState) -> Option<[f32; 10]> + Send + Sync>;
 
 // ============================================================================
 // ModuleRuntime
@@ -164,10 +163,7 @@ impl ModuleRuntime {
     /// Activate a module: spawn its agent, bind capabilities, register gates.
     ///
     /// Returns the spawned agent ID on success.
-    pub fn activate_module(
-        &mut self,
-        instance: ModuleInstance,
-    ) -> Result<String, ModuleError> {
+    pub fn activate_module(&mut self, instance: ModuleInstance) -> Result<String, ModuleError> {
         let module_id = instance.def.module.id.clone();
 
         if self.active_modules.contains_key(&module_id) {
@@ -274,12 +270,7 @@ impl ModuleRuntime {
     ///
     /// Returns [`GateDecision::Flow`] if no gate is configured or the check
     /// passes.
-    pub fn check_gate(
-        &self,
-        agent_id: &str,
-        tool_name: &str,
-        confidence: f64,
-    ) -> GateDecision {
+    pub fn check_gate(&self, agent_id: &str, tool_name: &str, confidence: f64) -> GateDecision {
         let gate = match self.gates.get(agent_id) {
             Some(g) => g,
             None => return GateDecision::Flow,
@@ -289,10 +280,7 @@ impl ModuleRuntime {
         for pattern in &gate.block_patterns {
             if glob_match(pattern, tool_name) {
                 return GateDecision::Block {
-                    reason: format!(
-                        "Tool '{}' blocked by pattern '{}'",
-                        tool_name, pattern
-                    ),
+                    reason: format!("Tool '{}' blocked by pattern '{}'", tool_name, pattern),
                 };
             }
         }
@@ -349,9 +337,7 @@ impl ModuleRuntime {
 
     /// Get a module instance by ID.
     pub fn get_module(&self, module_id: &str) -> Option<&ModuleInstance> {
-        self.active_modules
-            .get(module_id)
-            .map(|am| &am.instance)
+        self.active_modules.get(module_id).map(|am| &am.instance)
     }
 
     /// Get the agent ID for a module.
@@ -382,11 +368,7 @@ impl ModuleRuntime {
     }
 
     /// Check if an agent has a required role for a module.
-    pub fn check_rbac(
-        &self,
-        agent_id: &str,
-        module_id: &str,
-    ) -> bool {
+    pub fn check_rbac(&self, agent_id: &str, module_id: &str) -> bool {
         let module = match self.active_modules.get(module_id) {
             Some(m) => m,
             None => return false,
@@ -411,7 +393,10 @@ impl ModuleRuntime {
 impl std::fmt::Debug for ModuleRuntime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ModuleRuntime")
-            .field("active_modules", &self.active_modules.keys().collect::<Vec<_>>())
+            .field(
+                "active_modules",
+                &self.active_modules.keys().collect::<Vec<_>>(),
+            )
             .field("gates", &self.gates.len())
             .field("thinking_styles", &self.thinking_styles.len())
             .finish()

@@ -60,8 +60,7 @@ impl CapabilityRegistry {
 
     /// Register a capability directly.
     pub fn register(&mut self, capability: Capability) {
-        self.capabilities
-            .insert(capability.id.clone(), capability);
+        self.capabilities.insert(capability.id.clone(), capability);
     }
 
     /// Register multiple capabilities from a YAML file.
@@ -98,17 +97,14 @@ impl CapabilityRegistry {
 
             if path.is_dir() {
                 count += self.load_directory(&path)?;
-            } else if path.extension().map_or(false, |ext| {
-                ext == "yaml" || ext == "yml"
-            }) {
+            } else if path
+                .extension()
+                .map_or(false, |ext| ext == "yaml" || ext == "yml")
+            {
                 match self.register_from_file(path.to_str().unwrap_or_default()) {
                     Ok(n) => count += n,
                     Err(e) => {
-                        log::warn!(
-                            "Failed to load capability from {}: {}",
-                            path.display(),
-                            e
-                        );
+                        log::warn!("Failed to load capability from {}: {}", path.display(), e);
                     }
                 }
             }
@@ -154,8 +150,7 @@ impl CapabilityRegistry {
 
             let candidate_yml = search_path.join(namespace).join(format!("{}.yml", name));
             if candidate_yml.exists() {
-                if let Ok(_) = self.register_from_file(candidate_yml.to_str().unwrap_or_default())
-                {
+                if let Ok(_) = self.register_from_file(candidate_yml.to_str().unwrap_or_default()) {
                     return self.capabilities.get(&resolved_id);
                 }
             }
@@ -192,8 +187,7 @@ impl CapabilityRegistry {
 
                 let mut found = false;
                 for search_path in &self.search_paths.clone() {
-                    let candidate =
-                        search_path.join(namespace).join(format!("{}.yaml", name));
+                    let candidate = search_path.join(namespace).join(format!("{}.yaml", name));
                     if candidate.exists() {
                         if self
                             .register_from_file(candidate.to_str().unwrap_or_default())
@@ -230,7 +224,11 @@ impl CapabilityRegistry {
 
     /// List capabilities by namespace.
     pub fn list_by_namespace(&self, namespace: &str) -> Vec<&Capability> {
-        let resolved_ns = self.aliases.get(namespace).cloned().unwrap_or_else(|| namespace.to_string());
+        let resolved_ns = self
+            .aliases
+            .get(namespace)
+            .cloned()
+            .unwrap_or_else(|| namespace.to_string());
         self.capabilities
             .values()
             .filter(|c| c.namespace() == resolved_ns)

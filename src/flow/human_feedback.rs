@@ -50,11 +50,7 @@ impl Default for HumanFeedbackResult {
 
 impl HumanFeedbackResult {
     /// Create a new HumanFeedbackResult.
-    pub fn new(
-        output: serde_json::Value,
-        feedback: String,
-        method_name: String,
-    ) -> Self {
+    pub fn new(output: serde_json::Value, feedback: String, method_name: String) -> Self {
         Self {
             output,
             feedback,
@@ -119,11 +115,7 @@ impl HumanFeedbackConfig {
     }
 
     /// Create a new HumanFeedbackConfig with emit and LLM.
-    pub fn with_routing(
-        message: String,
-        emit: Vec<String>,
-        llm: String,
-    ) -> Result<Self, String> {
+    pub fn with_routing(message: String, emit: Vec<String>, llm: String) -> Result<Self, String> {
         if emit.is_empty() {
             return Err("emit must not be empty when specified".to_string());
         }
@@ -140,11 +132,9 @@ impl HumanFeedbackConfig {
     /// Validate the configuration.
     pub fn validate(&self) -> Result<(), String> {
         if self.emit.is_some() && self.llm.is_none() {
-            return Err(
-                "llm is required when emit is specified. \
+            return Err("llm is required when emit is specified. \
                  Provide an LLM model string (e.g., 'gpt-4o-mini')."
-                    .to_string(),
-            );
+                .to_string());
         }
         if let Some(ref default) = self.default_outcome {
             match &self.emit {

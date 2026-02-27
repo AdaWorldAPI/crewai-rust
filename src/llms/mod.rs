@@ -18,4 +18,4 @@ pub mod third_party;
 // Re-exports for convenience
 pub use base_llm::{BaseLLM, BaseLLMState, LLMCallType, LLMMessage, TokenUsage};
 pub use hooks::BaseInterceptor;
-pub use streaming::{StreamingLLM, StreamReceiver, StreamChunk, StreamAccumulator};
+pub use streaming::{StreamAccumulator, StreamChunk, StreamReceiver, StreamingLLM};

@@ -41,8 +41,7 @@ pub type ToolFilter = Box<dyn Fn(&Value) -> bool + Send + Sync>;
 /// Type alias for context-aware dynamic tool filter functions.
 ///
 /// A dynamic tool filter takes both a context and a tool definition.
-pub type DynamicToolFilter =
-    Box<dyn Fn(&ToolFilterContext, &Value) -> bool + Send + Sync>;
+pub type DynamicToolFilter = Box<dyn Fn(&ToolFilterContext, &Value) -> bool + Send + Sync>;
 
 /// Static tool filter with allow/block lists.
 ///
@@ -69,14 +68,8 @@ impl StaticToolFilter {
         blocked_tool_names: Option<Vec<String>>,
     ) -> Self {
         Self {
-            allowed_tool_names: allowed_tool_names
-                .unwrap_or_default()
-                .into_iter()
-                .collect(),
-            blocked_tool_names: blocked_tool_names
-                .unwrap_or_default()
-                .into_iter()
-                .collect(),
+            allowed_tool_names: allowed_tool_names.unwrap_or_default().into_iter().collect(),
+            blocked_tool_names: blocked_tool_names.unwrap_or_default().into_iter().collect(),
         }
     }
 
@@ -88,15 +81,10 @@ impl StaticToolFilter {
     /// # Returns
     /// `true` if tool should be included, `false` otherwise.
     pub fn filter(&self, tool: &Value) -> bool {
-        let tool_name = tool
-            .get("name")
-            .and_then(|n| n.as_str())
-            .unwrap_or("");
+        let tool_name = tool.get("name").and_then(|n| n.as_str()).unwrap_or("");
 
         // Blocked tools take precedence
-        if !self.blocked_tool_names.is_empty()
-            && self.blocked_tool_names.contains(tool_name)
-        {
+        if !self.blocked_tool_names.is_empty() && self.blocked_tool_names.contains(tool_name) {
             return false;
         }
 

@@ -72,8 +72,7 @@ impl RAGStorage {
             .map(|role| Self::sanitize_role(role))
             .collect();
         let agents_str = sanitized_roles.join("_");
-        let storage_file_name =
-            Self::build_storage_file_name(storage_type, &agents_str);
+        let storage_file_name = Self::build_storage_file_name(storage_type, &agents_str);
 
         Self {
             storage_type: storage_type.to_string(),
@@ -88,9 +87,7 @@ impl RAGStorage {
 
     /// Sanitize an agent role to ensure valid directory names.
     fn sanitize_role(role: &str) -> String {
-        role.replace('\n', "")
-            .replace(' ', "_")
-            .replace('/', "_")
+        role.replace('\n', "").replace(' ', "_").replace('/', "_")
     }
 
     /// Build the storage file name, ensuring it does not exceed max allowed length.
@@ -147,11 +144,7 @@ impl RAGStorage {
 
 #[async_trait]
 impl Storage for RAGStorage {
-    fn save(
-        &self,
-        value: &str,
-        metadata: &HashMap<String, Value>,
-    ) -> Result<(), anyhow::Error> {
+    fn save(&self, value: &str, metadata: &HashMap<String, Value>) -> Result<(), anyhow::Error> {
         log::debug!(
             "RAGStorage save to '{}': value='{}'",
             self.collection_name(),

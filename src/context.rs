@@ -2,8 +2,8 @@
 //!
 //! Corresponds to `crewai/context.py`.
 
-use std::sync::Mutex;
 use std::env;
+use std::sync::Mutex;
 
 /// Thread-local storage for platform integration token.
 static PLATFORM_INTEGRATION_TOKEN: Mutex<Option<String>> = Mutex::new(None);

@@ -35,11 +35,7 @@ pub trait HumanInputProvider: Send + Sync {
     /// Handle the full human feedback flow.
     ///
     /// Returns the final answer string after feedback processing.
-    fn handle_feedback(
-        &self,
-        formatted_answer: &str,
-        is_training_mode: bool,
-    ) -> String;
+    fn handle_feedback(&self, formatted_answer: &str, is_training_mode: bool) -> String;
 }
 
 // ---------------------------------------------------------------------------
@@ -59,11 +55,7 @@ impl HumanInputProvider for SyncHumanInputProvider {
         // No-op for sync provider.
     }
 
-    fn handle_feedback(
-        &self,
-        formatted_answer: &str,
-        is_training_mode: bool,
-    ) -> String {
+    fn handle_feedback(&self, formatted_answer: &str, is_training_mode: bool) -> String {
         let mut current_answer = formatted_answer.to_string();
 
         loop {

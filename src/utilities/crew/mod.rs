@@ -2,8 +2,8 @@
 //!
 //! Corresponds to `crewai/utilities/crew/`.
 
-use std::sync::Arc;
 use parking_lot::RwLock;
+use std::sync::Arc;
 
 /// Thread-safe container for crew execution context.
 ///

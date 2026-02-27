@@ -27,11 +27,7 @@ pub trait InterfaceAdapter: Send + Sync {
     /// The tool_name comes from `CapabilityTool.name` and args from the agent's
     /// tool call. The adapter translates this into the appropriate protocol
     /// operation (HTTP request, RCON command, SQL query, etc.).
-    async fn execute(
-        &self,
-        tool_name: &str,
-        args: &Value,
-    ) -> Result<Value, AdapterError>;
+    async fn execute(&self, tool_name: &str, args: &Value) -> Result<Value, AdapterError>;
 
     /// Disconnect and clean up resources.
     async fn disconnect(&mut self) -> Result<(), AdapterError>;

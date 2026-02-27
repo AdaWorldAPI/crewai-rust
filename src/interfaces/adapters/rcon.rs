@@ -27,9 +27,7 @@ use std::collections::HashMap;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
-use super::super::adapter::{
-    AdapterError, AdapterHealth, AdapterOperation, InterfaceAdapter,
-};
+use super::super::adapter::{AdapterError, AdapterHealth, AdapterOperation, InterfaceAdapter};
 use super::super::gateway::AdapterFactory;
 
 /// RCON adapter for game server control
@@ -79,9 +77,7 @@ impl RconAdapter {
     }
 
     /// Read an RCON response packet
-    async fn read_response(
-        stream: &mut TcpStream,
-    ) -> Result<(i32, i32, String), AdapterError> {
+    async fn read_response(stream: &mut TcpStream) -> Result<(i32, i32, String), AdapterError> {
         let mut size_buf = [0u8; 4];
         stream
             .read_exact(&mut size_buf)
@@ -100,14 +96,10 @@ impl RconAdapter {
         stream
             .read_exact(&mut payload)
             .await
-            .map_err(|e| {
-                AdapterError::ProtocolError(format!("Failed to read payload: {}", e))
-            })?;
+            .map_err(|e| AdapterError::ProtocolError(format!("Failed to read payload: {}", e)))?;
 
         if payload.len() < 8 {
-            return Err(AdapterError::ProtocolError(
-                "Payload too short".to_string(),
-            ));
+            return Err(AdapterError::ProtocolError("Payload too short".to_string()));
         }
 
         let id = i32::from_le_bytes([payload[0], payload[1], payload[2], payload[3]]);
@@ -147,10 +139,7 @@ impl InterfaceAdapter for RconAdapter {
             .unwrap_or("localhost")
             .to_string();
 
-        self.port = config
-            .get("port")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(25575) as u16;
+        self.port = config.get("port").and_then(|v| v.as_u64()).unwrap_or(25575) as u16;
 
         self.password = config
             .get("password")
@@ -179,12 +168,9 @@ impl InterfaceAdapter for RconAdapter {
         let password = self.password.clone();
         let auth_packet = self.build_packet(SERVERDATA_AUTH, &password);
         let stream = self.stream.as_mut().unwrap();
-        stream
-            .write_all(&auth_packet)
-            .await
-            .map_err(|e| {
-                AdapterError::AuthenticationFailed(format!("Failed to send auth: {}", e))
-            })?;
+        stream.write_all(&auth_packet).await.map_err(|e| {
+            AdapterError::AuthenticationFailed(format!("Failed to send auth: {}", e))
+        })?;
 
         // Read auth response (some servers send an empty response first)
         let (id, ptype, _) = Self::read_response(stream).await?;
@@ -215,14 +201,13 @@ impl InterfaceAdapter for RconAdapter {
 
         // Extract command from args
         let command = match tool_name {
-            "execute" | "mc_execute" | "rcon_execute" => {
-                args.get("command")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| {
-                        AdapterError::InvalidConfig("'command' argument is required".to_string())
-                    })?
-                    .to_string()
-            }
+            "execute" | "mc_execute" | "rcon_execute" => args
+                .get("command")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| {
+                    AdapterError::InvalidConfig("'command' argument is required".to_string())
+                })?
+                .to_string(),
             "list_players" => "list".to_string(),
             "server_info" => "status".to_string(),
             "say" => {
@@ -233,39 +218,27 @@ impl InterfaceAdapter for RconAdapter {
                 format!("say {}", message)
             }
             "whitelist_add" => {
-                let player = args
-                    .get("player")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| {
-                        AdapterError::InvalidConfig("'player' argument is required".to_string())
-                    })?;
+                let player = args.get("player").and_then(|v| v.as_str()).ok_or_else(|| {
+                    AdapterError::InvalidConfig("'player' argument is required".to_string())
+                })?;
                 format!("whitelist add {}", player)
             }
             "whitelist_remove" => {
-                let player = args
-                    .get("player")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| {
-                        AdapterError::InvalidConfig("'player' argument is required".to_string())
-                    })?;
+                let player = args.get("player").and_then(|v| v.as_str()).ok_or_else(|| {
+                    AdapterError::InvalidConfig("'player' argument is required".to_string())
+                })?;
                 format!("whitelist remove {}", player)
             }
             "op" => {
-                let player = args
-                    .get("player")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| {
-                        AdapterError::InvalidConfig("'player' argument is required".to_string())
-                    })?;
+                let player = args.get("player").and_then(|v| v.as_str()).ok_or_else(|| {
+                    AdapterError::InvalidConfig("'player' argument is required".to_string())
+                })?;
                 format!("op {}", player)
             }
             "deop" => {
-                let player = args
-                    .get("player")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| {
-                        AdapterError::InvalidConfig("'player' argument is required".to_string())
-                    })?;
+                let player = args.get("player").and_then(|v| v.as_str()).ok_or_else(|| {
+                    AdapterError::InvalidConfig("'player' argument is required".to_string())
+                })?;
                 format!("deop {}", player)
             }
             // Default: treat tool_name as the command

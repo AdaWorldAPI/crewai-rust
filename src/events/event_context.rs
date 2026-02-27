@@ -62,7 +62,9 @@ impl Default for EventContextConfig {
 
 /// Raised when stack depth limit is exceeded.
 #[derive(Debug, thiserror::Error)]
-#[error("Event stack depth limit ({limit}) exceeded. This usually indicates missing ending events.")]
+#[error(
+    "Event stack depth limit ({limit}) exceeded. This usually indicates missing ending events."
+)]
 pub struct StackDepthExceededError {
     /// The configured limit that was exceeded.
     pub limit: usize,
@@ -381,7 +383,10 @@ pub static VALID_EVENT_PAIRS: Lazy<HashMap<&'static str, &'static str>> = Lazy::
     m.insert("agent_execution_error", "agent_execution_started");
     m.insert("agent_evaluation_completed", "agent_evaluation_started");
     m.insert("agent_evaluation_failed", "agent_evaluation_started");
-    m.insert("lite_agent_execution_completed", "lite_agent_execution_started");
+    m.insert(
+        "lite_agent_execution_completed",
+        "lite_agent_execution_started",
+    );
     m.insert("lite_agent_execution_error", "lite_agent_execution_started");
     m.insert("task_completed", "task_started");
     m.insert("task_failed", "task_started");
@@ -403,14 +408,23 @@ pub static VALID_EVENT_PAIRS: Lazy<HashMap<&'static str, &'static str>> = Lazy::
     m.insert("memory_query_failed", "memory_query_started");
     m.insert("knowledge_query_completed", "knowledge_query_started");
     m.insert("knowledge_query_failed", "knowledge_query_started");
-    m.insert("knowledge_search_query_completed", "knowledge_search_query_started");
-    m.insert("knowledge_search_query_failed", "knowledge_search_query_started");
+    m.insert(
+        "knowledge_search_query_completed",
+        "knowledge_search_query_started",
+    );
+    m.insert(
+        "knowledge_search_query_failed",
+        "knowledge_search_query_started",
+    );
     m.insert("a2a_delegation_completed", "a2a_delegation_started");
     m.insert("a2a_conversation_completed", "a2a_conversation_started");
     m.insert("a2a_server_task_completed", "a2a_server_task_started");
     m.insert("a2a_server_task_canceled", "a2a_server_task_started");
     m.insert("a2a_server_task_failed", "a2a_server_task_started");
-    m.insert("a2a_parallel_delegation_completed", "a2a_parallel_delegation_started");
+    m.insert(
+        "a2a_parallel_delegation_completed",
+        "a2a_parallel_delegation_started",
+    );
     m.insert("agent_reasoning_completed", "agent_reasoning_started");
     m.insert("agent_reasoning_failed", "agent_reasoning_started");
     m

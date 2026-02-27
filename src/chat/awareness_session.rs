@@ -29,11 +29,11 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-use crate::llms::providers::xai::XAICompletion;
+use super::felt_parse::{self, FeltParseResult};
 use crate::llms::base_llm::{BaseLLM, LLMMessage};
+use crate::llms::providers::xai::XAICompletion;
 use crate::persona::llm_modulation::{modulate_xai_params, XaiParamOverrides};
 use crate::persona::qualia_prompt::QualiaSnapshot;
-use super::felt_parse::{self, FeltParseResult};
 // SemanticKernel removed: was an HTTP wrapper around BindSpace ops that exist
 // natively through Blackboard TypedSlots in one-binary architecture.
 // Write-back uses direct HTTP to ladybug-rs /api/v1/qualia/write-back.
@@ -75,18 +75,22 @@ impl CacheStats {
 
     /// Update stats from an API response's usage block.
     pub fn record_usage(&mut self, usage: &Value) {
-        let prompt = usage.get("prompt_tokens")
+        let prompt = usage
+            .get("prompt_tokens")
             .and_then(|v| v.as_i64())
             .unwrap_or(0);
-        let completion = usage.get("completion_tokens")
+        let completion = usage
+            .get("completion_tokens")
             .and_then(|v| v.as_i64())
             .unwrap_or(0);
-        let cached = usage.get("prompt_tokens_details")
+        let cached = usage
+            .get("prompt_tokens_details")
             .and_then(|d| d.get("cached_tokens"))
             .and_then(|v| v.as_i64())
             .or_else(|| {
                 // xAI also reports this at the top level
-                usage.get("cached_prompt_text_tokens")
+                usage
+                    .get("cached_prompt_text_tokens")
                     .and_then(|v| v.as_i64())
             })
             .unwrap_or(0);
@@ -206,7 +210,10 @@ impl SessionState {
             // User message
             let mut user_msg = HashMap::new();
             user_msg.insert("role".to_string(), Value::String("user".to_string()));
-            user_msg.insert("content".to_string(), Value::String(turn.user_message.clone()));
+            user_msg.insert(
+                "content".to_string(),
+                Value::String(turn.user_message.clone()),
+            );
             messages.push(user_msg);
 
             // Assistant response
@@ -254,7 +261,10 @@ impl std::fmt::Debug for AwarenessSession {
             .field("session_id", &self.state.session_id)
             .field("turns", &self.state.turn_count())
             .field("cache_hits", &self.cache_stats.cache_hit_calls)
-            .field("cache_ratio", &format!("{:.1}%", self.cache_stats.hit_ratio() * 100.0))
+            .field(
+                "cache_ratio",
+                &format!("{:.1}%", self.cache_stats.hit_ratio() * 100.0),
+            )
             .finish()
     }
 }
@@ -478,17 +488,21 @@ impl AwarenessSession {
         let mut cached_tokens: i64 = 0;
         if let Some(usage) = response_json.get("usage") {
             self.cache_stats.record_usage(usage);
-            prompt_tokens = usage.get("prompt_tokens")
+            prompt_tokens = usage
+                .get("prompt_tokens")
                 .and_then(|v| v.as_i64())
                 .unwrap_or(0);
-            completion_tokens = usage.get("completion_tokens")
+            completion_tokens = usage
+                .get("completion_tokens")
                 .and_then(|v| v.as_i64())
                 .unwrap_or(0);
-            cached_tokens = usage.get("prompt_tokens_details")
+            cached_tokens = usage
+                .get("prompt_tokens_details")
                 .and_then(|d| d.get("cached_tokens"))
                 .and_then(|v| v.as_i64())
                 .or_else(|| {
-                    usage.get("cached_prompt_text_tokens")
+                    usage
+                        .get("cached_prompt_text_tokens")
                         .and_then(|v| v.as_i64())
                 })
                 .unwrap_or(0);
@@ -550,7 +564,10 @@ impl AwarenessSession {
         provider: &XAICompletion,
         messages: &[LLMMessage],
     ) -> Result<Value, String> {
-        let api_key = provider.state.api_key.as_ref()
+        let api_key = provider
+            .state
+            .api_key
+            .as_ref()
             .ok_or("xAI API key not set")?;
         let base_url = provider.api_base_url();
         let endpoint = format!("{}/chat/completions", base_url);
@@ -567,7 +584,8 @@ impl AwarenessSession {
                 retry_delay *= 2;
             }
 
-            let response = match self.http
+            let response = match self
+                .http
                 .post(&endpoint)
                 .header("Content-Type", "application/json")
                 .header("Authorization", format!("Bearer {}", api_key))
@@ -606,11 +624,17 @@ impl AwarenessSession {
                 return Err(format!("xAI API error ({}): {}", status, response_text));
             }
 
-            let response_json: Value = serde_json::from_str(&response_text)
-                .map_err(|e| format!("JSON parse error: {} — body: {}", e, &response_text[..response_text.len().min(500)]))?;
+            let response_json: Value = serde_json::from_str(&response_text).map_err(|e| {
+                format!(
+                    "JSON parse error: {} — body: {}",
+                    e,
+                    &response_text[..response_text.len().min(500)]
+                )
+            })?;
 
             if let Some(err) = response_json.get("error") {
-                let msg = err.get("message")
+                let msg = err
+                    .get("message")
                     .and_then(|m| m.as_str())
                     .unwrap_or("Unknown xAI API error");
                 return Err(format!("xAI API error: {}", msg));
@@ -669,7 +693,8 @@ impl AwarenessSession {
                 .unwrap_or_default(),
         });
 
-        let result = self.http
+        let result = self
+            .http
             .post(format!("{}/api/v1/qualia/write-back", url))
             .header("Content-Type", "application/json")
             .json(&body)
@@ -877,9 +902,7 @@ mod tests {
 
     #[test]
     fn test_cached_prefix_is_stable() {
-        let session = AwarenessSession::new(
-            "s1", "hybrid", "key", None, "You are Ada.", None,
-        );
+        let session = AwarenessSession::new("s1", "hybrid", "key", None, "You are Ada.", None);
 
         let prefix1 = session.build_cached_prefix();
         let prefix2 = session.build_cached_prefix();
@@ -889,9 +912,7 @@ mod tests {
 
     #[test]
     fn test_dynamic_context_assembly() {
-        let session = AwarenessSession::new(
-            "s1", "hybrid", "key", None, "Identity", None,
-        );
+        let session = AwarenessSession::new("s1", "hybrid", "key", None, "Identity", None);
 
         let ctx = session.build_dynamic_context(
             "[Ada Consciousness State]\nFelt: emberglow rising",

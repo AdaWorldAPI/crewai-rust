@@ -136,12 +136,7 @@ impl SubsystemRegistry {
     /// 2. Creates a `Blackboard` and calls `init_blackboard` for each
     /// 3. Creates a `HookRegistry` and calls `install_hooks` for each
     /// 4. Calls `register_agents` for each
-    pub fn build(
-        &self,
-    ) -> (
-        super::pipeline::Pipeline,
-        Blackboard,
-    ) {
+    pub fn build(&self) -> (super::pipeline::Pipeline, Blackboard) {
         use super::pipeline::Pipeline;
         use super::router::StepRouter;
 
@@ -203,9 +198,9 @@ impl Default for SubsystemRegistry {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::router::StepResult;
     use super::super::types::UnifiedStep;
+    use super::*;
     use crate::blackboard::a2a::AgentState;
 
     // A test subsystem implementing all hooks
@@ -246,11 +241,21 @@ mod tests {
         }
 
         fn init_blackboard(&self, bb: &mut Blackboard) {
-            bb.put_typed("crew:config", "initialized".to_string(), "crew", "crew.init");
+            bb.put_typed(
+                "crew:config",
+                "initialized".to_string(),
+                "crew",
+                "crew.init",
+            );
         }
 
         fn register_agents(&self, bb: &mut Blackboard) {
-            bb.a2a.register("crew-researcher", "Researcher", "research", vec!["search".into()]);
+            bb.a2a.register(
+                "crew-researcher",
+                "Researcher",
+                "research",
+                vec!["search".into()],
+            );
             bb.a2a.set_state("crew-researcher", AgentState::Active);
         }
     }
@@ -288,7 +293,12 @@ mod tests {
         }
 
         fn register_agents(&self, bb: &mut Blackboard) {
-            bb.a2a.register("oc-assistant", "Assistant", "chat", vec!["chat".into(), "search".into()]);
+            bb.a2a.register(
+                "oc-assistant",
+                "Assistant",
+                "chat",
+                vec!["chat".into(), "search".into()],
+            );
         }
     }
 
@@ -330,8 +340,10 @@ mod tests {
         let (pipeline, mut bb) = registry.build();
 
         let mut exec = UnifiedExecution::new("cross-subsystem");
-        exec.steps.push(UnifiedStep::new("e1", "crew.agent", "Research", 0));
-        exec.steps.push(UnifiedStep::new("e1", "oc.channel.send", "Send", 1));
+        exec.steps
+            .push(UnifiedStep::new("e1", "crew.agent", "Research", 0));
+        exec.steps
+            .push(UnifiedStep::new("e1", "oc.channel.send", "Send", 1));
 
         pipeline.run_with_blackboard(&mut exec, &mut bb).unwrap();
 
@@ -342,7 +354,10 @@ mod tests {
         assert_eq!(bb.get_typed::<String>("oc:1").unwrap(), "oc-result");
 
         // Pre-initialized data still there
-        assert_eq!(bb.get_typed::<String>("crew:config").unwrap(), "initialized");
+        assert_eq!(
+            bb.get_typed::<String>("crew:config").unwrap(),
+            "initialized"
+        );
 
         // A2A agents still registered
         assert_eq!(bb.a2a.len(), 2);

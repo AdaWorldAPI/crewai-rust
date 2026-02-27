@@ -54,7 +54,9 @@ impl ContextualMemory {
         task_description: &str,
         context: &str,
     ) -> Result<String, anyhow::Error> {
-        let query = format!("{} {}", task_description, context).trim().to_string();
+        let query = format!("{} {}", task_description, context)
+            .trim()
+            .to_string();
 
         if query.is_empty() {
             return Ok(String::new());
@@ -92,7 +94,9 @@ impl ContextualMemory {
         task_description: &str,
         context: &str,
     ) -> Result<String, anyhow::Error> {
-        let query = format!("{} {}", task_description, context).trim().to_string();
+        let query = format!("{} {}", task_description, context)
+            .trim()
+            .to_string();
 
         if query.is_empty() {
             return Ok(String::new());
@@ -154,10 +158,7 @@ impl ContextualMemory {
     }
 
     /// Fetch historical data from LTM.
-    fn fetch_ltm_context(
-        &self,
-        task: &str,
-    ) -> Result<Option<String>, anyhow::Error> {
+    fn fetch_ltm_context(&self, task: &str) -> Result<Option<String>, anyhow::Error> {
         let ltm = match &self.ltm {
             Some(l) => l,
             None => return Ok(Some(String::new())),
@@ -190,10 +191,7 @@ impl ContextualMemory {
         if formatted.is_empty() {
             Ok(None)
         } else {
-            Ok(Some(format!(
-                "Historical Data:\n{}",
-                formatted.join("\n")
-            )))
+            Ok(Some(format!("Historical Data:\n{}", formatted.join("\n"))))
         }
     }
 
@@ -236,10 +234,7 @@ impl ContextualMemory {
             .map(|c| format!("- {}", c))
             .collect();
 
-        Ok(format!(
-            "External memories:\n{}",
-            formatted.join("\n")
-        ))
+        Ok(format!("External memories:\n{}", formatted.join("\n")))
     }
 
     /// Fetch STM context asynchronously.
@@ -264,10 +259,7 @@ impl ContextualMemory {
     }
 
     /// Fetch LTM context asynchronously.
-    async fn afetch_ltm_context(
-        &self,
-        task: &str,
-    ) -> Result<Option<String>, anyhow::Error> {
+    async fn afetch_ltm_context(&self, task: &str) -> Result<Option<String>, anyhow::Error> {
         let ltm = match &self.ltm {
             Some(l) => l,
             None => return Ok(Some(String::new())),
@@ -300,10 +292,7 @@ impl ContextualMemory {
         if formatted.is_empty() {
             Ok(None)
         } else {
-            Ok(Some(format!(
-                "Historical Data:\n{}",
-                formatted.join("\n")
-            )))
+            Ok(Some(format!("Historical Data:\n{}", formatted.join("\n"))))
         }
     }
 
@@ -346,9 +335,6 @@ impl ContextualMemory {
             .map(|c| format!("- {}", c))
             .collect();
 
-        Ok(format!(
-            "External memories:\n{}",
-            formatted.join("\n")
-        ))
+        Ok(format!("External memories:\n{}", formatted.join("\n")))
     }
 }

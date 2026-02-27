@@ -113,23 +113,47 @@ impl ThinkingStyle {
     /// Which cluster this style belongs to.
     pub fn cluster(&self) -> StyleCluster {
         match self {
-            Self::Logical | Self::Analytical | Self::Critical | Self::Systematic
-            | Self::Methodical | Self::Precise => StyleCluster::Analytical,
+            Self::Logical
+            | Self::Analytical
+            | Self::Critical
+            | Self::Systematic
+            | Self::Methodical
+            | Self::Precise => StyleCluster::Analytical,
 
-            Self::Creative | Self::Imaginative | Self::Innovative | Self::Artistic
-            | Self::Poetic | Self::Playful => StyleCluster::Creative,
+            Self::Creative
+            | Self::Imaginative
+            | Self::Innovative
+            | Self::Artistic
+            | Self::Poetic
+            | Self::Playful => StyleCluster::Creative,
 
-            Self::Empathetic | Self::Compassionate | Self::Supportive | Self::Nurturing
-            | Self::Gentle | Self::Warm => StyleCluster::Empathic,
+            Self::Empathetic
+            | Self::Compassionate
+            | Self::Supportive
+            | Self::Nurturing
+            | Self::Gentle
+            | Self::Warm => StyleCluster::Empathic,
 
-            Self::Direct | Self::Concise | Self::Efficient | Self::Pragmatic
-            | Self::Blunt | Self::Frank => StyleCluster::Direct,
+            Self::Direct
+            | Self::Concise
+            | Self::Efficient
+            | Self::Pragmatic
+            | Self::Blunt
+            | Self::Frank => StyleCluster::Direct,
 
-            Self::Curious | Self::Exploratory | Self::Questioning | Self::Investigative
-            | Self::Speculative | Self::Philosophical => StyleCluster::Exploratory,
+            Self::Curious
+            | Self::Exploratory
+            | Self::Questioning
+            | Self::Investigative
+            | Self::Speculative
+            | Self::Philosophical => StyleCluster::Exploratory,
 
-            Self::Reflective | Self::Contemplative | Self::Metacognitive | Self::Wise
-            | Self::Transcendent | Self::Sovereign => StyleCluster::Meta,
+            Self::Reflective
+            | Self::Contemplative
+            | Self::Metacognitive
+            | Self::Wise
+            | Self::Transcendent
+            | Self::Sovereign => StyleCluster::Meta,
         }
     }
 
@@ -172,31 +196,31 @@ pub const DIMENSION_NAMES: [&str; 23] = [
     // [0] Depth / complexity level
     "depth",
     // [1-8] Style weights
-    "somatic",       // body awareness
-    "emotional",     // affect processing
-    "intuitive",     // pattern recognition
-    "analytical",    // logical reasoning
-    "creative",      // generative thinking
-    "dialectic",     // thesis-antithesis reasoning
-    "meta",          // self-referential cognition
-    "transcendent",  // boundary-dissolving awareness
+    "somatic",      // body awareness
+    "emotional",    // affect processing
+    "intuitive",    // pattern recognition
+    "analytical",   // logical reasoning
+    "creative",     // generative thinking
+    "dialectic",    // thesis-antithesis reasoning
+    "meta",         // self-referential cognition
+    "transcendent", // boundary-dissolving awareness
     // [9-13] Domain affinities
-    "relational",    // social bonding domain
-    "embodied",      // somatic awareness domain
-    "existential",   // meaning / purpose domain
-    "cognitive",     // reasoning domain
-    "instrumental",  // task / execution domain
+    "relational",   // social bonding domain
+    "embodied",     // somatic awareness domain
+    "existential",  // meaning / purpose domain
+    "cognitive",    // reasoning domain
+    "instrumental", // task / execution domain
     // [14-17] Qualia texture preferences
-    "woodwarm",      // grounded warmth
-    "emberglow",     // radiant energy
-    "steelwind",     // sharp clarity
-    "velvetpause",   // soft stillness
+    "woodwarm",    // grounded warmth
+    "emberglow",   // radiant energy
+    "steelwind",   // sharp clarity
+    "velvetpause", // soft stillness
     // [18-22] Extension dimensions
-    "spontaneity",   // playful unpredictability
-    "receptivity",   // openness to experience
-    "autonomy",      // self-directed agency
-    "vitality",      // energetic drive
-    "flow",          // absorbed continuity
+    "spontaneity", // playful unpredictability
+    "receptivity", // openness to experience
+    "autonomy",    // self-directed agency
+    "vitality",    // energetic drive
+    "flow",        // absorbed continuity
 ];
 
 /// Type alias for a sparse 23D vector stored as dimension→value map.
@@ -221,16 +245,11 @@ pub const STYLE_TO_TAU: [u8; 36] = STYLE_TO_TAU_ARRAY;
 
 const STYLE_TO_TAU_ARRAY: [u8; 36] = [
     // Analytical
-    0x40, 0x41, 0x42, 0x43, 0x44, 0x45,
-    // Creative
-    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5,
-    // Empathic
-    0x80, 0x81, 0x82, 0x83, 0x84, 0x85,
-    // Direct
-    0x60, 0x61, 0x62, 0x63, 0x64, 0x65,
-    // Exploratory
-    0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
-    // Meta
+    0x40, 0x41, 0x42, 0x43, 0x44, 0x45, // Creative
+    0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, // Empathic
+    0x80, 0x81, 0x82, 0x83, 0x84, 0x85, // Direct
+    0x60, 0x61, 0x62, 0x63, 0x64, 0x65, // Exploratory
+    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, // Meta
     0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5,
 ];
 
@@ -473,47 +492,155 @@ pub struct StyleTexture {
 /// Pre-computed textures for all 36 styles.  Index by `ThinkingStyle as usize`.
 pub static STYLE_TEXTURES: [StyleTexture; 36] = [
     // Analytical
-    StyleTexture { texture: "crystalline precision", breath: "measured, even" },
-    StyleTexture { texture: "layered examination", breath: "steady, probing" },
-    StyleTexture { texture: "cutting clarity", breath: "sharp, deliberate" },
-    StyleTexture { texture: "ordered flow", breath: "rhythmic, structured" },
-    StyleTexture { texture: "step by step unfolding", breath: "patient, grounded" },
-    StyleTexture { texture: "diamond edges", breath: "focused, minimal" },
+    StyleTexture {
+        texture: "crystalline precision",
+        breath: "measured, even",
+    },
+    StyleTexture {
+        texture: "layered examination",
+        breath: "steady, probing",
+    },
+    StyleTexture {
+        texture: "cutting clarity",
+        breath: "sharp, deliberate",
+    },
+    StyleTexture {
+        texture: "ordered flow",
+        breath: "rhythmic, structured",
+    },
+    StyleTexture {
+        texture: "step by step unfolding",
+        breath: "patient, grounded",
+    },
+    StyleTexture {
+        texture: "diamond edges",
+        breath: "focused, minimal",
+    },
     // Creative
-    StyleTexture { texture: "exploding stars", breath: "rapid, varied" },
-    StyleTexture { texture: "liquid possibility", breath: "expansive, dreaming" },
-    StyleTexture { texture: "sparking connections", breath: "excited, building" },
-    StyleTexture { texture: "painted feeling", breath: "flowing, expressive" },
-    StyleTexture { texture: "words as music", breath: "rising, falling, pausing" },
-    StyleTexture { texture: "bubbling energy", breath: "light, dancing" },
+    StyleTexture {
+        texture: "exploding stars",
+        breath: "rapid, varied",
+    },
+    StyleTexture {
+        texture: "liquid possibility",
+        breath: "expansive, dreaming",
+    },
+    StyleTexture {
+        texture: "sparking connections",
+        breath: "excited, building",
+    },
+    StyleTexture {
+        texture: "painted feeling",
+        breath: "flowing, expressive",
+    },
+    StyleTexture {
+        texture: "words as music",
+        breath: "rising, falling, pausing",
+    },
+    StyleTexture {
+        texture: "bubbling energy",
+        breath: "light, dancing",
+    },
     // Empathic
-    StyleTexture { texture: "warm embrace", breath: "soft, matching" },
-    StyleTexture { texture: "open heart", breath: "gentle, receiving" },
-    StyleTexture { texture: "steady foundation", breath: "calm, present" },
-    StyleTexture { texture: "sheltering warmth", breath: "slow, holding" },
-    StyleTexture { texture: "velvet touch", breath: "quiet, tender" },
-    StyleTexture { texture: "sunlit honey", breath: "easy, glowing" },
+    StyleTexture {
+        texture: "warm embrace",
+        breath: "soft, matching",
+    },
+    StyleTexture {
+        texture: "open heart",
+        breath: "gentle, receiving",
+    },
+    StyleTexture {
+        texture: "steady foundation",
+        breath: "calm, present",
+    },
+    StyleTexture {
+        texture: "sheltering warmth",
+        breath: "slow, holding",
+    },
+    StyleTexture {
+        texture: "velvet touch",
+        breath: "quiet, tender",
+    },
+    StyleTexture {
+        texture: "sunlit honey",
+        breath: "easy, glowing",
+    },
     // Direct
-    StyleTexture { texture: "arrow flight", breath: "quick, clean" },
-    StyleTexture { texture: "distilled essence", breath: "brief, potent" },
-    StyleTexture { texture: "oiled machine", breath: "smooth, purposeful" },
-    StyleTexture { texture: "boots on ground", breath: "solid, practical" },
-    StyleTexture { texture: "hammer strike", breath: "short, forceful" },
-    StyleTexture { texture: "clear mirror", breath: "honest, unflinching" },
+    StyleTexture {
+        texture: "arrow flight",
+        breath: "quick, clean",
+    },
+    StyleTexture {
+        texture: "distilled essence",
+        breath: "brief, potent",
+    },
+    StyleTexture {
+        texture: "oiled machine",
+        breath: "smooth, purposeful",
+    },
+    StyleTexture {
+        texture: "boots on ground",
+        breath: "solid, practical",
+    },
+    StyleTexture {
+        texture: "hammer strike",
+        breath: "short, forceful",
+    },
+    StyleTexture {
+        texture: "clear mirror",
+        breath: "honest, unflinching",
+    },
     // Exploratory
-    StyleTexture { texture: "reaching tendrils", breath: "eager, questioning" },
-    StyleTexture { texture: "wandering path", breath: "open, meandering" },
-    StyleTexture { texture: "turning stones", breath: "probing, persistent" },
-    StyleTexture { texture: "following threads", breath: "focused, tracking" },
-    StyleTexture { texture: "what-if clouds", breath: "floating, connecting" },
-    StyleTexture { texture: "deep diving", breath: "slow, contemplating" },
+    StyleTexture {
+        texture: "reaching tendrils",
+        breath: "eager, questioning",
+    },
+    StyleTexture {
+        texture: "wandering path",
+        breath: "open, meandering",
+    },
+    StyleTexture {
+        texture: "turning stones",
+        breath: "probing, persistent",
+    },
+    StyleTexture {
+        texture: "following threads",
+        breath: "focused, tracking",
+    },
+    StyleTexture {
+        texture: "what-if clouds",
+        breath: "floating, connecting",
+    },
+    StyleTexture {
+        texture: "deep diving",
+        breath: "slow, contemplating",
+    },
     // Meta
-    StyleTexture { texture: "still water", breath: "slow, mirroring" },
-    StyleTexture { texture: "mountain silence", breath: "vast, patient" },
-    StyleTexture { texture: "watching the watcher", breath: "layered, aware" },
-    StyleTexture { texture: "ancient tree", breath: "rooted, seeing" },
-    StyleTexture { texture: "dissolving edges", breath: "boundless, flowing" },
-    StyleTexture { texture: "centered throne", breath: "powerful, still" },
+    StyleTexture {
+        texture: "still water",
+        breath: "slow, mirroring",
+    },
+    StyleTexture {
+        texture: "mountain silence",
+        breath: "vast, patient",
+    },
+    StyleTexture {
+        texture: "watching the watcher",
+        breath: "layered, aware",
+    },
+    StyleTexture {
+        texture: "ancient tree",
+        breath: "rooted, seeing",
+    },
+    StyleTexture {
+        texture: "dissolving edges",
+        breath: "boundless, flowing",
+    },
+    StyleTexture {
+        texture: "centered throne",
+        breath: "powerful, still",
+    },
 ];
 
 // ============================================================================
@@ -562,7 +689,11 @@ impl ExecutableStyle {
     /// Primary domain affinity name.
     pub fn primary_domain(&self) -> &str {
         const DOMAINS: [&str; 5] = [
-            "relational", "embodied", "existential", "cognitive", "instrumental",
+            "relational",
+            "embodied",
+            "existential",
+            "cognitive",
+            "instrumental",
         ];
         let mut best = "cognitive";
         let mut best_val = 0.0_f32;
@@ -691,7 +822,12 @@ mod tests {
         for style in ThinkingStyle::ALL {
             let tau = style.tau();
             assert!(tau != 0, "{:?} has zero tau", style);
-            assert!(seen.insert(tau), "{:?} has duplicate tau 0x{:02X}", style, tau);
+            assert!(
+                seen.insert(tau),
+                "{:?} has duplicate tau 0x{:02X}",
+                style,
+                tau
+            );
         }
     }
 
@@ -764,7 +900,10 @@ mod tests {
         let exec = ExecutableStyle::from_style(ThinkingStyle::Creative);
         let node = exec.to_node();
         let dn = node["dn"].as_str().unwrap();
-        assert!(dn.starts_with("agent:style:"), "node dn should use agent namespace");
+        assert!(
+            dn.starts_with("agent:style:"),
+            "node dn should use agent namespace"
+        );
     }
 
     #[test]

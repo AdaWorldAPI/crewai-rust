@@ -120,10 +120,7 @@ pub trait BaseFileKnowledgeSource: BaseKnowledgeSource {
     fn validate_paths(&self) -> Result<(), anyhow::Error> {
         for path in self.file_paths() {
             if !path.exists() {
-                return Err(anyhow::anyhow!(
-                    "File not found: {}",
-                    path.display()
-                ));
+                return Err(anyhow::anyhow!("File not found: {}", path.display()));
             }
         }
         Ok(())

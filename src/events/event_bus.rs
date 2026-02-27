@@ -72,8 +72,7 @@ impl std::hash::Hash for HandlerId {
     }
 }
 
-static HANDLER_ID_COUNTER: std::sync::atomic::AtomicU64 =
-    std::sync::atomic::AtomicU64::new(1);
+static HANDLER_ID_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 
 impl HandlerId {
     /// Create a new handler ID with the given human-readable name.
@@ -269,11 +268,7 @@ impl CrewAIEventsBus {
     /// Handles scope tracking (parent/previous/triggered-by) exactly like
     /// the Python implementation, then dispatches handlers on the background
     /// runtime.
-    pub fn emit<E: BaseEvent + 'static>(
-        &self,
-        source: Arc<dyn Any + Send + Sync>,
-        event: &mut E,
-    ) {
+    pub fn emit<E: BaseEvent + 'static>(&self, source: Arc<dyn Any + Send + Sync>, event: &mut E) {
         // -- chain tracking ------------------------------------------------
         event.set_previous_event_id(get_last_event_id());
         event.set_triggered_by_event_id(get_triggering_event_id());
@@ -288,14 +283,11 @@ impl CrewAIEventsBus {
                 match popped {
                     None => handle_empty_pop(&event_type_name),
                     Some((_, ref popped_type)) => {
-                        if let Some(expected_start) = VALID_EVENT_PAIRS.get(event_type_name.as_str())
+                        if let Some(expected_start) =
+                            VALID_EVENT_PAIRS.get(event_type_name.as_str())
                         {
                             if !popped_type.is_empty() && popped_type != expected_start {
-                                handle_mismatch(
-                                    &event_type_name,
-                                    popped_type,
-                                    expected_start,
-                                );
+                                handle_mismatch(&event_type_name, popped_type, expected_start);
                             }
                         }
                     }
@@ -359,10 +351,7 @@ impl CrewAIEventsBus {
                     handler(src.as_ref(), evt.as_ref());
                 }));
                 if let Err(e) = result {
-                    log::error!(
-                        "[CrewAIEventsBus] Handler panic: {:?}",
-                        e
-                    );
+                    log::error!("[CrewAIEventsBus] Handler panic: {:?}", e);
                 }
             });
             self.track_handle(handle);
@@ -402,10 +391,7 @@ impl CrewAIEventsBus {
                             h(src.as_ref(), evt.as_ref());
                         }));
                         if let Err(e) = result {
-                            log::error!(
-                                "[CrewAIEventsBus] Handler panic: {:?}",
-                                e
-                            );
+                            log::error!("[CrewAIEventsBus] Handler panic: {:?}", e);
                         }
                     });
                     handles.push(jh);
@@ -481,7 +467,9 @@ impl CrewAIEventsBus {
     ///
     /// Builds execution plans for all event types that have dependencies,
     /// detecting circular or unresolved references eagerly.
-    pub fn validate_dependencies(&self) -> Result<(), crate::events::handler_graph::CircularDependencyError> {
+    pub fn validate_dependencies(
+        &self,
+    ) -> Result<(), crate::events::handler_graph::CircularDependencyError> {
         let map = self.handlers.read().unwrap();
         for (_type_id, entries) in map.iter() {
             let has_deps = entries.iter().any(|e| !e.dependencies.is_empty());

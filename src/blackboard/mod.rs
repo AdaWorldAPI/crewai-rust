@@ -38,7 +38,7 @@ pub mod typed_slot;
 pub mod view;
 
 pub use a2a::{A2ARegistry, AgentPresence, AgentState};
-pub use bind_bridge::{BindBridge, BindProjection, SubstrateView, SubstrateMatch, StubSubstrate};
+pub use bind_bridge::{BindBridge, BindProjection, StubSubstrate, SubstrateMatch, SubstrateView};
 pub use phase::Phase;
 pub use slot::{BlackboardSlot, SlotMeta};
 pub use typed_slot::TypedSlot;

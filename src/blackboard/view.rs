@@ -196,11 +196,7 @@ impl Blackboard {
     }
 
     /// Import a DataEnvelope into the blackboard.
-    pub fn from_envelope(
-        &mut self,
-        key: impl Into<String>,
-        envelope: &DataEnvelope,
-    ) {
+    pub fn from_envelope(&mut self, key: impl Into<String>, envelope: &DataEnvelope) {
         let slot = BlackboardSlot::from_value(
             envelope.data.clone(),
             &envelope.metadata.source_step,
@@ -238,7 +234,9 @@ impl Blackboard {
 
     /// Get a typed value by key.
     pub fn get_typed<T: Any>(&self, key: &str) -> Option<&T> {
-        self.typed_slots.get(key).and_then(|s| s.downcast_ref::<T>())
+        self.typed_slots
+            .get(key)
+            .and_then(|s| s.downcast_ref::<T>())
     }
 
     /// Get a mutable typed value by key.
@@ -321,7 +319,12 @@ mod tests {
     #[test]
     fn test_blackboard_put_get() {
         let mut bb = Blackboard::new();
-        bb.put("step:0", serde_json::json!({"msg": "hello"}), "channel", "oc.channel.receive");
+        bb.put(
+            "step:0",
+            serde_json::json!({"msg": "hello"}),
+            "channel",
+            "oc.channel.receive",
+        );
 
         assert!(bb.contains("step:0"));
         assert_eq!(bb.len(), 1);
@@ -334,7 +337,12 @@ mod tests {
     #[test]
     fn test_blackboard_put_bytes() {
         let mut bb = Blackboard::new();
-        bb.put_bytes("raw:0", bytes::Bytes::from_static(b"raw data"), "test", "oc.browser.action");
+        bb.put_bytes(
+            "raw:0",
+            bytes::Bytes::from_static(b"raw data"),
+            "test",
+            "oc.browser.action",
+        );
 
         let slot = bb.get("raw:0").unwrap();
         assert_eq!(slot.as_str(), Some("raw data"));
@@ -368,7 +376,12 @@ mod tests {
     #[test]
     fn test_blackboard_envelope_roundtrip() {
         let mut bb = Blackboard::new();
-        bb.put("s:0", serde_json::json!({"result": "done"}), "agent", "crew.agent");
+        bb.put(
+            "s:0",
+            serde_json::json!({"result": "done"}),
+            "agent",
+            "crew.agent",
+        );
 
         let envelope = bb.to_envelope("s:0").unwrap();
         assert_eq!(envelope.data["result"], "done");
@@ -417,7 +430,10 @@ mod tests {
         let mut bb = Blackboard::new();
         bb.put_typed(
             "resp:0",
-            AgentOutput { text: "hello".into(), confidence: 0.95 },
+            AgentOutput {
+                text: "hello".into(),
+                confidence: 0.95,
+            },
             "agent",
             "oc.agent.think",
         );
@@ -453,8 +469,8 @@ mod tests {
         bb.put("json:0", serde_json::json!({"a": 1}), "s", "t");
         bb.put_typed("typed:0", 42u32, "s", "t");
 
-        assert_eq!(bb.len(), 1);           // bytes slots
-        assert_eq!(bb.total_len(), 2);     // bytes + typed
+        assert_eq!(bb.len(), 1); // bytes slots
+        assert_eq!(bb.total_len(), 2); // bytes + typed
         assert!(bb.contains_any("json:0"));
         assert!(bb.contains_any("typed:0"));
     }
@@ -465,8 +481,10 @@ mod tests {
     fn test_blackboard_a2a_registry() {
         let mut bb = Blackboard::new();
 
-        bb.a2a.register("agent-1", "Researcher", "research", vec!["search".into()]);
-        bb.a2a.register("agent-2", "Writer", "writing", vec!["write".into()]);
+        bb.a2a
+            .register("agent-1", "Researcher", "research", vec!["search".into()]);
+        bb.a2a
+            .register("agent-2", "Writer", "writing", vec!["write".into()]);
 
         assert_eq!(bb.a2a.len(), 2);
 

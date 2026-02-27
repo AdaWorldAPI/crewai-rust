@@ -172,10 +172,7 @@ impl ToolUsage {
     }
 
     /// Parse a tool-calling string into a `ToolCalling`.
-    pub fn parse_tool_calling(
-        &mut self,
-        tool_string: &str,
-    ) -> Result<ToolCalling, ToolUsageError> {
+    pub fn parse_tool_calling(&mut self, tool_string: &str) -> Result<ToolCalling, ToolUsageError> {
         self.tool_calling(tool_string)
     }
 
@@ -183,11 +180,7 @@ impl ToolUsage {
     ///
     /// Handles: repeated-usage detection, cache reads, usage limits,
     /// argument validation, execution, caching, and retry logic.
-    pub fn use_tool(
-        &mut self,
-        calling: &ToolCalling,
-        _tool_string: &str,
-    ) -> String {
+    pub fn use_tool(&mut self, calling: &ToolCalling, _tool_string: &str) -> String {
         // Select the tool
         let tool_idx = match self.select_tool(&calling.tool_name) {
             Ok(idx) => idx,
@@ -270,11 +263,7 @@ impl ToolUsage {
     }
 
     /// Execute a tool call asynchronously.
-    pub async fn ause_tool(
-        &mut self,
-        calling: &ToolCalling,
-        _tool_string: &str,
-    ) -> String {
+    pub async fn ause_tool(&mut self, calling: &ToolCalling, _tool_string: &str) -> String {
         // Select the tool
         let tool_idx = match self.select_tool(&calling.tool_name) {
             Ok(idx) => idx,
@@ -748,8 +737,8 @@ mod tests {
             std::sync::Arc::new(|_| Ok(Value::Null)),
         )];
         let usage = ToolUsage::new(tools, None, None);
-        let result = usage
-            .parse_json_tool_calling(r#"{"tool_name": "search", "arguments": {"q": "rust"}}"#);
+        let result =
+            usage.parse_json_tool_calling(r#"{"tool_name": "search", "arguments": {"q": "rust"}}"#);
         assert!(result.is_ok());
         let tc = result.unwrap();
         assert_eq!(tc.tool_name, "search");

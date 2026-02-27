@@ -423,9 +423,7 @@ impl MCPClient {
         }
 
         // Discover tools with retry.
-        let tools = self
-            .retry_operation(|| self.list_tools_impl())
-            .await?;
+        let tools = self.retry_operation(|| self.list_tools_impl()).await?;
 
         // Cache results if enabled.
         if use_cache {
@@ -670,9 +668,7 @@ impl MCPClient {
     /// 4. Removes empty objects and arrays after cleaning.
     ///
     /// Corresponds to `MCPClient._clean_tool_arguments()` in Python.
-    pub fn clean_tool_arguments(
-        arguments: &HashMap<String, Value>,
-    ) -> HashMap<String, Value> {
+    pub fn clean_tool_arguments(arguments: &HashMap<String, Value>) -> HashMap<String, Value> {
         let mut cleaned = HashMap::new();
 
         for (key, value) in arguments {
@@ -703,10 +699,8 @@ impl MCPClient {
 
             // Recursively clean nested objects.
             if let Some(obj) = value.as_object() {
-                let nested_map: HashMap<String, Value> = obj
-                    .iter()
-                    .map(|(k, v)| (k.clone(), v.clone()))
-                    .collect();
+                let nested_map: HashMap<String, Value> =
+                    obj.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
                 let nested_cleaned = Self::clean_tool_arguments(&nested_map);
                 if !nested_cleaned.is_empty() {
                     cleaned.insert(
@@ -723,15 +717,12 @@ impl MCPClient {
                             return None;
                         }
                         if let Some(obj) = item.as_object() {
-                            let nested_map: HashMap<String, Value> = obj
-                                .iter()
-                                .map(|(k, v)| (k.clone(), v.clone()))
-                                .collect();
+                            let nested_map: HashMap<String, Value> =
+                                obj.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
                             let cleaned_item = Self::clean_tool_arguments(&nested_map);
                             if !cleaned_item.is_empty() {
                                 return Some(
-                                    serde_json::to_value(cleaned_item)
-                                        .unwrap_or(Value::Null),
+                                    serde_json::to_value(cleaned_item).unwrap_or(Value::Null),
                                 );
                             }
                             None
@@ -785,9 +776,7 @@ impl MCPClient {
                     let error_str = e.to_string().to_lowercase();
 
                     // Non-retryable errors: authentication.
-                    if error_str.contains("authentication")
-                        || error_str.contains("unauthorized")
-                    {
+                    if error_str.contains("authentication") || error_str.contains("unauthorized") {
                         return Err(anyhow::anyhow!("Authentication failed: {}", e));
                     }
 
@@ -815,10 +804,7 @@ impl MCPClient {
         }
 
         Err(last_error.unwrap_or_else(|| {
-            anyhow::anyhow!(
-                "Operation failed after {} attempts",
-                self.max_retries
-            )
+            anyhow::anyhow!("Operation failed after {} attempts", self.max_retries)
         }))
     }
 
@@ -863,10 +849,7 @@ mod tests {
     #[test]
     fn test_clean_tool_arguments_fixes_sources() {
         let mut args = HashMap::new();
-        args.insert(
-            "sources".to_string(),
-            serde_json::json!(["web", "file"]),
-        );
+        args.insert("sources".to_string(), serde_json::json!(["web", "file"]));
 
         let cleaned = MCPClient::clean_tool_arguments(&args);
         let sources = cleaned.get("sources").unwrap().as_array().unwrap();
@@ -1000,11 +983,7 @@ mod tests {
     #[test]
     fn test_get_server_info_stdio() {
         use crate::mcp::transports::stdio::StdioTransport;
-        let transport = StdioTransport::new(
-            "python",
-            Some(vec!["server.py".into()]),
-            None,
-        );
+        let transport = StdioTransport::new("python", Some(vec!["server.py".into()]), None);
         let client = MCPClient::new(Box::new(transport));
         let info = client.get_server_info();
 

@@ -21,14 +21,14 @@ pub const VOLITION_AXIS_NAMES: [&str; 5] = [
 
 /// Names for the 8 affect baseline dimensions (Plutchik's wheel, neutral labels).
 pub const AFFECT_DIMENSION_NAMES: [&str; 8] = [
-    "joy",           // positive valence
-    "trust",         // openness to others
-    "fear",          // threat awareness
-    "surprise",      // novelty response
-    "sadness",       // loss awareness
-    "disgust",       // rejection response
-    "anger",         // boundary enforcement
-    "anticipation",  // forward orientation
+    "joy",          // positive valence
+    "trust",        // openness to others
+    "fear",         // threat awareness
+    "surprise",     // novelty response
+    "sadness",      // loss awareness
+    "disgust",      // rejection response
+    "anger",        // boundary enforcement
+    "anticipation", // forward orientation
 ];
 
 /// Create a default (neutral midpoint) persona profile.

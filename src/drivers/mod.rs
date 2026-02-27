@@ -45,17 +45,14 @@ pub mod spo;
 
 // Re-exports for ergonomic Blackboard access.
 pub use barrier_stack::{
-    BarrierStack, StackDecision, BlockingLayer, MulBlockReason, MulInput, Nudge,
-    LayerVerdicts, MulVerdict,
+    BarrierStack, BlockingLayer, LayerVerdicts, MulBlockReason, MulInput, MulVerdict, Nudge,
+    StackDecision,
 };
 pub use markov_barrier::{
-    MarkovBarrier, SemanticTransaction, XorBudget, GateDecision, CallMeta, BarrierStats,
+    BarrierStats, CallMeta, GateDecision, MarkovBarrier, SemanticTransaction, XorBudget,
 };
 pub use nars::{
-    AwarenessFrame, AwarenessMatch, AwarenessSummary,
-    NarsTruth, NarsRule, NarsAxisInference, NarsSemanticState,
-    CausalInference, SimilarityJudgment,
+    AwarenessFrame, AwarenessMatch, AwarenessSummary, CausalInference, NarsAxisInference, NarsRule,
+    NarsSemanticState, NarsTruth, SimilarityJudgment,
 };
-pub use spo::{
-    SpoTriple, ConversationPredicate,
-};
+pub use spo::{ConversationPredicate, SpoTriple};

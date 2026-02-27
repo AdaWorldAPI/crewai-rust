@@ -151,9 +151,7 @@ impl FlowStructure {
 /// # Returns
 ///
 /// The complete FlowStructure.
-pub fn build_flow_structure(
-    methods: &[FlowMethodRegistration],
-) -> FlowStructure {
+pub fn build_flow_structure(methods: &[FlowMethodRegistration]) -> FlowStructure {
     let mut structure = FlowStructure::default();
 
     // Build adjacency list for level calculation.
@@ -207,8 +205,7 @@ pub fn build_flow_structure(
         metadata.level = level;
 
         if let Some(ref triggers) = method.trigger_methods {
-            metadata.trigger_methods =
-                Some(triggers.iter().map(|t| t.0.clone()).collect());
+            metadata.trigger_methods = Some(triggers.iter().map(|t| t.0.clone()).collect());
         }
 
         if let Some(ref ct) = method.condition_type {
@@ -232,10 +229,7 @@ pub fn build_flow_structure(
                     source: trigger.0.clone(),
                     target: name.clone(),
                     label: Some("listens_to".to_string()),
-                    condition_type: method
-                        .condition_type
-                        .as_ref()
-                        .map(|c| format!("{}", c)),
+                    condition_type: method.condition_type.as_ref().map(|c| format!("{}", c)),
                     is_router_path: Some(false),
                     router_path_label: None,
                 });
@@ -281,8 +275,7 @@ pub fn calculate_execution_paths(structure: &FlowStructure) -> Vec<Vec<String>> 
 
     // DFS from each start node.
     for start in &structure.start_methods {
-        let mut stack: Vec<(String, Vec<String>)> =
-            vec![(start.clone(), vec![start.clone()])];
+        let mut stack: Vec<(String, Vec<String>)> = vec![(start.clone(), vec![start.clone()])];
 
         while let Some((current, path)) = stack.pop() {
             let has_next = if let Some(neighbors) = adjacency.get(&current) {
@@ -613,12 +606,21 @@ mod tests {
     fn test_calculate_execution_paths() {
         let mut structure = FlowStructure::default();
         structure.start_methods = vec!["a".to_string()];
-        structure
-            .nodes
-            .insert("a".to_string(), NodeMetadata { id: "a".to_string(), is_start: true, ..Default::default() });
-        structure
-            .nodes
-            .insert("b".to_string(), NodeMetadata { id: "b".to_string(), ..Default::default() });
+        structure.nodes.insert(
+            "a".to_string(),
+            NodeMetadata {
+                id: "a".to_string(),
+                is_start: true,
+                ..Default::default()
+            },
+        );
+        structure.nodes.insert(
+            "b".to_string(),
+            NodeMetadata {
+                id: "b".to_string(),
+                ..Default::default()
+            },
+        );
         structure.edges.push(StructureEdge {
             source: "a".to_string(),
             target: "b".to_string(),

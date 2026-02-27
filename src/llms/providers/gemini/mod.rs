@@ -190,10 +190,7 @@ impl GeminiCompletion {
         let mut contents: Vec<Value> = Vec::new();
 
         for msg in messages {
-            let role = msg
-                .get("role")
-                .and_then(|v| v.as_str())
-                .unwrap_or("user");
+            let role = msg.get("role").and_then(|v| v.as_str()).unwrap_or("user");
             let content = msg
                 .get("content")
                 .cloned()
@@ -228,13 +225,17 @@ impl GeminiCompletion {
                     serde_json::json!([{ "text": text }])
                 } else if let Some(arr) = content.as_array() {
                     // Handle multi-part content
-                    Value::Array(arr.iter().map(|block| {
-                        if let Some(text) = block.get("text").and_then(|t| t.as_str()) {
-                            serde_json::json!({ "text": text })
-                        } else {
-                            block.clone()
-                        }
-                    }).collect())
+                    Value::Array(
+                        arr.iter()
+                            .map(|block| {
+                                if let Some(text) = block.get("text").and_then(|t| t.as_str()) {
+                                    serde_json::json!({ "text": text })
+                                } else {
+                                    block.clone()
+                                }
+                            })
+                            .collect(),
+                    )
                 } else {
                     serde_json::json!([{ "text": content.to_string() }])
                 };
@@ -251,8 +252,12 @@ impl GeminiCompletion {
                         for tc in tool_calls {
                             let func = tc.get("function").unwrap_or(&Value::Null);
                             let name = func.get("name").and_then(|v| v.as_str()).unwrap_or("");
-                            let args_str = func.get("arguments").and_then(|v| v.as_str()).unwrap_or("{}");
-                            let args: Value = serde_json::from_str(args_str).unwrap_or(serde_json::json!({}));
+                            let args_str = func
+                                .get("arguments")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("{}");
+                            let args: Value =
+                                serde_json::from_str(args_str).unwrap_or(serde_json::json!({}));
                             all_parts.push(serde_json::json!({
                                 "functionCall": { "name": name, "args": args }
                             }));
@@ -282,11 +287,7 @@ impl GeminiCompletion {
     }
 
     /// Build the complete request body.
-    fn build_request_body(
-        &self,
-        messages: &[LLMMessage],
-        tools: Option<&[Value]>,
-    ) -> Value {
+    fn build_request_body(&self, messages: &[LLMMessage], tools: Option<&[Value]>) -> Value {
         let (system, contents) = self.format_messages(messages);
 
         let mut body = serde_json::json!({
@@ -303,13 +304,16 @@ impl GeminiCompletion {
         if let Some(tools) = tools {
             if !tools.is_empty() {
                 // Convert OpenAI-style tool definitions to Gemini function declarations
-                let declarations: Vec<Value> = tools.iter().map(|tool| {
-                    if let Some(func) = tool.get("function") {
-                        func.clone()
-                    } else {
-                        tool.clone()
-                    }
-                }).collect();
+                let declarations: Vec<Value> = tools
+                    .iter()
+                    .map(|tool| {
+                        if let Some(func) = tool.get("function") {
+                            func.clone()
+                        } else {
+                            tool.clone()
+                        }
+                    })
+                    .collect();
                 body["tools"] = serde_json::json!([{
                     "functionDeclarations": declarations
                 }]);
@@ -398,8 +402,14 @@ impl GeminiCompletion {
                 .unwrap_or(0);
 
             usage.insert("prompt_tokens".to_string(), serde_json::json!(prompt));
-            usage.insert("completion_tokens".to_string(), serde_json::json!(completion));
-            usage.insert("total_tokens".to_string(), serde_json::json!(prompt + completion));
+            usage.insert(
+                "completion_tokens".to_string(),
+                serde_json::json!(completion),
+            );
+            usage.insert(
+                "total_tokens".to_string(),
+                serde_json::json!(prompt + completion),
+            );
             usage.insert("cached_tokens".to_string(), serde_json::json!(cached));
         }
         usage
@@ -504,7 +514,11 @@ impl BaseLLM for GeminiCompletion {
 
         for attempt in 0..=max_retries {
             if attempt > 0 {
-                log::warn!("Gemini API retry attempt {} after {:?}", attempt, retry_delay);
+                log::warn!(
+                    "Gemini API retry attempt {} after {:?}",
+                    attempt,
+                    retry_delay
+                );
                 tokio::time::sleep(retry_delay).await;
                 retry_delay *= 2;
             }
@@ -560,7 +574,8 @@ impl BaseLLM for GeminiCompletion {
                         "Failed to parse Gemini response: {} - Body: {}",
                         e,
                         &response_text[..response_text.len().min(500)]
-                    ).into());
+                    )
+                    .into());
                 }
             };
 

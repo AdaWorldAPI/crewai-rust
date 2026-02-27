@@ -137,8 +137,14 @@ impl std::fmt::Display for FlowMethodType {
 /// In Rust, we represent flow methods as boxed async closures that take
 /// a mutable reference to the flow state, an optional trigger result,
 /// and return a `Value` result.
-pub type FlowMethodFn =
-    Box<dyn Fn(&mut FlowState, Option<Value>) -> futures::future::BoxFuture<'_, Result<Value, anyhow::Error>> + Send + Sync>;
+pub type FlowMethodFn = Box<
+    dyn Fn(
+            &mut FlowState,
+            Option<Value>,
+        ) -> futures::future::BoxFuture<'_, Result<Value, anyhow::Error>>
+        + Send
+        + Sync,
+>;
 
 /// Registration info for a flow method (analogous to Python decorator metadata).
 ///
@@ -463,9 +469,7 @@ impl Flow {
                     );
                 } else {
                     // Simple condition.
-                    let cond_type = registration
-                        .condition_type
-                        .unwrap_or(FlowConditionType::OR);
+                    let cond_type = registration.condition_type.unwrap_or(FlowConditionType::OR);
                     self.listeners.insert(
                         name.clone(),
                         ListenerCondition::Simple(SimpleFlowCondition {
@@ -483,7 +487,10 @@ impl Flow {
             if let Some(ref paths) = registration.router_paths {
                 self.router_paths.insert(
                     name.clone(),
-                    paths.iter().map(|p| FlowMethodName::new(p.as_str())).collect(),
+                    paths
+                        .iter()
+                        .map(|p| FlowMethodName::new(p.as_str()))
+                        .collect(),
                 );
             } else {
                 self.router_paths.insert(name.clone(), Vec::new());
@@ -495,8 +502,7 @@ impl Flow {
 
     /// Register a method using FlowMethodMeta (convenience).
     pub fn register_method_meta(&mut self, name: &str, meta: &FlowMethodMeta) {
-        let registration =
-            FlowMethodRegistration::from_meta(FlowMethodName::new(name), meta);
+        let registration = FlowMethodRegistration::from_meta(FlowMethodName::new(name), meta);
         self.register_method(registration);
     }
 
@@ -638,20 +644,13 @@ impl Flow {
                     last_result = result;
                 }
                 Err(e) => {
-                    log::error!(
-                        "Start method {} failed: {}",
-                        method_name,
-                        e
-                    );
+                    log::error!("Start method {} failed: {}", method_name, e);
                     return Err(e);
                 }
             }
         }
 
-        log::debug!(
-            "Flow::kickoff_async finished for flow_id={}",
-            self.flow_id
-        );
+        log::debug!("Flow::kickoff_async finished for flow_id={}", self.flow_id);
 
         Ok(last_result)
     }
@@ -681,15 +680,12 @@ impl Flow {
     ///
     /// Corresponds to `Flow.resume_async()` in Python.
     pub async fn resume_async(&mut self, feedback: &str) -> Result<Value, anyhow::Error> {
-        let context = self
-            .pending_feedback_context
-            .take()
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "No pending feedback context. \
+        let context = self.pending_feedback_context.take().ok_or_else(|| {
+            anyhow::anyhow!(
+                "No pending feedback context. \
                      Use from_pending() to restore a paused flow."
-                )
-            })?;
+            )
+        })?;
 
         let emit = context.emit.clone();
         let default_outcome = context.default_outcome.clone();
@@ -735,19 +731,16 @@ impl Flow {
         self.is_execution_resuming = false;
 
         // Trigger downstream listeners.
-        let trigger_name = if let (Some(ref emit_opts), Some(ref outcome)) =
-            (&emit, &collapsed_outcome)
-        {
-            self.method_outputs
-                .push(Value::String(outcome.clone()));
-            FlowMethodName::new(outcome.as_str())
-        } else {
-            FlowMethodName::new(context.method_name.as_str())
-        };
+        let trigger_name =
+            if let (Some(ref emit_opts), Some(ref outcome)) = (&emit, &collapsed_outcome) {
+                self.method_outputs.push(Value::String(outcome.clone()));
+                FlowMethodName::new(outcome.as_str())
+            } else {
+                FlowMethodName::new(context.method_name.as_str())
+            };
 
         let result_value = serde_json::to_value(&result).unwrap_or(Value::Null);
-        self.execute_listeners(&trigger_name, &result_value)
-            .await?;
+        self.execute_listeners(&trigger_name, &result_value).await?;
 
         Ok(result_value)
     }
@@ -761,9 +754,7 @@ impl Flow {
     ) -> Result<Self, anyhow::Error> {
         let loaded = persistence
             .load_pending_feedback(flow_id)?
-            .ok_or_else(|| {
-                anyhow::anyhow!("No pending feedback found for flow_id: {}", flow_id)
-            })?;
+            .ok_or_else(|| anyhow::anyhow!("No pending feedback found for flow_id: {}", flow_id))?;
 
         let (state_data, pending_context) = loaded;
 
@@ -878,11 +869,8 @@ impl Flow {
                     // Persist state after method completion if persistence is configured.
                     if let Some(ref persistence) = self.persistence {
                         let state_data = self.copy_and_serialize_state();
-                        let _ = persistence.save_state(
-                            &self.flow_id,
-                            &listener_name.0,
-                            &state_data,
-                        );
+                        let _ =
+                            persistence.save_state(&self.flow_id, &listener_name.0, &state_data);
                     }
 
                     // If the listener is a router, route based on its return value.
@@ -890,23 +878,15 @@ impl Flow {
                         if let Some(route_str) = listener_result.as_str() {
                             let route_name = FlowMethodName::new(route_str);
                             // Recursively trigger listeners for the route value.
-                            Box::pin(self.execute_listeners(&route_name, &listener_result))
-                                .await?;
+                            Box::pin(self.execute_listeners(&route_name, &listener_result)).await?;
                         }
                     } else {
                         // Recursively trigger downstream listeners.
-                        Box::pin(
-                            self.execute_listeners(listener_name, &listener_result),
-                        )
-                        .await?;
+                        Box::pin(self.execute_listeners(listener_name, &listener_result)).await?;
                     }
                 }
                 Err(e) => {
-                    log::error!(
-                        "Listener {} failed: {}",
-                        listener_name,
-                        e
-                    );
+                    log::error!("Listener {} failed: {}", listener_name, e);
                     return Err(e);
                 }
             }
@@ -961,11 +941,7 @@ impl Flow {
             }
             ListenerCondition::Compound(condition) => {
                 // Evaluate compound conditions recursively.
-                self.evaluate_compound_condition(
-                    listener_name,
-                    condition,
-                    completed_method,
-                )
+                self.evaluate_compound_condition(listener_name, condition, completed_method)
             }
         }
     }
@@ -1045,8 +1021,7 @@ impl Flow {
         let filename = filename.unwrap_or("flow_plot");
         log::debug!("Flow::plot for flow_id={}", self.flow_id);
 
-        let structure =
-            super::visualization::build_flow_structure(&self.methods);
+        let structure = super::visualization::build_flow_structure(&self.methods);
         super::visualization::render_interactive(&structure, filename)
     }
 
@@ -1152,17 +1127,11 @@ mod tests {
     #[test]
     fn test_flow_state_with_data_preserves_id() {
         let mut data = HashMap::new();
-        data.insert(
-            "id".to_string(),
-            Value::String("custom-id-123".to_string()),
-        );
+        data.insert("id".to_string(), Value::String("custom-id-123".to_string()));
         data.insert("key".to_string(), Value::String("value".to_string()));
         let state = FlowState::with_data(data);
         assert_eq!(state.id, "custom-id-123");
-        assert_eq!(
-            state.get("key"),
-            Some(&Value::String("value".to_string()))
-        );
+        assert_eq!(state.get("key"), Some(&Value::String("value".to_string())));
     }
 
     #[test]
@@ -1171,10 +1140,7 @@ mod tests {
         state.set("name".to_string(), Value::String("test".to_string()));
         let dict = state.to_dict();
         assert_eq!(dict.get("id"), Some(&Value::String(state.id.clone())));
-        assert_eq!(
-            dict.get("name"),
-            Some(&Value::String("test".to_string()))
-        );
+        assert_eq!(dict.get("name"), Some(&Value::String("test".to_string())));
     }
 
     #[test]
@@ -1215,8 +1181,12 @@ mod tests {
             ..Default::default()
         };
         flow.register_method_meta("route_decision", &meta);
-        assert!(flow.routers.contains(&FlowMethodName::new("route_decision")));
-        assert!(flow.router_paths.contains_key(&FlowMethodName::new("route_decision")));
+        assert!(flow
+            .routers
+            .contains(&FlowMethodName::new("route_decision")));
+        assert!(flow
+            .router_paths
+            .contains_key(&FlowMethodName::new("route_decision")));
     }
 
     #[test]

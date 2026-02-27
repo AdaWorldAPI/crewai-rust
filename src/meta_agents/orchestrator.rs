@@ -24,15 +24,15 @@ use crate::agent::Agent;
 use super::card_builder::{build_card_from_blueprint, build_card_from_state, update_card_skills};
 use super::delegation::{
     AgentFeedback, CapabilityUpdate, CapabilityUpdateTrigger, DelegationDispatch,
-    DelegationRequest, DelegationResponse, DelegationResult, OrchestrationEvent,
-    SkillAdjustment, SkillAdjustmentType, TaskOutcome,
+    DelegationRequest, DelegationResponse, DelegationResult, OrchestrationEvent, SkillAdjustment,
+    SkillAdjustmentType, TaskOutcome,
 };
 use super::savants;
 use super::skill_engine::{SkillEngine, SkillEngineConfig};
 use super::spawner::SpawnerAgent;
 use super::types::{
-    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain,
-    SkillDescriptor, SpawnedAgentState, TaskPriority,
+    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain, SkillDescriptor,
+    SpawnedAgentState, TaskPriority,
 };
 
 // ---------------------------------------------------------------------------
@@ -64,11 +64,21 @@ pub struct OrchestratorConfig {
     pub min_match_score: f64,
 }
 
-fn default_base_url() -> String { "http://localhost:8080".to_string() }
-fn default_max_agents() -> usize { 20 }
-fn default_max_retries() -> u32 { 3 }
-fn default_true() -> bool { true }
-fn default_min_score() -> f64 { 0.5 }
+fn default_base_url() -> String {
+    "http://localhost:8080".to_string()
+}
+fn default_max_agents() -> usize {
+    20
+}
+fn default_max_retries() -> u32 {
+    3
+}
+fn default_true() -> bool {
+    true
+}
+fn default_min_score() -> f64 {
+    0.5
+}
 
 impl Default for OrchestratorConfig {
     fn default() -> Self {
@@ -156,7 +166,11 @@ impl MetaOrchestrator {
 
     /// Register an agent blueprint.
     pub fn register_blueprint(&mut self, blueprint: AgentBlueprint) {
-        log::debug!("Registered blueprint: {} (domain: {})", blueprint.role, blueprint.domain);
+        log::debug!(
+            "Registered blueprint: {} (domain: {})",
+            blueprint.role,
+            blueprint.domain
+        );
         self.blueprints.push(blueprint);
     }
 
@@ -181,7 +195,10 @@ impl MetaOrchestrator {
     ///
     /// The ID of the spawned agent.
     pub fn spawn_agent(&mut self, blueprint: &AgentBlueprint) -> String {
-        let agent_id = format!("agent-{}", Uuid::new_v4().to_string().split('-').next().unwrap_or("x"));
+        let agent_id = format!(
+            "agent-{}",
+            Uuid::new_v4().to_string().split('-').next().unwrap_or("x")
+        );
 
         // Create the live Agent
         let mut agent = Agent::new(
@@ -203,7 +220,10 @@ impl MetaOrchestrator {
 
         log::info!(
             "Spawned agent '{}' ({}) in domain '{}' with {} skills",
-            agent_id, blueprint.role, blueprint.domain, blueprint.skills.len(),
+            agent_id,
+            blueprint.role,
+            blueprint.domain,
+            blueprint.skills.len(),
         );
 
         // Emit spawn event
@@ -315,8 +335,12 @@ impl MetaOrchestrator {
 
             // Required skills check
             if !task.required_skills.is_empty() {
-                let agent_skill_ids: Vec<&str> = state.skills.iter().map(|s| s.id.as_str()).collect();
-                let has_all = task.required_skills.iter().all(|req| agent_skill_ids.contains(&req.as_str()));
+                let agent_skill_ids: Vec<&str> =
+                    state.skills.iter().map(|s| s.id.as_str()).collect();
+                let has_all = task
+                    .required_skills
+                    .iter()
+                    .all(|req| agent_skill_ids.contains(&req.as_str()));
                 if has_all {
                     score += 2.0;
                 } else {
@@ -328,7 +352,10 @@ impl MetaOrchestrator {
             score *= state.performance_score;
 
             if score > self.config.min_match_score {
-                if best.as_ref().map_or(true, |(_, best_score)| score > *best_score) {
+                if best
+                    .as_ref()
+                    .map_or(true, |(_, best_score)| score > *best_score)
+                {
                     best = Some((agent_id.clone(), score));
                 }
             }
@@ -344,7 +371,9 @@ impl MetaOrchestrator {
         let mut assigned = 0;
 
         // Get indices of tasks that are pending and have dependencies satisfied
-        let assignable_indices: Vec<usize> = self.tasks.iter()
+        let assignable_indices: Vec<usize> = self
+            .tasks
+            .iter()
             .enumerate()
             .filter(|(_, t)| {
                 t.status == OrchestratedTaskStatus::Pending
@@ -354,7 +383,8 @@ impl MetaOrchestrator {
             .collect();
 
         // Sort by priority (critical first)
-        let mut indices_with_priority: Vec<(usize, TaskPriority)> = assignable_indices.iter()
+        let mut indices_with_priority: Vec<(usize, TaskPriority)> = assignable_indices
+            .iter()
             .map(|&i| (i, self.tasks[i].priority))
             .collect();
         indices_with_priority.sort_by(|a, b| b.1.cmp(&a.1));
@@ -366,7 +396,9 @@ impl MetaOrchestrator {
             if let Some((agent_id, score)) = self.find_best_agent(&task_clone) {
                 log::info!(
                     "Assigning task '{}' to agent '{}' (score: {:.2})",
-                    task_clone.id, agent_id, score,
+                    task_clone.id,
+                    agent_id,
+                    score,
                 );
 
                 // Emit assignment event
@@ -392,7 +424,8 @@ impl MetaOrchestrator {
                     let new_agent_id = self.spawn_domain_agent(domain);
                     log::info!(
                         "Auto-spawned agent '{}' for task '{}'",
-                        new_agent_id, task_clone.id,
+                        new_agent_id,
+                        task_clone.id,
                     );
 
                     // Emit assignment event
@@ -428,7 +461,9 @@ impl MetaOrchestrator {
         let mut executed = 0;
 
         // Find assigned tasks
-        let assigned_indices: Vec<usize> = self.tasks.iter()
+        let assigned_indices: Vec<usize> = self
+            .tasks
+            .iter()
             .enumerate()
             .filter(|(_, t)| t.status == OrchestratedTaskStatus::Assigned)
             .map(|(i, _)| i)
@@ -486,14 +521,17 @@ impl MetaOrchestrator {
                     // Apply skill feedback via the skill engine
                     if self.config.adaptive_skills {
                         // Identify which skills were relevant based on task description
-                        let relevant_skills: Vec<String> = if let Some(state) = self.agent_pool.get(&agent_id) {
-                            state.skills.iter()
-                                .filter(|s| s.match_score(&task_description) > 0.0)
-                                .map(|s| s.id.clone())
-                                .collect()
-                        } else {
-                            Vec::new()
-                        };
+                        let relevant_skills: Vec<String> =
+                            if let Some(state) = self.agent_pool.get(&agent_id) {
+                                state
+                                    .skills
+                                    .iter()
+                                    .filter(|s| s.match_score(&task_description) > 0.0)
+                                    .map(|s| s.id.clone())
+                                    .collect()
+                            } else {
+                                Vec::new()
+                            };
 
                         let feedback = AgentFeedback::success(&agent_id, &task_id)
                             .with_relevant_skills(relevant_skills);
@@ -503,7 +541,8 @@ impl MetaOrchestrator {
                             self.agent_cards.get_mut(&agent_id),
                         ) {
                             state.complete_task(true);
-                            let (_update, events) = self.skill_engine.apply_feedback(&feedback, state, card);
+                            let (_update, events) =
+                                self.skill_engine.apply_feedback(&feedback, state, card);
                             self.event_log.extend(events);
                         }
                     } else if let Some(state) = self.agent_pool.get_mut(&agent_id) {
@@ -528,7 +567,12 @@ impl MetaOrchestrator {
                             retry_count,
                         });
 
-                        log::warn!("Task '{}' failed after {} retries: {}", task_id, retry_count, error);
+                        log::warn!(
+                            "Task '{}' failed after {} retries: {}",
+                            task_id,
+                            retry_count,
+                            error
+                        );
                     } else {
                         // Reset to pending for retry
                         self.tasks[idx].status = OrchestratedTaskStatus::Pending;
@@ -542,19 +586,28 @@ impl MetaOrchestrator {
                             retry_count,
                         });
 
-                        log::info!("Task '{}' retry {}/{}: {}", task_id, retry_count, self.config.max_task_retries, error);
+                        log::info!(
+                            "Task '{}' retry {}/{}: {}",
+                            task_id,
+                            retry_count,
+                            self.config.max_task_retries,
+                            error
+                        );
                     }
 
                     // Apply failure feedback via the skill engine
                     if self.config.adaptive_skills {
-                        let relevant_skills: Vec<String> = if let Some(state) = self.agent_pool.get(&agent_id) {
-                            state.skills.iter()
-                                .filter(|s| s.match_score(&task_description) > 0.0)
-                                .map(|s| s.id.clone())
-                                .collect()
-                        } else {
-                            Vec::new()
-                        };
+                        let relevant_skills: Vec<String> =
+                            if let Some(state) = self.agent_pool.get(&agent_id) {
+                                state
+                                    .skills
+                                    .iter()
+                                    .filter(|s| s.match_score(&task_description) > 0.0)
+                                    .map(|s| s.id.clone())
+                                    .collect()
+                            } else {
+                                Vec::new()
+                            };
 
                         let feedback = AgentFeedback::failure(&agent_id, &task_id)
                             .with_relevant_skills(relevant_skills)
@@ -565,7 +618,8 @@ impl MetaOrchestrator {
                             self.agent_cards.get_mut(&agent_id),
                         ) {
                             state.complete_task(false);
-                            let (_update, events) = self.skill_engine.apply_feedback(&feedback, state, card);
+                            let (_update, events) =
+                                self.skill_engine.apply_feedback(&feedback, state, card);
                             self.event_log.extend(events);
                         }
                     } else if let Some(state) = self.agent_pool.get_mut(&agent_id) {
@@ -587,9 +641,17 @@ impl MetaOrchestrator {
             return self.tasks[task_idx].context.clone();
         }
 
-        let dep_outputs: Vec<String> = self.tasks.iter()
+        let dep_outputs: Vec<String> = self
+            .tasks
+            .iter()
             .filter(|t| deps.contains(&t.id) && t.output.is_some())
-            .map(|t| format!("Result from '{}': {}", t.description, t.output.as_ref().unwrap()))
+            .map(|t| {
+                format!(
+                    "Result from '{}': {}",
+                    t.description,
+                    t.output.as_ref().unwrap()
+                )
+            })
             .collect();
 
         if dep_outputs.is_empty() {
@@ -617,7 +679,9 @@ impl MetaOrchestrator {
     pub fn run(&mut self) -> OrchestrationResult {
         log::info!(
             "Starting orchestration with {} tasks, {} blueprints, {} pooled agents",
-            self.tasks.len(), self.blueprints.len(), self.agent_pool.len(),
+            self.tasks.len(),
+            self.blueprints.len(),
+            self.agent_pool.len(),
         );
 
         let mut iterations = 0;
@@ -626,7 +690,10 @@ impl MetaOrchestrator {
         loop {
             iterations += 1;
             if iterations > max_iterations {
-                log::warn!("Orchestration hit max iterations ({}), stopping", max_iterations);
+                log::warn!(
+                    "Orchestration hit max iterations ({}), stopping",
+                    max_iterations
+                );
                 break;
             }
 
@@ -646,9 +713,21 @@ impl MetaOrchestrator {
             self.event_log.extend(spawner_events);
 
             // 5. Check if we're done
-            let pending = self.tasks.iter().filter(|t| t.status == OrchestratedTaskStatus::Pending).count();
-            let assigned = self.tasks.iter().filter(|t| t.status == OrchestratedTaskStatus::Assigned).count();
-            let running = self.tasks.iter().filter(|t| t.status == OrchestratedTaskStatus::Running).count();
+            let pending = self
+                .tasks
+                .iter()
+                .filter(|t| t.status == OrchestratedTaskStatus::Pending)
+                .count();
+            let assigned = self
+                .tasks
+                .iter()
+                .filter(|t| t.status == OrchestratedTaskStatus::Assigned)
+                .count();
+            let running = self
+                .tasks
+                .iter()
+                .filter(|t| t.status == OrchestratedTaskStatus::Running)
+                .count();
 
             if pending == 0 && assigned == 0 && running == 0 {
                 break;
@@ -656,37 +735,53 @@ impl MetaOrchestrator {
 
             // If nothing happened this iteration and there's no progress, break
             if distributed == 0 && executed == 0 && pending > 0 {
-                log::warn!("Orchestration stalled: {} pending tasks with no progress", pending);
+                log::warn!(
+                    "Orchestration stalled: {} pending tasks with no progress",
+                    pending
+                );
                 break;
             }
         }
 
         // Emit orchestration finished event
-        let completed_count = self.tasks.iter()
-            .filter(|t| t.status == OrchestratedTaskStatus::Completed).count();
-        let failed_count = self.tasks.iter()
-            .filter(|t| t.status == OrchestratedTaskStatus::Failed).count();
-        self.event_log.push(OrchestrationEvent::OrchestrationFinished {
-            total_tasks: self.tasks.len(),
-            completed: completed_count,
-            failed: failed_count,
-            agents_used: self.agent_pool.len(),
-        });
+        let completed_count = self
+            .tasks
+            .iter()
+            .filter(|t| t.status == OrchestratedTaskStatus::Completed)
+            .count();
+        let failed_count = self
+            .tasks
+            .iter()
+            .filter(|t| t.status == OrchestratedTaskStatus::Failed)
+            .count();
+        self.event_log
+            .push(OrchestrationEvent::OrchestrationFinished {
+                total_tasks: self.tasks.len(),
+                completed: completed_count,
+                failed: failed_count,
+                agents_used: self.agent_pool.len(),
+            });
 
         self.build_result()
     }
 
     /// Build the orchestration result summary.
     fn build_result(&self) -> OrchestrationResult {
-        let completed: Vec<_> = self.tasks.iter()
+        let completed: Vec<_> = self
+            .tasks
+            .iter()
             .filter(|t| t.status == OrchestratedTaskStatus::Completed)
             .cloned()
             .collect();
-        let failed: Vec<_> = self.tasks.iter()
+        let failed: Vec<_> = self
+            .tasks
+            .iter()
             .filter(|t| t.status == OrchestratedTaskStatus::Failed)
             .cloned()
             .collect();
-        let pending: Vec<_> = self.tasks.iter()
+        let pending: Vec<_> = self
+            .tasks
+            .iter()
             .filter(|t| t.status == OrchestratedTaskStatus::Pending)
             .cloned()
             .collect();
@@ -766,11 +861,12 @@ impl MetaOrchestrator {
     pub fn submit_delegation(&mut self, request: DelegationRequest) -> String {
         let request_id = request.id.clone();
 
-        self.event_log.push(OrchestrationEvent::DelegationRequested {
-            request_id: request_id.clone(),
-            from_agent: request.from_agent.clone(),
-            target_domain: request.target_domain,
-        });
+        self.event_log
+            .push(OrchestrationEvent::DelegationRequested {
+                request_id: request_id.clone(),
+                from_agent: request.from_agent.clone(),
+                target_domain: request.target_domain,
+            });
 
         self.delegation_queue.push(request);
         log::debug!("Delegation request '{}' queued", request_id);
@@ -785,18 +881,16 @@ impl MetaOrchestrator {
     /// # Returns
     ///
     /// A `DelegationResult` with the outcome.
-    pub fn delegate_task(
-        &mut self,
-        request: DelegationRequest,
-    ) -> DelegationResult {
+    pub fn delegate_task(&mut self, request: DelegationRequest) -> DelegationResult {
         let request_id = request.id.clone();
         let from_agent = request.from_agent.clone();
 
-        self.event_log.push(OrchestrationEvent::DelegationRequested {
-            request_id: request_id.clone(),
-            from_agent: from_agent.clone(),
-            target_domain: request.target_domain,
-        });
+        self.event_log
+            .push(OrchestrationEvent::DelegationRequested {
+                request_id: request_id.clone(),
+                from_agent: from_agent.clone(),
+                target_domain: request.target_domain,
+            });
 
         // Use spawner to select or spawn an agent
         let dispatch = self.spawner.handle_delegation(&request, &self.agent_pool);
@@ -809,11 +903,7 @@ impl MetaOrchestrator {
             let bp = self.spawner.blueprint_for_domain(domain);
             let agent_id = dispatch.assigned_agent.clone();
 
-            let mut agent = Agent::new(
-                bp.role.clone(),
-                bp.goal.clone(),
-                bp.backstory.clone(),
-            );
+            let mut agent = Agent::new(bp.role.clone(), bp.goal.clone(), bp.backstory.clone());
             agent.llm = Some(bp.llm.clone());
             agent.tools = bp.tools.clone();
             agent.max_iter = bp.max_iter;
@@ -835,15 +925,16 @@ impl MetaOrchestrator {
             });
         }
 
-        self.event_log.push(OrchestrationEvent::DelegationDispatched {
-            request_id: request_id.clone(),
-            to_agent: assigned_agent.clone(),
-            match_score: dispatch.match_score,
-        });
+        self.event_log
+            .push(OrchestrationEvent::DelegationDispatched {
+                request_id: request_id.clone(),
+                to_agent: assigned_agent.clone(),
+                match_score: dispatch.match_score,
+            });
 
         // Create a task for the delegation and execute it
-        let mut task = OrchestratedTask::new(&request.task_description)
-            .with_priority(request.priority);
+        let mut task =
+            OrchestratedTask::new(&request.task_description).with_priority(request.priority);
         if let Some(ctx) = &request.context {
             task = task.with_context(ctx.clone());
         }
@@ -873,11 +964,12 @@ impl MetaOrchestrator {
                 task.complete(output.clone());
                 self.completed_task_ids.push(task_id.clone());
 
-                self.event_log.push(OrchestrationEvent::DelegationCompleted {
-                    request_id: request_id.clone(),
-                    from_agent: assigned_agent.clone(),
-                    success: true,
-                });
+                self.event_log
+                    .push(OrchestrationEvent::DelegationCompleted {
+                        request_id: request_id.clone(),
+                        from_agent: assigned_agent.clone(),
+                        success: true,
+                    });
 
                 // Apply success feedback
                 if self.config.adaptive_skills {
@@ -896,11 +988,12 @@ impl MetaOrchestrator {
             Err(err) => {
                 task.fail(err.clone());
 
-                self.event_log.push(OrchestrationEvent::DelegationCompleted {
-                    request_id: request_id.clone(),
-                    from_agent: assigned_agent.clone(),
-                    success: false,
-                });
+                self.event_log
+                    .push(OrchestrationEvent::DelegationCompleted {
+                        request_id: request_id.clone(),
+                        from_agent: assigned_agent.clone(),
+                        success: false,
+                    });
 
                 // Apply failure feedback
                 if self.config.adaptive_skills {
@@ -954,11 +1047,7 @@ impl MetaOrchestrator {
                 let domain = request.target_domain.unwrap_or(SavantDomain::General);
                 let bp = self.spawner.blueprint_for_domain(domain);
 
-                let mut agent = Agent::new(
-                    bp.role.clone(),
-                    bp.goal.clone(),
-                    bp.backstory.clone(),
-                );
+                let mut agent = Agent::new(bp.role.clone(), bp.goal.clone(), bp.backstory.clone());
                 agent.llm = Some(bp.llm.clone());
                 agent.tools = bp.tools.clone();
                 agent.max_iter = bp.max_iter;
@@ -969,8 +1058,10 @@ impl MetaOrchestrator {
                 let card = build_card_from_blueprint(&bp, &self.config.base_url);
 
                 self.agents.insert(dispatch.assigned_agent.clone(), agent);
-                self.agent_pool.insert(dispatch.assigned_agent.clone(), state);
-                self.agent_cards.insert(dispatch.assigned_agent.clone(), card);
+                self.agent_pool
+                    .insert(dispatch.assigned_agent.clone(), state);
+                self.agent_cards
+                    .insert(dispatch.assigned_agent.clone(), card);
 
                 self.event_log.push(OrchestrationEvent::AgentSpawned {
                     agent_id: dispatch.assigned_agent.clone(),
@@ -980,15 +1071,16 @@ impl MetaOrchestrator {
                 });
             }
 
-            self.event_log.push(OrchestrationEvent::DelegationDispatched {
-                request_id: request.id.clone(),
-                to_agent: dispatch.assigned_agent.clone(),
-                match_score: dispatch.match_score,
-            });
+            self.event_log
+                .push(OrchestrationEvent::DelegationDispatched {
+                    request_id: request.id.clone(),
+                    to_agent: dispatch.assigned_agent.clone(),
+                    match_score: dispatch.match_score,
+                });
 
             // Create a task for the delegation
-            let mut task = OrchestratedTask::new(&request.task_description)
-                .with_priority(request.priority);
+            let mut task =
+                OrchestratedTask::new(&request.task_description).with_priority(request.priority);
             if let Some(ctx) = &request.context {
                 task = task.with_context(ctx.clone());
             }
@@ -1043,8 +1135,16 @@ impl MetaOrchestrator {
                 });
                 self.event_log.push(OrchestrationEvent::CardUpdated {
                     agent_id: to_agent.to_string(),
-                    skill_count: self.agent_pool.get(to_agent).map(|s| s.skills.len()).unwrap_or(0),
-                    performance: self.agent_pool.get(to_agent).map(|s| s.performance_score).unwrap_or(0.0),
+                    skill_count: self
+                        .agent_pool
+                        .get(to_agent)
+                        .map(|s| s.skills.len())
+                        .unwrap_or(0),
+                    performance: self
+                        .agent_pool
+                        .get(to_agent)
+                        .map(|s| s.performance_score)
+                        .unwrap_or(0.0),
                 });
             }
 
@@ -1111,7 +1211,11 @@ impl MetaOrchestrator {
         let busy = self.agent_pool.values().filter(|s| s.busy).count();
         let idle = total - busy;
         let avg_performance = if total > 0 {
-            self.agent_pool.values().map(|s| s.performance_score).sum::<f64>() / total as f64
+            self.agent_pool
+                .values()
+                .map(|s| s.performance_score)
+                .sum::<f64>()
+                / total as f64
         } else {
             0.0
         };
@@ -1187,25 +1291,55 @@ fn infer_domains(objective: &str) -> Vec<SavantDomain> {
     let lower = objective.to_lowercase();
     let mut domains = Vec::new();
 
-    if lower.contains("research") || lower.contains("find") || lower.contains("search") || lower.contains("investigate") {
+    if lower.contains("research")
+        || lower.contains("find")
+        || lower.contains("search")
+        || lower.contains("investigate")
+    {
         domains.push(SavantDomain::Research);
     }
-    if lower.contains("code") || lower.contains("implement") || lower.contains("build") || lower.contains("develop") || lower.contains("program") {
+    if lower.contains("code")
+        || lower.contains("implement")
+        || lower.contains("build")
+        || lower.contains("develop")
+        || lower.contains("program")
+    {
         domains.push(SavantDomain::Engineering);
     }
-    if lower.contains("data") || lower.contains("analy") || lower.contains("statistic") || lower.contains("metric") {
+    if lower.contains("data")
+        || lower.contains("analy")
+        || lower.contains("statistic")
+        || lower.contains("metric")
+    {
         domains.push(SavantDomain::DataAnalysis);
     }
-    if lower.contains("write") || lower.contains("content") || lower.contains("document") || lower.contains("article") || lower.contains("blog") {
+    if lower.contains("write")
+        || lower.contains("content")
+        || lower.contains("document")
+        || lower.contains("article")
+        || lower.contains("blog")
+    {
         domains.push(SavantDomain::ContentCreation);
     }
-    if lower.contains("plan") || lower.contains("strateg") || lower.contains("organiz") || lower.contains("roadmap") {
+    if lower.contains("plan")
+        || lower.contains("strateg")
+        || lower.contains("organiz")
+        || lower.contains("roadmap")
+    {
         domains.push(SavantDomain::Planning);
     }
-    if lower.contains("test") || lower.contains("quality") || lower.contains("qa") || lower.contains("verify") {
+    if lower.contains("test")
+        || lower.contains("quality")
+        || lower.contains("qa")
+        || lower.contains("verify")
+    {
         domains.push(SavantDomain::QualityAssurance);
     }
-    if lower.contains("secur") || lower.contains("vulnerab") || lower.contains("audit") || lower.contains("penetration") {
+    if lower.contains("secur")
+        || lower.contains("vulnerab")
+        || lower.contains("audit")
+        || lower.contains("penetration")
+    {
         domains.push(SavantDomain::Security);
     }
 
@@ -1300,7 +1434,10 @@ mod tests {
         // Distribution should auto-spawn
         let assigned = orch.distribute_tasks();
         assert_eq!(assigned, 1);
-        assert!(!orch.agent_pool.is_empty(), "Agent should have been auto-spawned");
+        assert!(
+            !orch.agent_pool.is_empty(),
+            "Agent should have been auto-spawned"
+        );
     }
 
     #[test]
@@ -1310,7 +1447,11 @@ mod tests {
 
         let task_ids = orch.decompose_objective("Research and implement a web scraper with tests");
         // Spawner decomposition: planning + research + engineering + QA + synthesis
-        assert!(task_ids.len() >= 3, "Expected at least 3 tasks, got {}", task_ids.len());
+        assert!(
+            task_ids.len() >= 3,
+            "Expected at least 3 tasks, got {}",
+            task_ids.len()
+        );
         // Should have emitted events
         assert!(!orch.event_log.is_empty(), "Expected orchestration events");
     }
@@ -1330,7 +1471,11 @@ mod tests {
 
         let best = orch.find_best_agent(&task);
         assert!(best.is_some());
-        assert_eq!(best.unwrap().0, research_id, "Research agent should be preferred");
+        assert_eq!(
+            best.unwrap().0,
+            research_id,
+            "Research agent should be preferred"
+        );
     }
 
     #[test]
@@ -1374,8 +1519,7 @@ mod tests {
         // Task 2 depends on task 1
         let task1 = OrchestratedTask::new("Task one");
         let task1_id = task1.id.clone();
-        let task2 = OrchestratedTask::new("Task two")
-            .with_dependencies(vec![task1_id.clone()]);
+        let task2 = OrchestratedTask::new("Task two").with_dependencies(vec![task1_id.clone()]);
 
         orch.add_task(task1);
         orch.add_task(task2);
@@ -1427,7 +1571,10 @@ mod tests {
         assert_eq!(orch.delegation_queue_len(), 1);
 
         // Should have emitted DelegationRequested event
-        assert!(orch.event_log.iter().any(|e| matches!(e, OrchestrationEvent::DelegationRequested { .. })));
+        assert!(orch
+            .event_log
+            .iter()
+            .any(|e| matches!(e, OrchestrationEvent::DelegationRequested { .. })));
     }
 
     #[test]
@@ -1452,13 +1599,21 @@ mod tests {
         assert_eq!(orch.delegation_queue_len(), 0);
 
         // Should have created a task
-        let delegation_tasks: Vec<_> = orch.tasks.iter()
+        let delegation_tasks: Vec<_> = orch
+            .tasks
+            .iter()
             .filter(|t| t.description.contains("Search web"))
             .collect();
-        assert!(!delegation_tasks.is_empty(), "Delegation should create a task");
+        assert!(
+            !delegation_tasks.is_empty(),
+            "Delegation should create a task"
+        );
 
         // Should have emitted DelegationDispatched event
-        assert!(orch.event_log.iter().any(|e| matches!(e, OrchestrationEvent::DelegationDispatched { .. })));
+        assert!(orch
+            .event_log
+            .iter()
+            .any(|e| matches!(e, OrchestrationEvent::DelegationDispatched { .. })));
     }
 
     #[test]
@@ -1477,7 +1632,9 @@ mod tests {
         assert!(!orch.agent_pool.is_empty());
 
         // Should have AgentSpawned event
-        let spawn_events: Vec<_> = orch.event_log.iter()
+        let spawn_events: Vec<_> = orch
+            .event_log
+            .iter()
             .filter(|e| matches!(e, OrchestrationEvent::AgentSpawned { .. }))
             .collect();
         // At least 2: one from initial spawn_agent, one from delegation
@@ -1498,11 +1655,17 @@ mod tests {
         let adjustments = orch.transfer_skills(&research_id, &eng_id, 0.3);
 
         let eng_skills_after = orch.agent_pool.get(&eng_id).unwrap().skills.len();
-        assert!(eng_skills_after > eng_skills_before, "Engineering agent should have gained research skills");
+        assert!(
+            eng_skills_after > eng_skills_before,
+            "Engineering agent should have gained research skills"
+        );
         assert!(!adjustments.is_empty());
 
         // Check events
-        assert!(orch.event_log.iter().any(|e| matches!(e, OrchestrationEvent::SkillsAdjusted { .. })));
+        assert!(orch
+            .event_log
+            .iter()
+            .any(|e| matches!(e, OrchestrationEvent::SkillsAdjusted { .. })));
     }
 
     #[test]
@@ -1519,7 +1682,10 @@ mod tests {
         assert!(!orch.agents.contains_key(&agent_id));
         assert!(!orch.agent_cards.contains_key(&agent_id));
 
-        assert!(orch.event_log.iter().any(|e| matches!(e, OrchestrationEvent::AgentTerminated { .. })));
+        assert!(orch
+            .event_log
+            .iter()
+            .any(|e| matches!(e, OrchestrationEvent::AgentTerminated { .. })));
     }
 
     #[test]
@@ -1544,7 +1710,9 @@ mod tests {
 
         orch.spawn_domain_agent(SavantDomain::Engineering);
 
-        let spawn_events: Vec<_> = orch.event_log.iter()
+        let spawn_events: Vec<_> = orch
+            .event_log
+            .iter()
             .filter(|e| matches!(e, OrchestrationEvent::AgentSpawned { .. }))
             .collect();
         assert_eq!(spawn_events.len(), 1);
@@ -1555,11 +1723,12 @@ mod tests {
         let config = OrchestratorConfig::default();
         let mut orch = MetaOrchestrator::new(config);
 
-        let task = OrchestratedTask::new("Test task")
-            .with_priority(TaskPriority::High);
+        let task = OrchestratedTask::new("Test task").with_priority(TaskPriority::High);
         orch.add_task(task);
 
-        let queue_events: Vec<_> = orch.event_log.iter()
+        let queue_events: Vec<_> = orch
+            .event_log
+            .iter()
             .filter(|e| matches!(e, OrchestrationEvent::TaskQueued { .. }))
             .collect();
         assert_eq!(queue_events.len(), 1);
@@ -1574,12 +1743,14 @@ mod tests {
         let bp = savants::research_savant("openai/gpt-4o-mini");
         orch.spawn_agent(&bp);
 
-        let task = OrchestratedTask::new("Search for Rust patterns")
-            .with_domain(SavantDomain::Research);
+        let task =
+            OrchestratedTask::new("Search for Rust patterns").with_domain(SavantDomain::Research);
         orch.add_task(task);
         orch.distribute_tasks();
 
-        let assign_events: Vec<_> = orch.event_log.iter()
+        let assign_events: Vec<_> = orch
+            .event_log
+            .iter()
             .filter(|e| matches!(e, OrchestrationEvent::TaskAssigned { .. }))
             .collect();
         assert_eq!(assign_events.len(), 1);
@@ -1590,17 +1761,26 @@ mod tests {
         let config = OrchestratorConfig::default();
         let mut orch = MetaOrchestrator::new(config);
 
-        let task_ids = orch.decompose_objective("research Rust patterns, implement a web scraper, and write documentation");
+        let task_ids = orch.decompose_objective(
+            "research Rust patterns, implement a web scraper, and write documentation",
+        );
 
         // The spawner should produce: planning + research + engineering + content + synthesis
-        assert!(task_ids.len() >= 4, "Expected at least 4 tasks for multi-domain objective, got {}", task_ids.len());
+        assert!(
+            task_ids.len() >= 4,
+            "Expected at least 4 tasks for multi-domain objective, got {}",
+            task_ids.len()
+        );
 
         // All tasks should be in the queue
         assert_eq!(orch.tasks.len(), task_ids.len());
 
         // Last task should have dependencies (synthesis)
         let last_task = orch.tasks.last().unwrap();
-        assert!(!last_task.dependencies.is_empty(), "Synthesis task should have dependencies");
+        assert!(
+            !last_task.dependencies.is_empty(),
+            "Synthesis task should have dependencies"
+        );
     }
 
     #[test]
@@ -1617,12 +1797,17 @@ mod tests {
         let result = orch.run();
 
         // Should have orchestration finished event
-        assert!(result.event_log.iter().any(|e|
-            matches!(e, OrchestrationEvent::OrchestrationFinished { .. })
-        ));
+        assert!(result
+            .event_log
+            .iter()
+            .any(|e| matches!(e, OrchestrationEvent::OrchestrationFinished { .. })));
 
         // Should have at least: TaskQueued + AgentSpawned + TaskAssigned
-        assert!(result.event_log.len() >= 3,
-            "Expected at least 3 events, got {} events: {:?}", result.event_log.len(), result.event_log);
+        assert!(
+            result.event_log.len() >= 3,
+            "Expected at least 3 events, got {} events: {:?}",
+            result.event_log.len(),
+            result.event_log
+        );
     }
 }

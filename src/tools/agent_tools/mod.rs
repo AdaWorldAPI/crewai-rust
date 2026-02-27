@@ -11,8 +11,8 @@ pub mod ask_question_tool;
 pub mod delegate_work_tool;
 pub mod read_file_tool;
 
+pub use add_image_tool::AddImageTool;
 pub use agent_tools::AgentTools;
 pub use ask_question_tool::AskQuestionTool;
 pub use delegate_work_tool::DelegateWorkTool;
 pub use read_file_tool::ReadFileTool;
-pub use add_image_tool::AddImageTool;

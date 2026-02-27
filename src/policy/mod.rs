@@ -320,9 +320,7 @@ impl PolicyEngine {
     pub fn evaluate(&mut self, request: &PolicyRequest) -> PolicyDecision {
         // Check deny rules first
         for rule in &self.rules {
-            if rule.effect == PolicyEffect::Deny
-                && self.rule_matches(rule, request)
-            {
+            if rule.effect == PolicyEffect::Deny && self.rule_matches(rule, request) {
                 let decision = PolicyDecision {
                     effect: PolicyEffect::Deny,
                     rule_name: Some(rule.name.clone()),
@@ -337,9 +335,7 @@ impl PolicyEngine {
 
         // Check allow rules
         for rule in &self.rules {
-            if rule.effect == PolicyEffect::Allow
-                && self.rule_matches(rule, request)
-            {
+            if rule.effect == PolicyEffect::Allow && self.rule_matches(rule, request) {
                 let decision = PolicyDecision {
                     effect: PolicyEffect::Allow,
                     rule_name: Some(rule.name.clone()),
@@ -464,8 +460,7 @@ impl PolicyEngine {
             ConditionOperator::GreaterThanOrEqual => compare_values(actual, &condition.value) >= 0,
             ConditionOperator::LessThanOrEqual => compare_values(actual, &condition.value) <= 0,
             ConditionOperator::Contains => {
-                if let (Some(haystack), Some(needle)) =
-                    (actual.as_str(), condition.value.as_str())
+                if let (Some(haystack), Some(needle)) = (actual.as_str(), condition.value.as_str())
                 {
                     haystack.contains(needle)
                 } else if let Some(arr) = actual.as_array() {
@@ -475,8 +470,7 @@ impl PolicyEngine {
                 }
             }
             ConditionOperator::NotContains => {
-                if let (Some(haystack), Some(needle)) =
-                    (actual.as_str(), condition.value.as_str())
+                if let (Some(haystack), Some(needle)) = (actual.as_str(), condition.value.as_str())
                 {
                     !haystack.contains(needle)
                 } else if let Some(arr) = actual.as_array() {
@@ -486,9 +480,7 @@ impl PolicyEngine {
                 }
             }
             ConditionOperator::Matches => {
-                if let (Some(text), Some(pattern)) =
-                    (actual.as_str(), condition.value.as_str())
-                {
+                if let (Some(text), Some(pattern)) = (actual.as_str(), condition.value.as_str()) {
                     regex::Regex::new(pattern)
                         .map(|re| re.is_match(text))
                         .unwrap_or(false)
@@ -497,18 +489,14 @@ impl PolicyEngine {
                 }
             }
             ConditionOperator::StartsWith => {
-                if let (Some(text), Some(prefix)) =
-                    (actual.as_str(), condition.value.as_str())
-                {
+                if let (Some(text), Some(prefix)) = (actual.as_str(), condition.value.as_str()) {
                     text.starts_with(prefix)
                 } else {
                     false
                 }
             }
             ConditionOperator::EndsWith => {
-                if let (Some(text), Some(suffix)) =
-                    (actual.as_str(), condition.value.as_str())
-                {
+                if let (Some(text), Some(suffix)) = (actual.as_str(), condition.value.as_str()) {
                     text.ends_with(suffix)
                 } else {
                     false
@@ -559,8 +547,7 @@ impl PolicyEngine {
     ) {
         // Add RBAC rules
         for role in &policy.requires_roles {
-            self.rbac
-                .grant_capability_to_role(role, capability_id);
+            self.rbac.grant_capability_to_role(role, capability_id);
         }
 
         // Add rate limit rule if specified
@@ -655,8 +642,10 @@ impl PolicyEngine {
                 PolicyPrincipal::AgentId(id) => format!("principal == Agent::\"{}\"", id),
                 PolicyPrincipal::Role(role) => format!("principal in Role::\"{}\"", role),
                 PolicyPrincipal::Group(slots) => {
-                    let slot_strs: Vec<String> =
-                        slots.iter().map(|s| format!("Agent::\"0x{:02X}\"", s)).collect();
+                    let slot_strs: Vec<String> = slots
+                        .iter()
+                        .map(|s| format!("Agent::\"0x{:02X}\"", s))
+                        .collect();
                     format!("principal in [{}]", slot_strs.join(", "))
                 }
             };
@@ -825,10 +814,7 @@ mod tests {
 
         // Should deny: command is "stop"
         let mut ctx = HashMap::new();
-        ctx.insert(
-            "command".to_string(),
-            Value::String("stop".to_string()),
-        );
+        ctx.insert("command".to_string(), Value::String("stop".to_string()));
         let request = PolicyRequest {
             agent_slot: 1,
             agent_id: "test".to_string(),
@@ -843,10 +829,7 @@ mod tests {
 
         // Should allow: command is "list"
         let mut ctx2 = HashMap::new();
-        ctx2.insert(
-            "command".to_string(),
-            Value::String("list".to_string()),
-        );
+        ctx2.insert("command".to_string(), Value::String("list".to_string()));
         let request2 = PolicyRequest {
             agent_slot: 1,
             agent_id: "test".to_string(),

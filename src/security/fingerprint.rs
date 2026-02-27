@@ -26,7 +26,10 @@ pub struct Fingerprint {
 
 impl Fingerprint {
     /// Generate a new fingerprint with optional seed and metadata.
-    pub fn generate(seed: Option<&str>, metadata: Option<HashMap<String, serde_json::Value>>) -> Self {
+    pub fn generate(
+        seed: Option<&str>,
+        metadata: Option<HashMap<String, serde_json::Value>>,
+    ) -> Self {
         let uuid_str = match seed {
             Some(s) => Self::generate_uuid(s),
             None => Uuid::new_v4().to_string(),

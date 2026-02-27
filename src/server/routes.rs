@@ -47,7 +47,9 @@ impl AppState {
     pub fn new() -> Self {
         Self {
             recorder: Arc::new(RwLock::new(ContractRecorder::new())),
-            module_runtime: Arc::new(RwLock::new(ModuleRuntime::new("anthropic/claude-opus-4-5-20251101"))),
+            module_runtime: Arc::new(RwLock::new(ModuleRuntime::new(
+                "anthropic/claude-opus-4-5-20251101",
+            ))),
             chat_config: Arc::new(ChatConfig::from_env()),
         }
     }
@@ -65,9 +67,9 @@ pub fn app_router(state: AppState) -> Router {
     let chat_config = state.chat_config.clone();
 
     // Barrier stack routes (separate state: Arc<RwLock<BarrierStack>>)
-    let barrier_state = super::barrier_routes::BarrierState::new(
-        std::sync::RwLock::new(crate::drivers::barrier_stack::BarrierStack::new()),
-    );
+    let barrier_state = super::barrier_routes::BarrierState::new(std::sync::RwLock::new(
+        crate::drivers::barrier_stack::BarrierStack::new(),
+    ));
     let barrier_routes = super::barrier_routes::barrier_router(barrier_state);
 
     let main_routes = Router::new()
@@ -79,10 +81,7 @@ pub fn app_router(state: AppState) -> Router {
         .route("/modules/{id}/deactivate", post(deactivate_module_handler))
         .route("/modules/{id}/gate-check", post(gate_check_handler))
         // Chat endpoint — the holy grail pipeline
-        .route(
-            "/chat",
-            post(chat_handler).with_state(chat_config),
-        )
+        .route("/chat", post(chat_handler).with_state(chat_config))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
@@ -170,12 +169,7 @@ async fn execute_handler(
         if !recorder.crew_to_execution.contains_key(&crew_name) {
             recorder.on_crew_started(&crew_name);
         }
-        recorder.on_task_started(
-            &step.step_id,
-            &step.name,
-            &crew_name,
-            Some(&role),
-        );
+        recorder.on_task_started(&step.step_id, &step.name, &crew_name, Some(&role));
     }
 
     // Mark step as running
@@ -357,15 +351,12 @@ async fn activate_module_handler(
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
-    let yaml = body
-        .get("yaml")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                Json(serde_json::json!({"error": "Missing 'yaml' field in request body"})),
-            )
-        })?;
+    let yaml = body.get("yaml").and_then(|v| v.as_str()).ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": "Missing 'yaml' field in request body"})),
+        )
+    })?;
 
     // Load the module definition
     let mut loader = crate::modules::ModuleLoader::new();

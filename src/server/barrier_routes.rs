@@ -23,7 +23,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::drivers::barrier_stack::{BarrierStack, MulInput, MulBlockReason};
+use crate::drivers::barrier_stack::{BarrierStack, MulBlockReason, MulInput};
 use crate::drivers::markov_barrier::GateDecision;
 use crate::drivers::nars::NarsTruth;
 use crate::persona::triune::Facet;
@@ -80,11 +80,21 @@ pub struct CheckOutboundRequest {
     pub risk_moral: f32,
 }
 
-fn default_true() -> bool { true }
-fn default_one() -> f32 { 1.0 }
-fn default_slope() -> String { "slope_of_enlightenment".into() }
-fn default_solid() -> String { "solid".into() }
-fn default_low_risk() -> f32 { 0.1 }
+fn default_true() -> bool {
+    true
+}
+fn default_one() -> f32 {
+    1.0
+}
+fn default_slope() -> String {
+    "slope_of_enlightenment".into()
+}
+fn default_solid() -> String {
+    "solid".into()
+}
+fn default_low_risk() -> f32 {
+    0.1
+}
 
 #[derive(Debug, Deserialize)]
 pub struct CheckInboundRequest {
@@ -103,7 +113,9 @@ pub struct CheckInboundRequest {
     pub mul_free_will: f32,
 }
 
-fn default_commit() -> String { "commit".into() }
+fn default_commit() -> String {
+    "commit".into()
+}
 
 #[derive(Debug, Deserialize)]
 pub struct FeedbackRequest {
@@ -123,7 +135,10 @@ async fn check_outbound_handler(
     Json(req): Json<CheckOutboundRequest>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     let stack = barrier.read().map_err(|_| {
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "lock poisoned"})))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "lock poisoned"})),
+        )
     })?;
 
     let truth = NarsTruth::new(req.nars_frequency, req.nars_confidence);
@@ -177,7 +192,10 @@ async fn check_inbound_handler(
     Json(req): Json<CheckInboundRequest>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     let stack = barrier.read().map_err(|_| {
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "lock poisoned"})))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "lock poisoned"})),
+        )
     })?;
 
     let evidence = NarsTruth::new(req.evidence_frequency, req.evidence_confidence);
@@ -212,7 +230,10 @@ async fn topology_handler(
     State(barrier): State<BarrierState>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     let stack = barrier.read().map_err(|_| {
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "lock poisoned"})))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "lock poisoned"})),
+        )
     })?;
 
     let t = &stack.triune.topology;
@@ -245,7 +266,10 @@ async fn feedback_handler(
     };
 
     let mut stack = barrier.write().map_err(|_| {
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "lock poisoned"})))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "lock poisoned"})),
+        )
     })?;
 
     stack.feedback(facet, req.success);
@@ -269,7 +293,10 @@ async fn stats_handler(
     State(barrier): State<BarrierState>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     let stack = barrier.read().map_err(|_| {
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "lock poisoned"})))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({"error": "lock poisoned"})),
+        )
     })?;
 
     let stats = stack.markov.stats();

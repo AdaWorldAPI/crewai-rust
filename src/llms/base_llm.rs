@@ -260,7 +260,10 @@ impl BaseLLMState {
     /// Panics if `model` is empty.
     pub fn new(model: impl Into<String>) -> Self {
         let model = model.into();
-        assert!(!model.is_empty(), "Model name is required and cannot be empty");
+        assert!(
+            !model.is_empty(),
+            "Model name is required and cannot be empty"
+        );
 
         Self {
             model,
@@ -285,7 +288,10 @@ impl BaseLLMState {
         prefer_upload: bool,
     ) -> Self {
         let model = model.into();
-        assert!(!model.is_empty(), "Model name is required and cannot be empty");
+        assert!(
+            !model.is_empty(),
+            "Model name is required and cannot be empty"
+        );
 
         Self {
             model,
@@ -352,10 +358,7 @@ impl BaseLLMState {
     /// plain string, use `string_to_messages` first.
     ///
     /// Corresponds to `BaseLLM._format_messages`.
-    pub fn format_messages(
-        &self,
-        messages: Vec<LLMMessage>,
-    ) -> Result<Vec<LLMMessage>, String> {
+    pub fn format_messages(&self, messages: Vec<LLMMessage>) -> Result<Vec<LLMMessage>, String> {
         for (i, msg) in messages.iter().enumerate() {
             if !msg.contains_key("role") || !msg.contains_key("content") {
                 return Err(format!(
@@ -472,11 +475,7 @@ impl BaseLLMState {
 ///
 /// In a full implementation, this would publish to the CrewAI event bus.
 /// Corresponds to `BaseLLM._emit_call_started_event`.
-pub fn emit_call_started_event(
-    model: &str,
-    messages: &[LLMMessage],
-    call_id: &str,
-) {
+pub fn emit_call_started_event(model: &str, messages: &[LLMMessage], call_id: &str) {
     log::debug!(
         "LLM call started: model={}, call_id={}, messages={}",
         model,
@@ -488,11 +487,7 @@ pub fn emit_call_started_event(
 /// Stub for emitting LLM call completed events.
 ///
 /// Corresponds to `BaseLLM._emit_call_completed_event`.
-pub fn emit_call_completed_event(
-    model: &str,
-    call_type: LLMCallType,
-    call_id: &str,
-) {
+pub fn emit_call_completed_event(model: &str, call_type: LLMCallType, call_id: &str) {
     log::debug!(
         "LLM call completed: model={}, type={:?}, call_id={}",
         model,
@@ -532,10 +527,7 @@ pub fn emit_stream_chunk_event(chunk: &str, call_id: &str) {
 ///
 /// Returns `true` if the call should proceed, `false` if blocked by a hook.
 /// Corresponds to `BaseLLM._invoke_before_llm_call_hooks`.
-pub fn invoke_before_llm_call_hooks(
-    _messages: &[LLMMessage],
-    _model: &str,
-) -> bool {
+pub fn invoke_before_llm_call_hooks(_messages: &[LLMMessage], _model: &str) -> bool {
     // Stub: always allow
     true
 }

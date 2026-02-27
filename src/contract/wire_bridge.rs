@@ -25,7 +25,10 @@ use ladybug_contract::container::Container;
 use ladybug_contract::nars::TruthValue;
 use ladybug_contract::wire::{self, CogPacket};
 
-use crate::contract::types::{DataEnvelope, EnvelopeMetadata, StepDelegationRequest, StepDelegationResponse, StepStatus, UnifiedStep};
+use crate::contract::types::{
+    DataEnvelope, EnvelopeMetadata, StepDelegationRequest, StepDelegationResponse, StepStatus,
+    UnifiedStep,
+};
 
 /// Convert a StepDelegationRequest to a CogPacket.
 ///
@@ -149,12 +152,7 @@ pub fn pack_agent_result(
     let source_addr = (0x0Cu16 << 8) | agent_slot as u16;
     let target_addr = (0x10u16 << 8) | 0x00; // Fluid zone slot 0
 
-    let mut pkt = CogPacket::response(
-        wire::wire_ops::EXECUTE,
-        source_addr,
-        target_addr,
-        content,
-    );
+    let mut pkt = CogPacket::response(wire::wire_ops::EXECUTE, source_addr, target_addr, content);
 
     pkt.set_layer(4); // L5 Execution (0-indexed = 4)
     pkt.set_truth_value(&TruthValue::new(1.0, confidence as f32));
@@ -298,7 +296,10 @@ mod tests {
         };
 
         let delegation_response = emit(&response, &step);
-        assert_eq!(delegation_response.step.unwrap().status, StepStatus::Completed);
+        assert_eq!(
+            delegation_response.step.unwrap().status,
+            StepStatus::Completed
+        );
         assert!(delegation_response.output.metadata.confidence > 0.9);
         assert_eq!(delegation_response.output.metadata.dominant_layer, Some(4));
     }

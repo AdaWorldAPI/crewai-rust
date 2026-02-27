@@ -240,7 +240,8 @@ fn derive_tool_name(method: &str, path: &str) -> String {
     if segments.len() > 1 {
         // Nested resource: include parent
         let parent = singularize(segments[segments.len() - 2]);
-        format!("{}_{}_{}",
+        format!(
+            "{}_{}_{}",
             prefix,
             parent.replace('-', "_"),
             resource.replace('-', "_"),

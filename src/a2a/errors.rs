@@ -156,10 +156,7 @@ impl A2AError {
         let mut resp = serde_json::Map::new();
         resp.insert("jsonrpc".to_string(), Value::String("2.0".to_string()));
         resp.insert("error".to_string(), self.to_dict());
-        resp.insert(
-            "id".to_string(),
-            request_id.unwrap_or(Value::Null),
-        );
+        resp.insert("id".to_string(), request_id.unwrap_or(Value::Null));
         Value::Object(resp)
     }
 }
@@ -195,7 +192,7 @@ pub fn is_retryable_error(code: i32) -> bool {
         code,
         -32603 | // InternalError
         -32013 | // RateLimitExceeded
-        -32014   // TaskTimeout
+        -32014 // TaskTimeout
     )
 }
 
@@ -213,6 +210,6 @@ pub fn is_client_error(code: i32) -> bool {
         -32010 | // UnsupportedExtension
         -32016 | // ContextNotFound
         -32017 | // SkillNotFound
-        -32018   // ArtifactNotFound
+        -32018 // ArtifactNotFound
     )
 }

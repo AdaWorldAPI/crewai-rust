@@ -80,12 +80,8 @@ impl ShortTermMemory {
                 .and_then(|c| c.get("config"))
                 .and_then(|c| serde_json::from_value::<HashMap<String, Value>>(c.clone()).ok());
             Box::new(
-                crate::memory::storage::mem0_storage::Mem0Storage::new(
-                    "short_term",
-                    None,
-                    config,
-                )
-                .expect("Failed to create Mem0Storage"),
+                crate::memory::storage::mem0_storage::Mem0Storage::new("short_term", None, config)
+                    .expect("Failed to create Mem0Storage"),
             )
         } else {
             Box::new(RAGStorage::new(

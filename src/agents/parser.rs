@@ -124,9 +124,10 @@ pub fn parse(text: &str) -> Result<ParseResult, OutputParserError> {
     let includes_answer = text.contains(FINAL_ANSWER_ACTION);
 
     // Regex for Action + Action Input
-    let action_input_re =
-        Regex::new(r"(?s)Action\s*\d*\s*:\s*(.+?)\s*(?:\n|\r\n?)Action\s*\d*\s*Input\s*\d*\s*:\s*(.*)")
-            .expect("Invalid regex");
+    let action_input_re = Regex::new(
+        r"(?s)Action\s*\d*\s*:\s*(.+?)\s*(?:\n|\r\n?)Action\s*\d*\s*Input\s*\d*\s*:\s*(.*)",
+    )
+    .expect("Invalid regex");
     let action_re = Regex::new(r"Action\s*\d*\s*:").expect("Invalid regex");
     let action_input_only_re =
         Regex::new(r"Action\s*\d*\s*Input\s*\d*\s*:").expect("Invalid regex");
@@ -201,7 +202,9 @@ pub enum ParseResult {
 
 /// Extract the thought portion from the text.
 fn extract_thought(text: &str) -> String {
-    let thought_index = text.find("\nAction").or_else(|| text.find("\nFinal Answer"));
+    let thought_index = text
+        .find("\nAction")
+        .or_else(|| text.find("\nFinal Answer"));
     match thought_index {
         Some(idx) => {
             let thought = text[..idx].trim();
@@ -261,7 +264,10 @@ mod tests {
         let result = parse(text).unwrap();
         match result {
             ParseResult::Finish(finish) => {
-                assert_eq!(finish.output, Value::String("The temperature is 72 degrees.".to_string()));
+                assert_eq!(
+                    finish.output,
+                    Value::String("The temperature is 72 degrees.".to_string())
+                );
                 assert_eq!(finish.thought, "Thought: I know the answer");
             }
             _ => panic!("Expected AgentFinish"),

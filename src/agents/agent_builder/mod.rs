@@ -9,5 +9,5 @@ pub mod base_agent_executor;
 pub mod base_agent_trait;
 pub mod utilities;
 
-pub use base_agent_trait::BaseAgent;
 pub use base_agent_executor::BaseAgentExecutorMixin;
+pub use base_agent_trait::BaseAgent;

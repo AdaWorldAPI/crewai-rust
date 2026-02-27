@@ -179,6 +179,4 @@ impl_base_event!(SigContEvent);
 // ---------------------------------------------------------------------------
 
 /// All supported signal event type names.
-pub const SIGNAL_EVENT_TYPE_NAMES: &[&str] = &[
-    "SIGTERM", "SIGINT", "SIGHUP", "SIGTSTP", "SIGCONT",
-];
+pub const SIGNAL_EVENT_TYPE_NAMES: &[&str] = &["SIGTERM", "SIGINT", "SIGHUP", "SIGTSTP", "SIGCONT"];

@@ -4,14 +4,14 @@
 //! (ChromaDB, Qdrant), embedding providers, storage abstractions, and factory
 //! functions for client creation.
 
-pub mod types;
-pub mod core;
-pub mod config;
 pub mod chromadb;
-pub mod qdrant;
-pub mod storage;
+pub mod config;
+pub mod core;
 pub mod embeddings;
 pub mod factory;
+pub mod qdrant;
+pub mod storage;
+pub mod types;
 
-pub use types::{BaseRecord, SearchResult, Embeddings, EmbeddingFunction};
 pub use factory::create_client;
+pub use types::{BaseRecord, EmbeddingFunction, Embeddings, SearchResult};

@@ -185,18 +185,36 @@ mod tests {
 
     #[test]
     fn test_transport_type_from_str() {
-        assert_eq!(TransportType::from_str_opt("stdio"), Some(TransportType::Stdio));
-        assert_eq!(TransportType::from_str_opt("http"), Some(TransportType::Http));
-        assert_eq!(TransportType::from_str_opt("streamable-http"), Some(TransportType::StreamableHttp));
-        assert_eq!(TransportType::from_str_opt("streamable_http"), Some(TransportType::StreamableHttp));
+        assert_eq!(
+            TransportType::from_str_opt("stdio"),
+            Some(TransportType::Stdio)
+        );
+        assert_eq!(
+            TransportType::from_str_opt("http"),
+            Some(TransportType::Http)
+        );
+        assert_eq!(
+            TransportType::from_str_opt("streamable-http"),
+            Some(TransportType::StreamableHttp)
+        );
+        assert_eq!(
+            TransportType::from_str_opt("streamable_http"),
+            Some(TransportType::StreamableHttp)
+        );
         assert_eq!(TransportType::from_str_opt("sse"), Some(TransportType::Sse));
         assert_eq!(TransportType::from_str_opt("unknown"), None);
     }
 
     #[test]
     fn test_transport_type_from_str_case_insensitive() {
-        assert_eq!(TransportType::from_str_opt("STDIO"), Some(TransportType::Stdio));
-        assert_eq!(TransportType::from_str_opt("Http"), Some(TransportType::Http));
+        assert_eq!(
+            TransportType::from_str_opt("STDIO"),
+            Some(TransportType::Stdio)
+        );
+        assert_eq!(
+            TransportType::from_str_opt("Http"),
+            Some(TransportType::Http)
+        );
         assert_eq!(TransportType::from_str_opt("SSE"), Some(TransportType::Sse));
     }
 
@@ -247,7 +265,10 @@ mod tests {
     #[test]
     fn test_http_transport_streamable() {
         let transport_streamable = HTTPTransport::new("https://example.com/mcp", None, Some(true));
-        assert_eq!(transport_streamable.transport_type(), TransportType::StreamableHttp);
+        assert_eq!(
+            transport_streamable.transport_type(),
+            TransportType::StreamableHttp
+        );
 
         let transport_plain = HTTPTransport::new("https://example.com/mcp", None, Some(false));
         assert_eq!(transport_plain.transport_type(), TransportType::Http);

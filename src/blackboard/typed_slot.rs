@@ -139,7 +139,10 @@ mod tests {
     #[test]
     fn test_typed_slot_new_and_downcast() {
         let slot = TypedSlot::new(
-            TestMessage { text: "hello".into(), score: 0.9 },
+            TestMessage {
+                text: "hello".into(),
+                score: 0.9,
+            },
             "agent",
             "oc.agent.think",
         );
@@ -155,7 +158,10 @@ mod tests {
     #[test]
     fn test_typed_slot_downcast_mut() {
         let mut slot = TypedSlot::new(
-            TestMessage { text: "hello".into(), score: 0.5 },
+            TestMessage {
+                text: "hello".into(),
+                score: 0.5,
+            },
             "agent",
             "oc.agent.think",
         );
@@ -169,7 +175,10 @@ mod tests {
     #[test]
     fn test_typed_slot_consume() {
         let slot = TypedSlot::new(
-            TestMessage { text: "consumed".into(), score: 1.0 },
+            TestMessage {
+                text: "consumed".into(),
+                score: 1.0,
+            },
             "agent",
             "oc.agent.think",
         );
@@ -197,8 +206,7 @@ mod tests {
 
     #[test]
     fn test_typed_slot_confidence() {
-        let slot = TypedSlot::new("data", "test", "oc.memory.recall")
-            .with_confidence(0.75);
+        let slot = TypedSlot::new("data", "test", "oc.memory.recall").with_confidence(0.75);
         assert_eq!(slot.meta.confidence, 0.75);
     }
 

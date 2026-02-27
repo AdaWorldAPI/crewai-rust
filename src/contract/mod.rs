@@ -20,13 +20,13 @@
 //! binary wire protocol (CogPackets), V1 type bridges, and cognitive substrate
 //! integration become available.
 
-pub mod types;
 pub mod envelope;
 pub mod event_recorder;
 pub mod pg_store;
-pub mod router;
 pub mod pipeline;
+pub mod router;
 pub mod subsystem;
+pub mod types;
 
 // Ladybug-rs integration modules — only available with the `ladybug` feature.
 #[cfg(feature = "ladybug")]
@@ -34,12 +34,12 @@ pub mod bridge;
 #[cfg(feature = "ladybug")]
 pub mod wire_bridge;
 
-pub use types::*;
-pub use envelope::{from_task_output, from_memory, from_crew_callback, to_task_input};
-pub use event_recorder::{ContractRecorder, shared_recorder};
-pub use router::{StepDomain, StepHandler, StepResult, StepRouter};
+pub use envelope::{from_crew_callback, from_memory, from_task_output, to_task_input};
+pub use event_recorder::{shared_recorder, ContractRecorder};
 pub use pipeline::Pipeline;
+pub use router::{StepDomain, StepHandler, StepResult, StepRouter};
 pub use subsystem::{Subsystem, SubsystemRegistry};
+pub use types::*;
 
 // Re-export the shared substrate types from ladybug-contract (only with feature)
 #[cfg(feature = "ladybug")]

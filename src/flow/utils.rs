@@ -159,9 +159,7 @@ pub fn get_condition_type(condition: &ListenerCondition) -> &str {
     match condition {
         ListenerCondition::Simple(simple) => &simple.condition_type,
         ListenerCondition::Nested(nested) => match nested {
-            FlowCondition::Compound {
-                condition_type, ..
-            } => condition_type,
+            FlowCondition::Compound { condition_type, .. } => condition_type,
             FlowCondition::MethodName(_) => OR_CONDITION,
         },
     }
@@ -207,10 +205,7 @@ pub fn calculate_node_levels(
                     .push(listener_name.clone());
             }
         } else if condition_type == AND_CONDITION {
-            and_listeners.insert(
-                listener_name.clone(),
-                trigger_methods.into_iter().collect(),
-            );
+            and_listeners.insert(listener_name.clone(), trigger_methods.into_iter().collect());
         }
     }
 
@@ -355,8 +350,7 @@ fn dfs_ancestors(
         let trigger_methods = extract_methods_from_listener(condition_data);
         if trigger_methods.contains(&node.to_string()) {
             // Get ancestors of node before inserting
-            let node_ancestors: HashSet<String> =
-                ancestors.get(node).cloned().unwrap_or_default();
+            let node_ancestors: HashSet<String> = ancestors.get(node).cloned().unwrap_or_default();
 
             let entry = ancestors.entry(listener_name.clone()).or_default();
             entry.insert(node.to_string());

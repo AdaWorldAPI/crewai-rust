@@ -135,11 +135,7 @@ impl AzureCompletion {
     }
 
     /// Build the OpenAI-compatible request body for Azure.
-    fn build_request_body(
-        &self,
-        messages: &[LLMMessage],
-        tools: Option<&[Value]>,
-    ) -> Value {
+    fn build_request_body(&self, messages: &[LLMMessage], tools: Option<&[Value]>) -> Value {
         let mut body = serde_json::json!({
             "messages": messages,
         });
@@ -232,7 +228,10 @@ impl AzureCompletion {
                 .unwrap_or(prompt + completion);
 
             usage.insert("prompt_tokens".to_string(), serde_json::json!(prompt));
-            usage.insert("completion_tokens".to_string(), serde_json::json!(completion));
+            usage.insert(
+                "completion_tokens".to_string(),
+                serde_json::json!(completion),
+            );
             usage.insert("total_tokens".to_string(), serde_json::json!(total));
         }
         usage
@@ -304,9 +303,11 @@ impl BaseLLM for AzureCompletion {
             messages.len(),
         );
 
-        let api_key = self.state.api_key.as_ref().ok_or_else(|| {
-            "Azure API key not set. Set AZURE_API_KEY environment variable."
-        })?;
+        let api_key = self
+            .state
+            .api_key
+            .as_ref()
+            .ok_or_else(|| "Azure API key not set. Set AZURE_API_KEY environment variable.")?;
 
         let tools_slice = tools.as_deref();
         let body = self.build_request_body(&messages, tools_slice);
@@ -356,8 +357,7 @@ impl BaseLLM for AzureCompletion {
             }
 
             if status.is_server_error() {
-                last_error =
-                    Some(format!("Azure API server error: {}", status).into());
+                last_error = Some(format!("Azure API server error: {}", status).into());
                 continue;
             }
 
@@ -370,9 +370,7 @@ impl BaseLLM for AzureCompletion {
             };
 
             if status.is_client_error() {
-                return Err(
-                    format!("Azure API error ({}): {}", status, response_text).into()
-                );
+                return Err(format!("Azure API error ({}): {}", status, response_text).into());
             }
 
             let response_json: Value = match serde_json::from_str(&response_text) {
@@ -405,8 +403,7 @@ impl BaseLLM for AzureCompletion {
             return self.parse_response(&response_json);
         }
 
-        Err(last_error
-            .unwrap_or_else(|| "Azure API call failed after all retries".into()))
+        Err(last_error.unwrap_or_else(|| "Azure API call failed after all retries".into()))
     }
 
     fn get_token_usage_summary(&self) -> UsageMetrics {
@@ -449,7 +446,10 @@ mod tests {
     }
 
     fn msg(pairs: &[(&str, Value)]) -> LLMMessage {
-        pairs.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.clone()))
+            .collect()
     }
 
     #[test]
@@ -458,9 +458,10 @@ mod tests {
         provider.max_tokens = Some(1024);
         provider.top_p = Some(0.9);
 
-        let messages: Vec<LLMMessage> = vec![
-            msg(&[("role", serde_json::json!("user")), ("content", serde_json::json!("Hello"))]),
-        ];
+        let messages: Vec<LLMMessage> = vec![msg(&[
+            ("role", serde_json::json!("user")),
+            ("content", serde_json::json!("Hello")),
+        ])];
 
         let body = provider.build_request_body(&messages, None);
         assert!(body.get("messages").is_some());

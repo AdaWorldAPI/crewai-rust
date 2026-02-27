@@ -197,18 +197,12 @@ impl AnthropicCompletion {
     /// system messages with double newlines.
     ///
     /// Corresponds to `_format_messages_for_anthropic()` in Python.
-    fn extract_system_and_messages(
-        &self,
-        messages: &[LLMMessage],
-    ) -> (Option<String>, Vec<Value>) {
+    fn extract_system_and_messages(&self, messages: &[LLMMessage]) -> (Option<String>, Vec<Value>) {
         let mut system_parts: Vec<String> = Vec::new();
         let mut formatted: Vec<Value> = Vec::new();
 
         for msg in messages {
-            let role = msg
-                .get("role")
-                .and_then(|v| v.as_str())
-                .unwrap_or("user");
+            let role = msg.get("role").and_then(|v| v.as_str()).unwrap_or("user");
             let content = msg
                 .get("content")
                 .cloned()
@@ -264,8 +258,10 @@ impl AnthropicCompletion {
                             let id = tc.get("id").and_then(|v| v.as_str()).unwrap_or("");
                             let func = tc.get("function").unwrap_or(&Value::Null);
                             let name = func.get("name").and_then(|v| v.as_str()).unwrap_or("");
-                            let args_str =
-                                func.get("arguments").and_then(|v| v.as_str()).unwrap_or("{}");
+                            let args_str = func
+                                .get("arguments")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("{}");
                             let input: Value =
                                 serde_json::from_str(args_str).unwrap_or(serde_json::json!({}));
 
@@ -306,11 +302,7 @@ impl AnthropicCompletion {
     ///
     /// Extracts system messages from the messages list and places them in the
     /// separate `system` parameter as required by the Anthropic API.
-    pub fn build_request_body(
-        &self,
-        messages: &[LLMMessage],
-        tools: Option<&[Value]>,
-    ) -> Value {
+    pub fn build_request_body(&self, messages: &[LLMMessage], tools: Option<&[Value]>) -> Value {
         let (system, formatted_messages) = self.extract_system_and_messages(messages);
 
         let mut body = serde_json::json!({
@@ -469,10 +461,7 @@ impl AnthropicCompletion {
                 "total_tokens".to_string(),
                 serde_json::json!(input + output),
             );
-            usage.insert(
-                "cached_tokens".to_string(),
-                serde_json::json!(cache_read),
-            );
+            usage.insert("cached_tokens".to_string(), serde_json::json!(cache_read));
 
             log::debug!(
                 "Anthropic token usage: input={}, output={}, total={}, cached={}",
@@ -488,9 +477,7 @@ impl AnthropicCompletion {
     /// Collect beta headers needed for this request.
     fn beta_headers(&self) -> Vec<String> {
         let mut betas = Vec::new();
-        if self.response_format.is_some()
-            && supports_native_structured_outputs(&self.state.model)
-        {
+        if self.response_format.is_some() && supports_native_structured_outputs(&self.state.model) {
             betas.push(ANTHROPIC_STRUCTURED_OUTPUTS_BETA.to_string());
         }
         betas
@@ -650,8 +637,7 @@ impl BaseLLM for AnthropicCompletion {
 
             // Handle server errors (5xx)
             if status.is_server_error() {
-                last_error =
-                    Some(format!("Anthropic API server error: {}", status).into());
+                last_error = Some(format!("Anthropic API server error: {}", status).into());
                 continue;
             }
 
@@ -666,11 +652,7 @@ impl BaseLLM for AnthropicCompletion {
 
             // Handle client errors (4xx) — don't retry
             if status.is_client_error() {
-                return Err(format!(
-                    "Anthropic API error ({}): {}",
-                    status, response_text
-                )
-                .into());
+                return Err(format!("Anthropic API error ({}): {}", status, response_text).into());
             }
 
             // Parse JSON response
@@ -711,8 +693,7 @@ impl BaseLLM for AnthropicCompletion {
         }
 
         // All retries exhausted
-        Err(last_error
-            .unwrap_or_else(|| "Anthropic API call failed after all retries".into()))
+        Err(last_error.unwrap_or_else(|| "Anthropic API call failed after all retries".into()))
     }
 
     fn get_token_usage_summary(&self) -> UsageMetrics {
@@ -776,10 +757,7 @@ mod tests {
         let messages: Vec<LLMMessage> = vec![
             {
                 let mut m = HashMap::new();
-                m.insert(
-                    "role".to_string(),
-                    Value::String("system".to_string()),
-                );
+                m.insert("role".to_string(), Value::String("system".to_string()));
                 m.insert(
                     "content".to_string(),
                     Value::String("You are a helpful assistant.".to_string()),
@@ -789,10 +767,7 @@ mod tests {
             {
                 let mut m = HashMap::new();
                 m.insert("role".to_string(), Value::String("user".to_string()));
-                m.insert(
-                    "content".to_string(),
-                    Value::String("Hello!".to_string()),
-                );
+                m.insert("content".to_string(), Value::String("Hello!".to_string()));
                 m
             },
         ];
@@ -810,10 +785,7 @@ mod tests {
         let messages: Vec<LLMMessage> = vec![
             {
                 let mut m = HashMap::new();
-                m.insert(
-                    "role".to_string(),
-                    Value::String("system".to_string()),
-                );
+                m.insert("role".to_string(), Value::String("system".to_string()));
                 m.insert(
                     "content".to_string(),
                     Value::String("System 1.".to_string()),
@@ -822,10 +794,7 @@ mod tests {
             },
             {
                 let mut m = HashMap::new();
-                m.insert(
-                    "role".to_string(),
-                    Value::String("system".to_string()),
-                );
+                m.insert("role".to_string(), Value::String("system".to_string()));
                 m.insert(
                     "content".to_string(),
                     Value::String("System 2.".to_string()),
@@ -835,10 +804,7 @@ mod tests {
             {
                 let mut m = HashMap::new();
                 m.insert("role".to_string(), Value::String("user".to_string()));
-                m.insert(
-                    "content".to_string(),
-                    Value::String("Hi".to_string()),
-                );
+                m.insert("content".to_string(), Value::String("Hi".to_string()));
                 m
             },
         ];
@@ -855,10 +821,7 @@ mod tests {
         let messages: Vec<LLMMessage> = vec![
             {
                 let mut m = HashMap::new();
-                m.insert(
-                    "role".to_string(),
-                    Value::String("system".to_string()),
-                );
+                m.insert("role".to_string(), Value::String("system".to_string()));
                 m.insert(
                     "content".to_string(),
                     Value::String("Be concise.".to_string()),
@@ -963,7 +926,9 @@ mod tests {
 
     #[test]
     fn test_native_structured_output_models() {
-        assert!(supports_native_structured_outputs("claude-opus-4-5-20251101"));
+        assert!(supports_native_structured_outputs(
+            "claude-opus-4-5-20251101"
+        ));
         assert!(supports_native_structured_outputs("claude-opus-4.5"));
         assert!(supports_native_structured_outputs("claude-opus-4-6"));
         assert!(supports_native_structured_outputs("claude-opus-4.6"));

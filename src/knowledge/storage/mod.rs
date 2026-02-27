@@ -275,10 +275,7 @@ impl BaseKnowledgeStorage for KnowledgeStorage {
 
     fn reset(&self) -> Result<(), anyhow::Error> {
         let collection = self.effective_collection_name();
-        log::debug!(
-            "KnowledgeStorage::reset: collection='{}'",
-            collection
-        );
+        log::debug!("KnowledgeStorage::reset: collection='{}'", collection);
 
         // Delegate to RAG client when integrated:
         // let client = self.get_client();
@@ -301,10 +298,7 @@ mod tests {
     #[test]
     fn test_knowledge_storage_new_with_collection() {
         let storage = KnowledgeStorage::new(None, Some("docs".to_string()));
-        assert_eq!(
-            storage.effective_collection_name(),
-            "knowledge_docs"
-        );
+        assert_eq!(storage.effective_collection_name(), "knowledge_docs");
     }
 
     #[test]

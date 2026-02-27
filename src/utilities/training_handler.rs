@@ -32,7 +32,9 @@ impl CrewTrainingHandler {
 
     /// Append a new training entry.
     pub fn append(&self, agent_id: &str, data: Value) -> std::io::Result<()> {
-        let mut training_data = self.load().unwrap_or_else(|| Value::Object(Default::default()));
+        let mut training_data = self
+            .load()
+            .unwrap_or_else(|| Value::Object(Default::default()));
 
         if let Value::Object(ref mut map) = training_data {
             let entries = map

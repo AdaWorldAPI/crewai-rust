@@ -74,9 +74,17 @@ pub enum BlockingLayer {
     /// L1: NARS truth insufficient.
     NarsTruth { frequency: f32, confidence: f32 },
     /// L2: MarkovBarrier XOR budget exceeded.
-    MarkovBudget { distance: u32, budget: u32, gate: GateDecision },
+    MarkovBudget {
+        distance: u32,
+        budget: u32,
+        gate: GateDecision,
+    },
     /// L3: Triune facet consensus denied.
-    TriuneConsensus { leader: Facet, confidence: f32, required: f32 },
+    TriuneConsensus {
+        leader: Facet,
+        confidence: f32,
+        required: f32,
+    },
     /// L4: MUL metacognitive gate blocked.
     MetaUncertainty { reason: MulBlockReason },
 }
@@ -129,7 +137,10 @@ impl StackDecision {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Nudge {
     /// Suggest gathering more evidence before committing.
-    GatherEvidence { current_confidence: f32, target: f32 },
+    GatherEvidence {
+        current_confidence: f32,
+        target: f32,
+    },
     /// Suggest recalibrating DK position (more samples needed).
     Recalibrate { current_samples: u32, needed: u32 },
     /// Suggest trust repair (which component is weakest).
@@ -345,7 +356,11 @@ impl BarrierStack {
         let triune_decision = self.triune.barrier_check(action, nars_truth.confidence);
         verdicts.triune = Some(triune_decision.clone());
         match &triune_decision {
-            BarrierDecision::Hold { confidence, required, facet } => {
+            BarrierDecision::Hold {
+                confidence,
+                required,
+                facet,
+            } => {
                 blocking.push(BlockingLayer::TriuneConsensus {
                     leader: *facet,
                     confidence: *confidence,
@@ -366,7 +381,10 @@ impl BarrierStack {
                     });
                 }
             }
-            BarrierDecision::Block { pattern, action: act } => {
+            BarrierDecision::Block {
+                pattern,
+                action: act,
+            } => {
                 blocking.push(BlockingLayer::TriuneConsensus {
                     leader: self.triune.topology.leader(),
                     confidence: 0.0,
@@ -544,7 +562,10 @@ mod tests {
 
         let decision = stack.check_outbound("action", truth, None, &mul);
         assert!(!decision.proceed);
-        assert!(decision.blocking.iter().any(|b| matches!(b, BlockingLayer::NarsTruth { .. })));
+        assert!(decision
+            .blocking
+            .iter()
+            .any(|b| matches!(b, BlockingLayer::NarsTruth { .. })));
     }
 
     #[test]
@@ -556,7 +577,10 @@ mod tests {
 
         let decision = stack.check_outbound("safe_action", truth, None, &mul);
         assert!(!decision.proceed);
-        assert!(decision.blocking.iter().any(|b| matches!(b, BlockingLayer::TriuneConsensus { .. })));
+        assert!(decision
+            .blocking
+            .iter()
+            .any(|b| matches!(b, BlockingLayer::TriuneConsensus { .. })));
     }
 
     #[test]
@@ -577,7 +601,9 @@ mod tests {
         assert!(!decision.proceed);
         assert!(decision.blocking.iter().any(|b| matches!(
             b,
-            BlockingLayer::MetaUncertainty { reason: MulBlockReason::MountStupid }
+            BlockingLayer::MetaUncertainty {
+                reason: MulBlockReason::MountStupid
+            }
         )));
     }
 
@@ -599,7 +625,9 @@ mod tests {
         assert!(!decision.proceed);
         assert!(decision.blocking.iter().any(|b| matches!(
             b,
-            BlockingLayer::MetaUncertainty { reason: MulBlockReason::LowFreeWill }
+            BlockingLayer::MetaUncertainty {
+                reason: MulBlockReason::LowFreeWill
+            }
         )));
     }
 
@@ -706,7 +734,10 @@ mod tests {
         let nudged = StackDecision {
             proceed: true,
             blocking: Vec::new(),
-            nudge: Some(Nudge::GatherEvidence { current_confidence: 0.5, target: 0.7 }),
+            nudge: Some(Nudge::GatherEvidence {
+                current_confidence: 0.5,
+                target: 0.7,
+            }),
             effective_confidence: 0.5,
             verdicts: LayerVerdicts::default(),
         };
@@ -717,7 +748,9 @@ mod tests {
         // Blocked
         let blocked = StackDecision {
             proceed: false,
-            blocking: vec![BlockingLayer::MetaUncertainty { reason: MulBlockReason::MountStupid }],
+            blocking: vec![BlockingLayer::MetaUncertainty {
+                reason: MulBlockReason::MountStupid,
+            }],
             nudge: None,
             effective_confidence: 0.0,
             verdicts: LayerVerdicts::default(),

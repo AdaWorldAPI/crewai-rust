@@ -100,10 +100,7 @@ impl Telemetry {
 
     /// Record crew creation telemetry.
     pub fn crew_creation(&self, crew_id: &str, _attributes: HashMap<String, String>) -> SpanHandle {
-        self.create_span(
-            &format!("crew_creation_{}", crew_id),
-            HashMap::new(),
-        )
+        self.create_span(&format!("crew_creation_{}", crew_id), HashMap::new())
     }
 
     /// Record crew execution telemetry.
@@ -112,10 +109,7 @@ impl Telemetry {
         crew_id: &str,
         _attributes: HashMap<String, String>,
     ) -> SpanHandle {
-        self.create_span(
-            &format!("crew_execution_{}", crew_id),
-            HashMap::new(),
-        )
+        self.create_span(&format!("crew_execution_{}", crew_id), HashMap::new())
     }
 
     /// Record tool usage telemetry.
