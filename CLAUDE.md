@@ -48,6 +48,39 @@ does NOT talk to databases.
 - Workflow orchestration (owned by n8n-rs)
 - Wire protocol types (owned by ladybug-contract, n8n-contract)
 
+### Storage Strategy: Arrow Zero-Copy Backend
+
+crewai-rust does NOT own storage. **ladybug-rs does.**
+
+ladybug-rs uses **Arrow** (not Lance) as the zero-copy computational backbone.
+Lance is the cold-tier persistence layer — Arrow buffers are mmap'd from
+Lance files, but the compute path never depends on the `lance` crate.
+
+**All data that crosses from crewai-rust to storage flows through:**
+
+```
+Blackboard TypedSlots (in-process)
+    → SubstrateView trait (bind_bridge.rs)
+        → BindSpace (ladybug-rs)
+            → Arrow zero-copy buffers (FingerprintBuffer)
+                → rustynum SIMD kernels (select_hamming_fn)
+```
+
+**Rules for crewai-rust developers:**
+
+- **NEVER** copy fingerprint data — use TypedSlots (references, not clones)
+- **NEVER** serialize to JSON for in-process data flow — use TypedSlots
+- **NEVER** implement SIMD operations — call through rustynum
+- **NEVER** import `arrow`, `lance`, or storage crates — all behind BindSpace abstraction
+- XOR deltas from agents flow through `flush_deltas()` → BindSpace, not direct writes
+- Use rustynum's `DeltaLayer` / `LayerStack` / `CollapseGate` for multi-agent state
+
+**Cross-repo references:**
+
+- `ladybug-rs/CLAUDE.md` § "The Rustynum Acceleration Contract"
+- `rustynum/CLAUDE.md` § 12 "The Lance Zero-Copy Contract"
+- `n8n-rs/CLAUDE.md` § "Arrow Zero-Copy Chain"
+
 ---
 
 ## 2. The Blackboard — Sacred Interface
