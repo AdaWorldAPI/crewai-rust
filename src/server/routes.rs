@@ -103,23 +103,30 @@ async fn health_handler() -> impl IntoResponse {
     }))
 }
 
-/// Execute a crew.* step delegation — core logic.
+/// POST /execute — execute a crew.* step delegation.
 ///
-/// Used by both the Axum handler and the in-process dispatch from ladybug-rs.
-/// Returns `Ok(StepDelegationResponse)` on success (including agent failures
-/// wrapped in the envelope) or `Err(String)` for validation/infrastructure errors.
-pub async fn execute_step(
-    state: &AppState,
-    request: StepDelegationRequest,
-) -> Result<StepDelegationResponse, String> {
+/// Request:  `StepDelegationRequest` = `{ "step": UnifiedStep, "input": DataEnvelope }`
+/// Response: `StepDelegationResponse` = `{ "output": DataEnvelope, "step": Option<UnifiedStep> }`
+///
+/// The handler:
+/// 1. Maps incoming step parameters to an Agent + Task configuration
+/// 2. Runs the agent via `execute_task()` (sync, wrapped in spawn_blocking)
+/// 3. Populates decision trail fields (reasoning, confidence, alternatives) from output
+/// 4. Returns DataEnvelope with result
+async fn execute_handler(
+    State(state): State<AppState>,
+    Json(request): Json<StepDelegationRequest>,
+) -> Result<Json<StepDelegationResponse>, (StatusCode, Json<Value>)> {
     let mut step = request.step.clone();
     let task_input = envelope::to_task_input(&request.input);
 
     // Validate this is a crew.* step
     if !step.is_crew() {
-        return Err(format!(
-            "Cannot handle step type '{}' — only crew.* steps are accepted",
-            step.step_type
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "error": format!("Cannot handle step type '{}' — only crew.* steps are accepted", step.step_type),
+            })),
         ));
     }
 
@@ -154,10 +161,12 @@ pub async fn execute_step(
     // Record step start
     let crew_name = format!("delegation-{}", &step.execution_id);
     {
-        let mut recorder = state
-            .recorder
-            .write()
-            .map_err(|_| "Recorder lock poisoned".to_string())?;
+        let mut recorder = state.recorder.write().map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({"error": "Recorder lock poisoned"})),
+            )
+        })?;
         if !recorder.crew_to_execution.contains_key(&crew_name) {
             recorder.on_crew_started(&crew_name);
         }
@@ -213,6 +222,7 @@ pub async fn execute_step(
             // Update step with completion + decision trail
             step.mark_completed(serde_json::json!({"result": &output}));
             step.confidence = Some(confidence);
+            // Reasoning is extracted from agent's last messages if available
             step.reasoning = Some(format!("Executed as {} agent", step.step_type));
 
             // Record completion
@@ -228,10 +238,10 @@ pub async fn execute_step(
                 }
             }
 
-            Ok(StepDelegationResponse {
+            Ok(Json(StepDelegationResponse {
                 output: output_envelope,
                 step: Some(step),
-            })
+            }))
         }
         Ok(Err(error)) => {
             step.mark_failed(&error);
@@ -257,33 +267,21 @@ pub async fn execute_step(
                 },
             };
 
-            Ok(StepDelegationResponse {
+            Ok(Json(StepDelegationResponse {
                 output: error_envelope,
                 step: Some(step),
-            })
+            }))
         }
         Err(join_error) => {
-            Err(format!("Agent execution panicked: {}", join_error))
+            let error_msg = format!("Agent execution panicked: {}", join_error);
+            step.mark_failed(&error_msg);
+
+            Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({"error": error_msg})),
+            ))
         }
     }
-}
-
-/// POST /execute — Axum handler (thin HTTP adapter over `execute_step`).
-async fn execute_handler(
-    State(state): State<AppState>,
-    Json(request): Json<StepDelegationRequest>,
-) -> Result<Json<StepDelegationResponse>, (StatusCode, Json<Value>)> {
-    execute_step(&state, request)
-        .await
-        .map(Json)
-        .map_err(|e| {
-            let status = if e.starts_with("Cannot handle step type") {
-                StatusCode::BAD_REQUEST
-            } else {
-                StatusCode::INTERNAL_SERVER_ERROR
-            };
-            (status, Json(serde_json::json!({"error": e})))
-        })
 }
 
 // ---------------------------------------------------------------------------
