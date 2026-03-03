@@ -553,6 +553,7 @@ struct HydrationResponse {
     council: [f32; 3],
     thinking_style: Option<[f32; 10]>,
     felt_surprise: f32,
+    #[allow(dead_code)]
     mode: String,
 }
 

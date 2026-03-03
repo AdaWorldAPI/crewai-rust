@@ -13,8 +13,8 @@
 //! - Phase-based `&mut` discipline prevents data races at compile time
 //! - The A2A registry provides agent discovery without message passing
 
-use super::router::{StepDomain, StepHandler, StepResult, StepRouter};
-use super::types::{StepStatus, UnifiedExecution, UnifiedStep};
+use super::router::{StepResult, StepRouter};
+use super::types::{StepStatus, UnifiedExecution};
 use crate::blackboard::{Blackboard, Phase};
 use crate::hooks::lifecycle::HookRegistry;
 

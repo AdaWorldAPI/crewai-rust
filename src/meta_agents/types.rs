@@ -113,7 +113,7 @@ impl SkillDescriptor {
         let task_tokens: Vec<&str> = task_lower.split_whitespace().collect();
 
         let mut score = 0.0;
-        let total_keywords = self.tags.len() + 1; // +1 for name
+        let _total_keywords = self.tags.len() + 1; // +1 for name
 
         // Check name match
         if task_lower.contains(&self.name.to_lowercase()) {

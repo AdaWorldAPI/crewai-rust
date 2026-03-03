@@ -56,12 +56,10 @@ impl CacheEntry {
 
 /// Server information extracted from transport, used for event emission.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct ServerInfo {
-    /// Human-readable server name (command line or URL).
     server_name: String,
-    /// Server URL (None for stdio transports).
     server_url: Option<String>,
-    /// Transport type string.
     transport_type: String,
 }
 

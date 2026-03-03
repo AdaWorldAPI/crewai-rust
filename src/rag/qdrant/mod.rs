@@ -2,15 +2,13 @@
 //!
 //! Port of crewai/rag/qdrant/
 
-use std::collections::HashMap;
 
 use async_trait::async_trait;
-use serde_json::Value;
 
 use crate::rag::core::{BaseClient, CollectionAddParams, CollectionParams, CollectionSearchParams};
-use crate::rag::types::{BaseRecord, SearchResult};
+use crate::rag::types::SearchResult;
 
-/// Default vector dimension for Qdrant collections.
+#[allow(dead_code)]
 const DEFAULT_VECTOR_SIZE: usize = 1536;
 
 /// Qdrant implementation of the BaseClient protocol.

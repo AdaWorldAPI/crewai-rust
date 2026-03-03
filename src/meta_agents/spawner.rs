@@ -11,15 +11,14 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use uuid::Uuid;
 
 use super::delegation::{
-    DelegationDispatch, DelegationRequest, DelegationResponse, DelegationResult, OrchestrationEvent,
+    DelegationDispatch, DelegationRequest, OrchestrationEvent,
 };
 use super::savants;
 use super::types::{
-    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain, SkillDescriptor,
+    AgentBlueprint, OrchestratedTask, SavantDomain,
     SpawnedAgentState, TaskPriority,
 };
 

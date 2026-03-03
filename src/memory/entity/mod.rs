@@ -116,7 +116,7 @@ impl EntityMemory {
             return Ok(());
         }
 
-        let mut saved_count = 0;
+        let mut _saved_count = 0;
         let mut errors: Vec<String> = Vec::new();
 
         for item in &items {
@@ -131,7 +131,7 @@ impl EntityMemory {
             };
 
             match self.memory.save(&data, Some(item.metadata.clone())) {
-                Ok(()) => saved_count += 1,
+                Ok(()) => _saved_count += 1,
                 Err(e) => errors.push(format!("{}: {}", item.name, e)),
             }
         }

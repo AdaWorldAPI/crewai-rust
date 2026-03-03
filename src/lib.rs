@@ -1,3 +1,4 @@
+#![allow(unexpected_cfgs)]
 //! # CrewAI - Rust Port
 //!
 //! A 1:1 Rust port of the crewAI Python framework for AI agent orchestration.

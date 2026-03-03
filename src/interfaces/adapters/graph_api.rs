@@ -135,7 +135,7 @@ impl GraphApiAdapter {
         Ok(())
     }
 
-    /// Ensure we have a valid access token
+    #[allow(dead_code)]
     async fn ensure_token(&mut self) -> Result<(), AdapterError> {
         let needs_refresh = match self.token_expires_at {
             Some(expires) => std::time::Instant::now() >= expires,

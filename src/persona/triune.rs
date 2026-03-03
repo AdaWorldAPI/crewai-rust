@@ -19,7 +19,6 @@
 //! instinct/emotion/reason) via `custom_properties`.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 use super::composite::CompositeStyle;
 use super::profile::{PersonaProfile, SelfModifyBounds};

@@ -42,6 +42,7 @@ pub struct McpBridgeAdapter {
 
 /// Information about a discovered MCP tool
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct McpToolInfo {
     name: String,
     description: String,

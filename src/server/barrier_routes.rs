@@ -16,11 +16,10 @@ use std::sync::{Arc, RwLock};
 use axum::{
     extract::State,
     http::StatusCode,
-    response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
 
 use crate::drivers::barrier_stack::{BarrierStack, MulBlockReason, MulInput};

@@ -12,7 +12,7 @@ use serde_json::Value;
 
 use crate::memory::storage::interface::Storage;
 
-/// Maximum agent ID length for Mem0.
+#[allow(dead_code)]
 const MAX_AGENT_ID_LENGTH_MEM0: usize = 255;
 
 /// Supported memory types for Mem0.
@@ -93,12 +93,12 @@ impl Mem0Storage {
         Ok(())
     }
 
-    /// Sanitize an agent role to ensure valid directory names.
+    #[allow(dead_code)]
     fn sanitize_role(role: &str) -> String {
         role.replace('\n', "").replace(' ', "_").replace('/', "_")
     }
 
-    /// Extract the assistant message from text.
+    #[allow(dead_code)]
     fn get_assistant_message(text: &str) -> &str {
         let marker = "Final Answer:";
         if let Some(pos) = text.find(marker) {
@@ -108,7 +108,7 @@ impl Mem0Storage {
         }
     }
 
-    /// Extract the user message from text.
+    #[allow(dead_code)]
     fn get_user_message(text: &str) -> &str {
         let prefix = "User message:";
         if let Some(pos) = text.find(prefix) {
@@ -135,8 +135,8 @@ impl Storage for Mem0Storage {
     fn search(
         &self,
         query: &str,
-        limit: usize,
-        score_threshold: f64,
+        _limit: usize,
+        _score_threshold: f64,
     ) -> Result<Vec<Value>, anyhow::Error> {
         // Placeholder: Mem0 integration requires the mem0 service
         log::warn!(

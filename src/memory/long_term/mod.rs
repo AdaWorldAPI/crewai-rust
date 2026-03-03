@@ -7,7 +7,6 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::memory::memory::Memory;
 use crate::memory::storage::ltm_sqlite_storage::LTMSQLiteStorage;
 
 /// An item stored in long-term memory.

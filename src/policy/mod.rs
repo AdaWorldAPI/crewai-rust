@@ -265,6 +265,7 @@ pub struct PolicyDecision {
 
 /// Audit log entry
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct AuditEntry {
     timestamp: std::time::Instant,
     request_summary: String,

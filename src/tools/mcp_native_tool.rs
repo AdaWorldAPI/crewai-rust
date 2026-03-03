@@ -30,6 +30,7 @@ pub struct MCPNativeTool {
     pub args_schema: Value,
     /// Shared MCP client instance (opaque, type-erased).
     /// In a full implementation, this would be a concrete MCP client type.
+    #[allow(dead_code)]
     mcp_client: Arc<Mutex<Box<dyn Any + Send + Sync>>>,
     /// Original tool name on the MCP server (without prefix).
     pub original_tool_name: String,
@@ -132,10 +133,7 @@ impl MCPNativeTool {
         .into())
     }
 
-    /// Extract result content from an MCP tool call response.
-    ///
-    /// Handles various result formats including string results,
-    /// content lists, and text content items.
+    #[allow(dead_code)]
     fn extract_result_content(result: &Value) -> String {
         if let Some(s) = result.as_str() {
             return s.to_string();

@@ -15,7 +15,6 @@ use std::sync::{Arc, RwLock};
 
 use axum::{
     extract::State,
-    http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
     Json, Router,

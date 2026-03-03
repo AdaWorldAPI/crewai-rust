@@ -2,8 +2,6 @@
 //!
 //! Corresponds to `crewai/flow/flow_trackable.py`.
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 /// Tracks flow execution context for objects created within flows.
 ///
@@ -62,11 +60,6 @@ impl FlowTrackable {
     }
 }
 
-/// Thread-local flow context (simulates Python's contextvars).
-///
-/// In the Python implementation, `current_flow_id` and `current_flow_request_id`
-/// are ContextVar instances. In Rust, we use tokio task-local or thread-local
-/// alternatives.
 thread_local! {
     static CURRENT_FLOW_ID: std::cell::RefCell<Option<String>> = std::cell::RefCell::new(None);
     static CURRENT_FLOW_REQUEST_ID: std::cell::RefCell<Option<String>> = std::cell::RefCell::new(None);

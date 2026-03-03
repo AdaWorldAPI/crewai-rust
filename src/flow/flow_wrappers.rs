@@ -3,7 +3,6 @@
 //! Corresponds to `crewai/flow/flow_wrappers.py`.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// A type-safe method name for flow methods.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

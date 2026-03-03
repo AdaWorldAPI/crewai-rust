@@ -21,22 +21,20 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use uuid::Uuid;
 
 use crate::a2a::client::AgentCard;
 use crate::agent::Agent;
 
-use super::card_builder::{build_card_from_blueprint, build_card_from_state, update_card_skills};
+use super::card_builder::{build_card_from_blueprint, update_card_skills};
 use super::delegation::{
-    AgentFeedback, CapabilityUpdate, CapabilityUpdateTrigger, DelegationRequest, DelegationResult,
-    OrchestrationEvent, SkillAdjustment, SkillAdjustmentType, TaskOutcome,
+    AgentFeedback,
+    OrchestrationEvent, SkillAdjustment, SkillAdjustmentType,
 };
 use super::savants;
-use super::skill_engine::{SkillEngine, SkillEngineConfig};
-use super::spawner::SpawnerAgent;
+use super::skill_engine::SkillEngine;
 use super::types::{
-    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain, SkillDescriptor,
+    AgentBlueprint, OrchestratedTask, SavantDomain, SkillDescriptor,
     SpawnedAgentState, TaskPriority,
 };
 

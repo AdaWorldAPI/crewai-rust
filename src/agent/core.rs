@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::agents::crew_agent_executor::CrewAgentExecutor;
 use crate::agents::tools_handler::ToolsHandler;
-use crate::llms::base_llm::{BaseLLM, BaseLLMState, LLMMessage};
+use crate::llms::base_llm::{BaseLLM, LLMMessage};
 use crate::llms::providers::anthropic::AnthropicCompletion;
 use crate::llms::providers::openai::OpenAICompletion;
 use crate::llms::providers::xai::XAICompletion;
@@ -194,6 +194,7 @@ pub struct Agent {
     // ---- Private state ----
     /// Number of times the agent has been executed (for retry tracking).
     #[serde(skip)]
+    #[allow(dead_code)]
     times_executed: i32,
     /// Original role before interpolation.
     #[serde(skip)]
@@ -359,14 +360,14 @@ impl Agent {
         log::debug!("set_knowledge called for agent '{}'", self.role);
     }
 
-    /// Check if any memory is available through the crew.
+    #[allow(dead_code)]
     fn is_any_available_memory(&self) -> bool {
         // In the full implementation, this checks the crew's memory attributes.
         // For now, return false as we don't have a crew reference with memory.
         false
     }
 
-    /// Check if the LLM supports native function calling with the given tools.
+    #[allow(dead_code)]
     fn supports_native_tool_calling(&self, tools: &[String]) -> bool {
         // TODO: Check LLM capabilities for native function calling.
         !tools.is_empty() && self.llm.is_some()
@@ -387,7 +388,7 @@ impl Agent {
         &mut self,
         task_description: &str,
         context: Option<&str>,
-        tools: Option<&[String]>,
+        _tools: Option<&[String]>,
     ) -> Result<String, String> {
         log::debug!("Agent '{}' executing task: {}", self.role, task_description);
 
@@ -814,7 +815,7 @@ impl Agent {
         self.security_config = security_config;
     }
 
-    /// Validate Docker installation for code execution.
+    #[allow(dead_code)]
     fn validate_docker_installation(&self) -> Result<(), String> {
         // TODO: Check if Docker is installed and running.
         if self.allow_code_execution {

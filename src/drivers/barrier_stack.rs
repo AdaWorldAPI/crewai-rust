@@ -57,9 +57,9 @@
 //! - Markov Hold → request smaller-scope API call
 //! - NARS Hold → gather more evidence before committing
 
-use super::markov_barrier::{CallMeta, GateDecision, MarkovBarrier, XorBudget};
+use super::markov_barrier::{GateDecision, MarkovBarrier};
 use super::nars::NarsTruth;
-use crate::persona::triune::{CouncilResult, Facet, Strategy, TriuneTopology};
+use crate::persona::triune::Facet;
 use crate::persona::triune_dispatch::{BarrierDecision, TriuneDispatch};
 
 use serde::{Deserialize, Serialize};
@@ -382,8 +382,8 @@ impl BarrierStack {
                 }
             }
             BarrierDecision::Block {
-                pattern,
-                action: act,
+                pattern: _,
+                action: _act,
             } => {
                 blocking.push(BlockingLayer::TriuneConsensus {
                     leader: self.triune.topology.leader(),

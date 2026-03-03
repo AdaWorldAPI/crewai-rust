@@ -8,10 +8,10 @@
 //! 5. Constructing the cognitive gate (if configured)
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::capabilities::capability::{
-    Capability, CapabilityInterface, CapabilityPolicy, CapabilityTool,
+    Capability, CapabilityInterface, CapabilityTool,
 };
 use crate::capabilities::registry::CapabilityRegistry;
 use crate::meta_agents::types::AgentBlueprint;

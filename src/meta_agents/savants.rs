@@ -828,7 +828,7 @@ pub fn problem_solving_savant(llm: &str) -> AgentBlueprint {
 ///
 /// Returns one blueprint for each domain, all using the specified LLM.
 pub fn all_savants(llm: &str) -> Vec<AgentBlueprint> {
-    let mut savants = vec![
+    let savants = vec![
         research_savant(llm),
         engineering_savant(llm),
         data_analysis_savant(llm),

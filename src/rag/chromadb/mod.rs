@@ -2,13 +2,11 @@
 //!
 //! Port of crewai/rag/chromadb/
 
-use std::collections::HashMap;
 
 use async_trait::async_trait;
-use serde_json::Value;
 
 use crate::rag::core::{BaseClient, CollectionAddParams, CollectionParams, CollectionSearchParams};
-use crate::rag::types::{BaseRecord, SearchResult};
+use crate::rag::types::SearchResult;
 
 /// Sanitize a collection name for ChromaDB.
 ///

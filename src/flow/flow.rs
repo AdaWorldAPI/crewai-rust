@@ -10,20 +10,17 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
-use super::async_feedback::{HumanFeedbackPending, PendingFeedbackContext};
-use super::flow_events::*;
+use super::async_feedback::PendingFeedbackContext;
 use super::flow_wrappers::{
     FlowCondition, FlowConditionItem, FlowConditionType, FlowMethodMeta, FlowMethodName,
     SimpleFlowCondition,
 };
 use super::human_feedback::HumanFeedbackResult;
 use super::persistence::FlowPersistence;
-use super::utils::{extract_all_methods, normalize_condition};
 
 /// Constant for OR condition type (matches Python `OR_CONDITION`).
 pub const OR_CONDITION: &str = "OR";
@@ -343,6 +340,7 @@ pub struct Flow {
     /// Registered method callbacks (not serialized).
     method_callbacks: HashMap<FlowMethodName, Arc<FlowMethodFn>>,
     /// Thread-safe state lock.
+    #[allow(dead_code)]
     state_lock: Arc<Mutex<()>>,
 }
 
@@ -530,7 +528,7 @@ impl Flow {
         true
     }
 
-    /// Clear all fired OR listeners (for cyclic flows).
+    #[allow(dead_code)]
     fn clear_or_listeners(&mut self) {
         self.fired_or_listeners.clear();
     }
@@ -599,7 +597,7 @@ impl Flow {
         log::debug!("Flow::kickoff_async starting for flow_id={}", self.flow_id);
 
         // Emit flow started event.
-        let flow_name = self.flow_name().to_string();
+        let _flow_name = self.flow_name().to_string();
 
         // Find start methods.
         let start_methods: Vec<FlowMethodRegistration> = self
@@ -732,7 +730,7 @@ impl Flow {
 
         // Trigger downstream listeners.
         let trigger_name =
-            if let (Some(ref emit_opts), Some(ref outcome)) = (&emit, &collapsed_outcome) {
+            if let (Some(_emit_opts), Some(ref outcome)) = (&emit, &collapsed_outcome) {
                 self.method_outputs.push(Value::String(outcome.clone()));
                 FlowMethodName::new(outcome.as_str())
             } else {
@@ -825,7 +823,7 @@ impl Flow {
     async fn execute_listeners(
         &mut self,
         completed_method: &FlowMethodName,
-        result: &Value,
+        _result: &Value,
     ) -> Result<(), anyhow::Error> {
         // Collect listeners that should be triggered.
         // We collect keys first to avoid borrowing self immutably while calling should_trigger.

@@ -44,7 +44,9 @@ pub struct RconAdapter {
 // RCON packet types
 const SERVERDATA_AUTH: i32 = 3;
 const SERVERDATA_AUTH_RESPONSE: i32 = 2;
+#[allow(dead_code)]
 const SERVERDATA_EXECCOMMAND: i32 = 2;
+#[allow(dead_code)]
 const SERVERDATA_RESPONSE_VALUE: i32 = 0;
 
 impl RconAdapter {

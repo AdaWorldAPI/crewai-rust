@@ -4,7 +4,6 @@
 //! A2A cards. Implements exponential moving average for proficiency scores,
 //! skill discovery from task outcomes, and cross-agent skill transfer.
 
-use std::collections::HashMap;
 
 use crate::a2a::client::AgentCard;
 

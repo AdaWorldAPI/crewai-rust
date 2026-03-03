@@ -27,8 +27,7 @@ use crate::chat::handler::{chat_handler, ChatConfig};
 use crate::contract::envelope;
 use crate::contract::event_recorder::ContractRecorder;
 use crate::contract::types::{
-    DataEnvelope, EnvelopeMetadata, StepDelegationRequest, StepDelegationResponse, StepStatus,
-    UnifiedStep,
+    DataEnvelope, EnvelopeMetadata, StepDelegationRequest, StepDelegationResponse,
 };
 use crate::modules::runtime::ModuleRuntime;
 
