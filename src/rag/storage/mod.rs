@@ -21,7 +21,7 @@ pub trait BaseRAGStorage: Send + Sync {
 
     /// Sanitize an agent role to ensure valid directory names.
     fn sanitize_role(&self, role: &str) -> String {
-        role.replace('\n', "").replace(' ', "_").replace('/', "_")
+        role.replace('\n', "").replace([' ', '/'], "_")
     }
 
     /// Save a value with metadata to the storage.

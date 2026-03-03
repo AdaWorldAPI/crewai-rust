@@ -41,7 +41,7 @@ use super::delegation::{
     AgentFeedback, CapabilityUpdate, DelegationRequest, DelegationResponse, OrchestrationEvent,
 };
 use super::types::{
-    AgentBlueprint, OrchestratedTask, SavantDomain, SkillDescriptor, SpawnedAgentState,
+    OrchestratedTask, SavantDomain, SkillDescriptor,
 };
 
 // ---------------------------------------------------------------------------

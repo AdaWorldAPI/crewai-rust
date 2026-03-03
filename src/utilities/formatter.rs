@@ -3,16 +3,12 @@
 //! Corresponds to `crewai/utilities/formatter.py`.
 
 /// Formats output text for display, with optional truncation and wrapping.
+#[derive(Default)]
 pub struct OutputFormatter {
     /// Maximum number of characters before truncation.
     pub max_length: Option<usize>,
 }
 
-impl Default for OutputFormatter {
-    fn default() -> Self {
-        Self { max_length: None }
-    }
-}
 
 impl OutputFormatter {
     /// Create a new `OutputFormatter` with the given max length.

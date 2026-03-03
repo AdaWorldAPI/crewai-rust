@@ -15,20 +15,18 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use uuid::Uuid;
 
 use crate::a2a::client::AgentCard;
 use crate::agent::Agent;
 
-use super::card_builder::{build_card_from_blueprint, build_card_from_state, update_card_skills};
+use super::card_builder::{build_card_from_blueprint, update_card_skills};
 use super::delegation::{
-    AgentFeedback, CapabilityUpdate, CapabilityUpdateTrigger, DelegationDispatch,
-    DelegationRequest, DelegationResponse, DelegationResult, OrchestrationEvent, SkillAdjustment,
-    SkillAdjustmentType, TaskOutcome,
+    AgentFeedback, CapabilityUpdate, CapabilityUpdateTrigger,
+    DelegationRequest, DelegationResult, OrchestrationEvent, SkillAdjustment,
 };
 use super::savants;
-use super::skill_engine::{SkillEngine, SkillEngineConfig};
+use super::skill_engine::SkillEngine;
 use super::spawner::SpawnerAgent;
 use super::types::{
     AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain, SkillDescriptor,
@@ -351,14 +349,13 @@ impl MetaOrchestrator {
             // Performance weight
             score *= state.performance_score;
 
-            if score > self.config.min_match_score {
-                if best
+            if score > self.config.min_match_score
+                && best
                     .as_ref()
-                    .map_or(true, |(_, best_score)| score > *best_score)
+                    .is_none_or(|(_, best_score)| score > *best_score)
                 {
                     best = Some((agent_id.clone(), score));
                 }
-            }
         }
 
         best

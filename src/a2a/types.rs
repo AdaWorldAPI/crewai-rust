@@ -9,18 +9,15 @@ use serde_json::Value;
 
 /// Transport protocol type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum TransportType {
+    #[default]
     JSONRPC,
     GRPC,
     #[serde(rename = "HTTP+JSON")]
     HttpJson,
 }
 
-impl Default for TransportType {
-    fn default() -> Self {
-        Self::JSONRPC
-    }
-}
 
 impl std::fmt::Display for TransportType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -34,6 +31,7 @@ impl std::fmt::Display for TransportType {
 
 /// A2A protocol version.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum ProtocolVersion {
     #[serde(rename = "0.2.0")]
     V0_2_0,
@@ -50,16 +48,12 @@ pub enum ProtocolVersion {
     #[serde(rename = "0.2.6")]
     V0_2_6,
     #[serde(rename = "0.3.0")]
+    #[default]
     V0_3_0,
     #[serde(rename = "0.4.0")]
     V0_4_0,
 }
 
-impl Default for ProtocolVersion {
-    fn default() -> Self {
-        Self::V0_3_0
-    }
-}
 
 /// Protocol for the dynamically created AgentResponse model.
 pub trait AgentResponseProtocol {

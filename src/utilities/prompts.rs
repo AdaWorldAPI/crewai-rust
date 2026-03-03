@@ -66,6 +66,7 @@ pub struct AgentInfo {
 
 /// Manages and generates prompts for a generic agent.
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct Prompts {
     /// Internationalization support.
     pub i18n: I18N,
@@ -83,19 +84,6 @@ pub struct Prompts {
     pub use_system_prompt: bool,
 }
 
-impl Default for Prompts {
-    fn default() -> Self {
-        Self {
-            i18n: I18N::default(),
-            has_tools: false,
-            use_native_tool_calling: false,
-            system_template: None,
-            prompt_template: None,
-            response_template: None,
-            use_system_prompt: false,
-        }
-    }
-}
 
 impl Prompts {
     /// Generate a prompt result for task execution.

@@ -334,7 +334,7 @@ impl Task {
         } else {
             // Fallback: use LLM directly when no executor is configured
             log::warn!("No agent_executor configured for task, using direct LLM call");
-            let llm = crate::llm::LLM::new(&format!("openai/gpt-4o-mini"));
+            let llm = crate::llm::LLM::new("openai/gpt-4o-mini".to_string());
             let mut messages = Vec::new();
             let mut sys_msg = HashMap::new();
             sys_msg.insert("role".to_string(), "system".to_string());

@@ -9,7 +9,7 @@ use std::sync::{Arc, RwLock};
 
 use serde_json::Value;
 
-use super::types::{StepStatus, UnifiedExecution, UnifiedStep};
+use super::types::{UnifiedExecution, UnifiedStep};
 
 /// In-memory recorder that tracks execution and step state.
 ///

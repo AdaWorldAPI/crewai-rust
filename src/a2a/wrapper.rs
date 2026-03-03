@@ -40,6 +40,7 @@ pub struct DelegationContext {
 
 /// State accumulated during a delegation conversation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct DelegationState {
     /// Context ID for the conversation.
     pub context_id: Option<String>,
@@ -55,18 +56,6 @@ pub struct DelegationState {
     pub result: Option<String>,
 }
 
-impl Default for DelegationState {
-    fn default() -> Self {
-        Self {
-            context_id: None,
-            task_id: None,
-            turns_completed: 0,
-            messages: Vec::new(),
-            is_complete: false,
-            result: None,
-        }
-    }
-}
 
 impl DelegationState {
     /// Create a new empty `DelegationState`.

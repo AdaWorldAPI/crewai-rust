@@ -99,7 +99,7 @@ impl CapabilityRegistry {
                 count += self.load_directory(&path)?;
             } else if path
                 .extension()
-                .map_or(false, |ext| ext == "yaml" || ext == "yml")
+                .is_some_and(|ext| ext == "yaml" || ext == "yml")
             {
                 match self.register_from_file(path.to_str().unwrap_or_default()) {
                     Ok(n) => count += n,
@@ -188,15 +188,14 @@ impl CapabilityRegistry {
                 let mut found = false;
                 for search_path in &self.search_paths.clone() {
                     let candidate = search_path.join(namespace).join(format!("{}.yaml", name));
-                    if candidate.exists() {
-                        if self
+                    if candidate.exists()
+                        && self
                             .register_from_file(candidate.to_str().unwrap_or_default())
                             .is_ok()
                         {
                             found = true;
                             break;
                         }
-                    }
                 }
                 if !found {
                     unresolved.push(id.clone());

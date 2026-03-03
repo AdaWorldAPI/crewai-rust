@@ -49,6 +49,7 @@ impl TaskExecutionData {
 /// Contains metadata about the currently executing task for streaming
 /// and progress tracking purposes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct TaskInfo {
     /// Task index in the crew.
     pub index: usize,
@@ -62,17 +63,6 @@ pub struct TaskInfo {
     pub agent_id: String,
 }
 
-impl Default for TaskInfo {
-    fn default() -> Self {
-        Self {
-            index: 0,
-            name: String::new(),
-            id: String::new(),
-            agent_role: String::new(),
-            agent_id: String::new(),
-        }
-    }
-}
 
 /// Container for streaming state and holders used during crew execution.
 ///

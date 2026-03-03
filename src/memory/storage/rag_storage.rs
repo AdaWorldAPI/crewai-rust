@@ -87,7 +87,7 @@ impl RAGStorage {
 
     /// Sanitize an agent role to ensure valid directory names.
     fn sanitize_role(role: &str) -> String {
-        role.replace('\n', "").replace(' ', "_").replace('/', "_")
+        role.replace('\n', "").replace([' ', '/'], "_")
     }
 
     /// Build the storage file name, ensuring it does not exceed max allowed length.

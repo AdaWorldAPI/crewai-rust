@@ -200,8 +200,8 @@ impl BaseKnowledgeStorage for KnowledgeStorage {
     async fn asearch(
         &self,
         query: &str,
-        limit: usize,
-        score_threshold: f64,
+        _limit: usize,
+        _score_threshold: f64,
     ) -> Result<Vec<Value>, anyhow::Error> {
         if query.is_empty() {
             return Err(anyhow::anyhow!("Query cannot be empty"));

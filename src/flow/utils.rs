@@ -512,7 +512,7 @@ pub fn parse_flow_condition(value: &Value) -> Option<FlowCondition> {
 
         let conditions: Vec<FlowCondition> = sub_values
             .iter()
-            .filter_map(|v| parse_flow_condition(v))
+            .filter_map(parse_flow_condition)
             .collect();
 
         return Some(FlowCondition::Compound {

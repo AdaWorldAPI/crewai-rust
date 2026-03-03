@@ -13,7 +13,7 @@ use std::fmt;
 
 use serde_json::Value;
 
-use super::parser::{AgentAction, AgentFinish, ParseResult};
+use super::parser::{AgentFinish, ParseResult};
 use super::tools_handler::ToolsHandler;
 use crate::tools::structured_tool::CrewStructuredTool;
 use crate::tools::tool_calling::ToolCalling;

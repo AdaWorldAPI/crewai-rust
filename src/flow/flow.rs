@@ -10,20 +10,17 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
-use super::async_feedback::{HumanFeedbackPending, PendingFeedbackContext};
-use super::flow_events::*;
+use super::async_feedback::PendingFeedbackContext;
 use super::flow_wrappers::{
     FlowCondition, FlowConditionItem, FlowConditionType, FlowMethodMeta, FlowMethodName,
     SimpleFlowCondition,
 };
 use super::human_feedback::HumanFeedbackResult;
 use super::persistence::FlowPersistence;
-use super::utils::{extract_all_methods, normalize_condition};
 
 /// Constant for OR condition type (matches Python `OR_CONDITION`).
 pub const OR_CONDITION: &str = "OR";
@@ -452,11 +449,10 @@ impl Flow {
         let name = registration.name.clone();
 
         // Track start methods.
-        if registration.is_start_method {
-            if !self.start_methods.contains(&name) {
+        if registration.is_start_method
+            && !self.start_methods.contains(&name) {
                 self.start_methods.push(name.clone());
             }
-        }
 
         // Track listeners and their conditions.
         if let Some(ref triggers) = registration.trigger_methods {
@@ -599,7 +595,7 @@ impl Flow {
         log::debug!("Flow::kickoff_async starting for flow_id={}", self.flow_id);
 
         // Emit flow started event.
-        let flow_name = self.flow_name().to_string();
+        let _flow_name = self.flow_name().to_string();
 
         // Find start methods.
         let start_methods: Vec<FlowMethodRegistration> = self
@@ -732,7 +728,7 @@ impl Flow {
 
         // Trigger downstream listeners.
         let trigger_name =
-            if let (Some(ref emit_opts), Some(ref outcome)) = (&emit, &collapsed_outcome) {
+            if let (Some(_emit_opts), Some(ref outcome)) = (&emit, &collapsed_outcome) {
                 self.method_outputs.push(Value::String(outcome.clone()));
                 FlowMethodName::new(outcome.as_str())
             } else {
@@ -825,7 +821,7 @@ impl Flow {
     async fn execute_listeners(
         &mut self,
         completed_method: &FlowMethodName,
-        result: &Value,
+        _result: &Value,
     ) -> Result<(), anyhow::Error> {
         // Collect listeners that should be triggered.
         // We collect keys first to avoid borrowing self immutably while calling should_trigger.
@@ -923,7 +919,7 @@ impl Flow {
                         let pending = self
                             .pending_and_listeners
                             .entry(key.clone())
-                            .or_insert_with(HashSet::new);
+                            .or_default();
                         pending.insert(completed_method.clone());
 
                         // Check if all required methods have completed.
@@ -992,12 +988,12 @@ impl Flow {
                 let pending = self
                     .pending_and_listeners
                     .entry(key.clone())
-                    .or_insert_with(HashSet::new);
+                    .or_default();
                 pending.insert(completed_method.clone());
 
                 let all_required: HashSet<FlowMethodName> = all_methods
                     .into_iter()
-                    .map(|s| FlowMethodName::new(s))
+                    .map(FlowMethodName::new)
                     .collect();
 
                 if pending.is_superset(&all_required) {

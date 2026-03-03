@@ -14,6 +14,7 @@ use std::fmt;
 /// * `Raw` - Output as raw unprocessed string
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum OutputFormat {
     /// Output as JSON dictionary format.
     #[serde(rename = "json")]
@@ -23,14 +24,10 @@ pub enum OutputFormat {
     Pydantic,
     /// Output as raw unprocessed string.
     #[serde(rename = "raw")]
+    #[default]
     Raw,
 }
 
-impl Default for OutputFormat {
-    fn default() -> Self {
-        OutputFormat::Raw
-    }
-}
 
 impl fmt::Display for OutputFormat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

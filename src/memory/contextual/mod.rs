@@ -2,9 +2,7 @@
 //!
 //! Port of crewai/memory/contextual/contextual_memory.py
 
-use std::collections::HashMap;
 
-use serde_json::Value;
 
 use crate::memory::entity::EntityMemory;
 use crate::memory::external::ExternalMemory;

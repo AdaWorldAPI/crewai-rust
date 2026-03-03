@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use serde_json::Value;
 
 use super::a2a::A2ARegistry;
-use super::slot::{BlackboardSlot, SlotMeta};
+use super::slot::BlackboardSlot;
 use super::typed_slot::TypedSlot;
 use crate::contract::types::{DataEnvelope, EnvelopeMetadata};
 

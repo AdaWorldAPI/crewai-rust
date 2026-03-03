@@ -8,8 +8,10 @@ use std::fmt;
 /// Represents the different processes that can be used to tackle tasks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum Process {
     /// Tasks are executed one after another in order.
+    #[default]
     Sequential,
     /// A manager agent delegates tasks to other agents.
     Hierarchical,
@@ -25,8 +27,3 @@ impl fmt::Display for Process {
     }
 }
 
-impl Default for Process {
-    fn default() -> Self {
-        Process::Sequential
-    }
-}

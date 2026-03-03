@@ -39,7 +39,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use super::thinking_style::{StyleCluster, ThinkingStyle, STYLE_TO_TAU, STYLE_VECTORS};
+use super::thinking_style::{StyleCluster, ThinkingStyle};
 
 // ============================================================================
 // JIT Template types

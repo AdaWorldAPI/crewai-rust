@@ -166,8 +166,10 @@ impl AgentEvaluationResult {
 /// Corresponds to `crewai.experimental.evaluation.base_evaluator.AggregationStrategy`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum AggregationStrategy {
     /// Equal weight to all tasks.
+    #[default]
     SimpleAverage,
     /// Weight by task complexity.
     WeightedByComplexity,
@@ -177,11 +179,6 @@ pub enum AggregationStrategy {
     WorstPerformance,
 }
 
-impl Default for AggregationStrategy {
-    fn default() -> Self {
-        Self::SimpleAverage
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Aggregated evaluation result

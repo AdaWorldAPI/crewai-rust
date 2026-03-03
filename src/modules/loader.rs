@@ -8,10 +8,10 @@
 //! 5. Constructing the cognitive gate (if configured)
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::capabilities::capability::{
-    Capability, CapabilityInterface, CapabilityPolicy, CapabilityTool,
+    Capability, CapabilityInterface, CapabilityTool,
 };
 use crate::capabilities::registry::CapabilityRegistry;
 use crate::meta_agents::types::AgentBlueprint;
@@ -133,7 +133,7 @@ impl ModuleLoader {
                 let path = entry.path();
                 if path
                     .extension()
-                    .map_or(false, |ext| ext == "yaml" || ext == "yml")
+                    .is_some_and(|ext| ext == "yaml" || ext == "yml")
                 {
                     match self.load_file(path.to_str().unwrap_or_default()) {
                         Ok(instance) => instances.push(instance),

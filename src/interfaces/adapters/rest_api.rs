@@ -43,6 +43,12 @@ struct EndpointConfig {
     read_only: bool,
 }
 
+impl Default for RestApiAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RestApiAdapter {
     pub fn new() -> Self {
         Self {
@@ -248,7 +254,7 @@ impl InterfaceAdapter for RestApiAdapter {
             .map_err(|e| AdapterError::ExecutionFailed(e.to_string()))?;
 
         // Parse response body as JSON if possible
-        let body_value: Value = serde_json::from_str(&body).unwrap_or_else(|_| Value::String(body));
+        let body_value: Value = serde_json::from_str(&body).unwrap_or(Value::String(body));
 
         Ok(serde_json::json!({
             "status": status,

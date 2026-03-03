@@ -208,7 +208,7 @@ impl<S: SubstrateView> BindBridge<S> {
                 crystallized.push(awareness_match);
             } else if m.similarity > 0.60 {
                 // Medium similarity — check for axis tension
-                let has_tension = if let Some((freq, conf)) = m.truth {
+                let has_tension = if let Some((_freq, conf)) = m.truth {
                     // Tension = high confidence but moderate similarity
                     conf > 0.5 && m.similarity < 0.75
                 } else {
@@ -286,7 +286,7 @@ impl<S: SubstrateView> BindBridge<S> {
         );
 
         // Write per-axis truths to NARS surface slots
-        for (i, (axis, inference)) in state.axis_truths.iter().enumerate() {
+        for (i, (_axis, inference)) in state.axis_truths.iter().enumerate() {
             let slot = (i + 1) as u8; // slots 1..N
             let addr = 0x0400 | slot as u16;
             self.substrate

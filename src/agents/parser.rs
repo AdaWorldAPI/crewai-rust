@@ -225,7 +225,7 @@ fn clean_trailing_backticks(text: &str) -> String {
     if result.ends_with("```") {
         let count = result.matches("```").count();
         // If count is odd, it's an unmatched trailing set; remove it.
-        if count % 2 != 0 {
+        if !count.is_multiple_of(2) {
             result = result[..result.len() - 3].trim_end().to_string();
         }
     }

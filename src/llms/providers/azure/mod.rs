@@ -192,7 +192,7 @@ impl AzureCompletion {
 
         // Check for tool calls
         if let Some(tool_calls) = message.get("tool_calls") {
-            if tool_calls.as_array().map_or(false, |a| !a.is_empty()) {
+            if tool_calls.as_array().is_some_and(|a| !a.is_empty()) {
                 return Ok(serde_json::json!({
                     "role": "assistant",
                     "content": message.get("content").cloned().unwrap_or(Value::Null),

@@ -3,7 +3,6 @@
 //! Corresponds to `crewai/flow/flow_wrappers.py`.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// A type-safe method name for flow methods.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -100,6 +99,7 @@ pub enum FlowConditionItem {
 /// Corresponds to the attributes set by FlowMethod, StartMethod, ListenMethod,
 /// and RouterMethod in Python.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct FlowMethodMeta {
     /// Whether this is a start method.
     pub is_start_method: bool,
@@ -117,19 +117,6 @@ pub struct FlowMethodMeta {
     pub human_feedback_config: Option<String>,
 }
 
-impl Default for FlowMethodMeta {
-    fn default() -> Self {
-        Self {
-            is_start_method: false,
-            trigger_methods: None,
-            condition_type: None,
-            trigger_condition: None,
-            is_router: false,
-            router_paths: None,
-            human_feedback_config: None,
-        }
-    }
-}
 
 /// StartMethod metadata builder.
 pub fn start_method_meta() -> FlowMethodMeta {

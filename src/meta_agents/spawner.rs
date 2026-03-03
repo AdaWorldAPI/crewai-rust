@@ -11,15 +11,14 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use uuid::Uuid;
 
 use super::delegation::{
-    DelegationDispatch, DelegationRequest, DelegationResponse, DelegationResult, OrchestrationEvent,
+    DelegationDispatch, DelegationRequest, OrchestrationEvent,
 };
 use super::savants;
 use super::types::{
-    AgentBlueprint, OrchestratedTask, OrchestratedTaskStatus, SavantDomain, SkillDescriptor,
+    AgentBlueprint, OrchestratedTask, SavantDomain,
     SpawnedAgentState, TaskPriority,
 };
 
@@ -402,7 +401,7 @@ impl SpawnerAgent {
     /// Split an objective into clauses (by "and", commas, semicolons).
     fn split_into_clauses(&self, text: &str) -> Vec<String> {
         let mut clauses: Vec<String> = text
-            .split(|c: char| c == ',' || c == ';')
+            .split([',', ';'])
             .flat_map(|segment| segment.split(" and "))
             .map(|s| s.trim().to_string())
             .filter(|s| s.len() > 5) // Filter out tiny fragments
@@ -488,7 +487,7 @@ impl SpawnerAgent {
             // Performance weight
             score *= state.performance_score;
 
-            if best_match.as_ref().map_or(true, |(_, best)| score > *best) {
+            if best_match.as_ref().is_none_or(|(_, best)| score > *best) {
                 best_match = Some((agent_id.clone(), score));
             }
         }

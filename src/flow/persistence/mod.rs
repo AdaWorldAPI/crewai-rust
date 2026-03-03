@@ -6,7 +6,7 @@
 //! `SQLiteFlowPersistence` implementation for persisting flow states,
 //! including support for async human feedback pending contexts.
 
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use rusqlite::{params, Connection};
 use serde_json::Value;
 use std::path::Path;

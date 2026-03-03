@@ -9,18 +9,15 @@ use std::sync::{Arc, Mutex};
 /// Type of streaming chunk.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum StreamChunkType {
     /// Text content chunk.
+    #[default]
     Text,
     /// Tool call chunk.
     ToolCall,
 }
 
-impl Default for StreamChunkType {
-    fn default() -> Self {
-        StreamChunkType::Text
-    }
-}
 
 /// Tool call information in a streaming chunk.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

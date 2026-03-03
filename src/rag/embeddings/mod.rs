@@ -14,7 +14,6 @@ use std::collections::HashMap;
 use serde_json::Value;
 
 use crate::rag::core::{BaseEmbeddingsProvider, EmbeddingFunctionTrait};
-use crate::rag::types::Embeddings;
 
 // Provider types will be re-exported once implemented.
 // Currently, provider stubs are placeholders for future native implementations.

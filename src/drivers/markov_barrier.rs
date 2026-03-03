@@ -171,6 +171,7 @@ pub enum GateDecision {
 
 /// Metadata about the external API call.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct CallMeta {
     /// LLM provider (e.g., "xai", "anthropic", "openai").
     pub provider: String,
@@ -184,17 +185,6 @@ pub struct CallMeta {
     pub prefix_cached: bool,
 }
 
-impl Default for CallMeta {
-    fn default() -> Self {
-        Self {
-            provider: String::new(),
-            model: String::new(),
-            response_tokens: 0,
-            latency_ms: 0,
-            prefix_cached: false,
-        }
-    }
-}
 
 // ============================================================================
 // MarkovBarrier — the gate controller

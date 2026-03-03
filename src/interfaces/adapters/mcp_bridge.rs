@@ -48,6 +48,12 @@ struct McpToolInfo {
     input_schema: Value,
 }
 
+impl Default for McpBridgeAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl McpBridgeAdapter {
     pub fn new() -> Self {
         Self {

@@ -9,18 +9,12 @@ use super::fingerprint::Fingerprint;
 
 /// Security configuration including fingerprinting.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct SecurityConfig {
     /// Security fingerprint for identity tracking.
     pub fingerprint: Fingerprint,
 }
 
-impl Default for SecurityConfig {
-    fn default() -> Self {
-        Self {
-            fingerprint: Fingerprint::default(),
-        }
-    }
-}
 
 impl SecurityConfig {
     /// Create a new SecurityConfig with default fingerprint.
