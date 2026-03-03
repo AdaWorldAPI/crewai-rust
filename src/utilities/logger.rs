@@ -29,7 +29,7 @@ impl Default for Logger {
         Self {
             verbose: false,
             default_color: PrinterColor::BoldYellow,
-            printer: Printer::default(),
+            printer: Printer,
         }
     }
 }
@@ -40,7 +40,7 @@ impl Logger {
         Self {
             verbose,
             default_color: PrinterColor::BoldYellow,
-            printer: Printer::default(),
+            printer: Printer,
         }
     }
 

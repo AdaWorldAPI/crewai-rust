@@ -212,8 +212,8 @@ fn derive_tool_name(method: &str, path: &str) -> String {
         .collect();
 
     // Check if the *last* segment is a path param (e.g. /users/{id})
-    let last_raw_segment = path.split('/').filter(|s| !s.is_empty()).last();
-    let ends_with_param = last_raw_segment.map_or(false, |s| s.starts_with('{'));
+    let last_raw_segment = path.split('/').rfind(|s| !s.is_empty());
+    let ends_with_param = last_raw_segment.is_some_and(|s| s.starts_with('{'));
 
     if segments.is_empty() {
         return format!("{}_root", method);

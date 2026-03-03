@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use super::thinking_style::{ExecutableStyle, ThinkingStyle, DIMENSION_NAMES, STYLE_VECTORS};
+use super::thinking_style::{ExecutableStyle, ThinkingStyle, STYLE_VECTORS};
 
 // ============================================================================
 // Composite style

@@ -46,6 +46,12 @@ pub struct GraphApiAdapter {
     connected: bool,
 }
 
+impl Default for GraphApiAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GraphApiAdapter {
     pub fn new() -> Self {
         Self {

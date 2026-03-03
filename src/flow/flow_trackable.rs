@@ -2,8 +2,6 @@
 //!
 //! Corresponds to `crewai/flow/flow_trackable.py`.
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 /// Tracks flow execution context for objects created within flows.
 ///
@@ -16,6 +14,7 @@ use tokio::sync::Mutex;
 ///
 /// Corresponds to `crewai.flow.flow_trackable.FlowTrackable`.
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct FlowTrackable {
     /// The request ID from the current flow context.
     pub request_id: Option<String>,
@@ -23,14 +22,6 @@ pub struct FlowTrackable {
     pub flow_id: Option<String>,
 }
 
-impl Default for FlowTrackable {
-    fn default() -> Self {
-        Self {
-            request_id: None,
-            flow_id: None,
-        }
-    }
-}
 
 impl FlowTrackable {
     /// Create a new FlowTrackable.
@@ -68,8 +59,8 @@ impl FlowTrackable {
 /// are ContextVar instances. In Rust, we use tokio task-local or thread-local
 /// alternatives.
 thread_local! {
-    static CURRENT_FLOW_ID: std::cell::RefCell<Option<String>> = std::cell::RefCell::new(None);
-    static CURRENT_FLOW_REQUEST_ID: std::cell::RefCell<Option<String>> = std::cell::RefCell::new(None);
+    static CURRENT_FLOW_ID: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+    static CURRENT_FLOW_REQUEST_ID: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
 }
 
 /// Get the current flow ID from thread-local context.

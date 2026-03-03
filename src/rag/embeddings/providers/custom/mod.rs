@@ -23,17 +23,13 @@ use crate::rag::core::{BaseEmbedding, EmbeddingFunctionTrait, EmbeddingResult, E
 /// In the Python version, this holds a reference to a custom `EmbeddingFunction` class.
 /// In Rust, the user provides a trait object or closure at construction time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct CustomProviderConfig {
     /// Description of the custom embedding function (for logging/debugging).
     #[serde(default)]
     pub description: Option<String>,
 }
 
-impl Default for CustomProviderConfig {
-    fn default() -> Self {
-        Self { description: None }
-    }
-}
 
 /// Custom provider specification.
 ///

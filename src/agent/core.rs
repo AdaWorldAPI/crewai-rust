@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::agents::crew_agent_executor::CrewAgentExecutor;
 use crate::agents::tools_handler::ToolsHandler;
-use crate::llms::base_llm::{BaseLLM, BaseLLMState, LLMMessage};
+use crate::llms::base_llm::{BaseLLM, LLMMessage};
 use crate::llms::providers::anthropic::AnthropicCompletion;
 use crate::llms::providers::openai::OpenAICompletion;
 use crate::llms::providers::xai::XAICompletion;
@@ -37,18 +37,15 @@ pub type StepCallback = Box<dyn Fn(&str) + Send + Sync>;
 /// Code execution mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum CodeExecutionMode {
     /// Safe mode using Docker for code execution.
+    #[default]
     Safe,
     /// Unsafe mode using direct execution.
     Unsafe,
 }
 
-impl Default for CodeExecutionMode {
-    fn default() -> Self {
-        CodeExecutionMode::Safe
-    }
-}
 
 /// Represents an agent in the CrewAI system.
 ///
@@ -387,7 +384,7 @@ impl Agent {
         &mut self,
         task_description: &str,
         context: Option<&str>,
-        tools: Option<&[String]>,
+        _tools: Option<&[String]>,
     ) -> Result<String, String> {
         log::debug!("Agent '{}' executing task: {}", self.role, task_description);
 
@@ -690,8 +687,7 @@ impl Agent {
         let url = server_url
             .trim_start_matches("https://")
             .trim_start_matches("http://");
-        url.replace('.', "_")
-            .replace('/', "_")
+        url.replace(['.', '/'], "_")
             .trim_matches('_')
             .to_string()
     }

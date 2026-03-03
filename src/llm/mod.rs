@@ -209,6 +209,7 @@ pub struct ResponseFormat {
 /// See field documentation below. All fields from the Python `LLM.__init__`
 /// are included. Methods are simplified stubs.
 #[derive(Debug, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct LLM {
     /// Model identifier (e.g., "gpt-4", "claude-opus-4-5-20251101").
     pub model: String,
@@ -308,41 +309,6 @@ impl Clone for LLM {
     }
 }
 
-impl Default for LLM {
-    fn default() -> Self {
-        Self {
-            model: String::new(),
-            timeout: None,
-            temperature: None,
-            top_p: None,
-            n: None,
-            stop: Vec::new(),
-            max_completion_tokens: None,
-            max_tokens: None,
-            presence_penalty: None,
-            frequency_penalty: None,
-            logit_bias: None,
-            response_format: None,
-            seed: None,
-            logprobs: None,
-            top_logprobs: None,
-            base_url: None,
-            api_base: None,
-            api_version: None,
-            api_key: None,
-            callbacks: Vec::new(),
-            reasoning_effort: None,
-            stream: false,
-            prefer_upload: false,
-            context_window_size: 0,
-            additional_params: HashMap::new(),
-            is_anthropic: false,
-            is_litellm: false,
-            provider: None,
-            completion_cost: None,
-        }
-    }
-}
 
 impl LLM {
     /// Create a new LLM with a model identifier.

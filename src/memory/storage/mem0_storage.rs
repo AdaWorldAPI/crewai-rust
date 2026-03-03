@@ -95,7 +95,7 @@ impl Mem0Storage {
 
     /// Sanitize an agent role to ensure valid directory names.
     fn sanitize_role(role: &str) -> String {
-        role.replace('\n', "").replace(' ', "_").replace('/', "_")
+        role.replace('\n', "").replace([' ', '/'], "_")
     }
 
     /// Extract the assistant message from text.
@@ -135,8 +135,8 @@ impl Storage for Mem0Storage {
     fn search(
         &self,
         query: &str,
-        limit: usize,
-        score_threshold: f64,
+        _limit: usize,
+        _score_threshold: f64,
     ) -> Result<Vec<Value>, anyhow::Error> {
         // Placeholder: Mem0 integration requires the mem0 service
         log::warn!(

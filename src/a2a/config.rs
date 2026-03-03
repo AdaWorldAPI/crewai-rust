@@ -12,7 +12,9 @@ use crate::a2a::types::{ProtocolVersion, TransportType};
 
 /// Signing algorithm for AgentCard JWS signing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum SigningAlgorithm {
+    #[default]
     RS256,
     RS384,
     RS512,
@@ -24,11 +26,6 @@ pub enum SigningAlgorithm {
     PS512,
 }
 
-impl Default for SigningAlgorithm {
-    fn default() -> Self {
-        Self::RS256
-    }
-}
 
 /// Configuration for AgentCard JWS signing.
 #[derive(Debug, Clone, Serialize, Deserialize)]

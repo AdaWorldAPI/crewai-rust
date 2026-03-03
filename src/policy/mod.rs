@@ -210,8 +210,10 @@ pub enum ConditionOperator {
 /// Enforcement mode
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum EnforcementMode {
     /// Block denied actions (production)
+    #[default]
     Strict,
     /// Log but allow denied actions (testing)
     AuditOnly,
@@ -219,11 +221,6 @@ pub enum EnforcementMode {
     Escalate,
 }
 
-impl Default for EnforcementMode {
-    fn default() -> Self {
-        EnforcementMode::Strict
-    }
-}
 
 /// A request to be evaluated by the policy engine
 #[derive(Debug, Clone)]
@@ -720,7 +717,7 @@ impl PolicyEngine {
                         serde_json::to_string(&cond.value).unwrap_or_default()
                     ));
                 }
-                output.push_str("}");
+                output.push('}');
             }
 
             output.push_str(";\n\n");

@@ -47,6 +47,12 @@ const SERVERDATA_AUTH_RESPONSE: i32 = 2;
 const SERVERDATA_EXECCOMMAND: i32 = 2;
 const SERVERDATA_RESPONSE_VALUE: i32 = 0;
 
+impl Default for RconAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RconAdapter {
     pub fn new() -> Self {
         Self {

@@ -20,9 +20,7 @@
 //! ```
 
 use serde::{Deserialize, Serialize};
-use std::fmt;
 
-use super::triune::TriuneTopology;
 
 // ============================================================================
 // Qualia snapshot types (from ladybug-rs hydration)

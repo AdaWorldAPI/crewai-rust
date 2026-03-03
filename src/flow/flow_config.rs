@@ -12,18 +12,12 @@ use std::sync::{Arc, Mutex};
 ///   Defaults to None (uses console input).
 ///   Can be overridden by deployments at startup.
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub struct FlowConfig {
     /// The configured HITL provider name.
     hitl_provider: Option<String>,
 }
 
-impl Default for FlowConfig {
-    fn default() -> Self {
-        Self {
-            hitl_provider: None,
-        }
-    }
-}
 
 impl FlowConfig {
     /// Create a new FlowConfig.

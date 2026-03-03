@@ -92,7 +92,7 @@ pub struct EmptyStackError {
 
 thread_local! {
     /// Stack of `(event_id, event_type)` for hierarchical scope tracking.
-    static EVENT_ID_STACK: RefCell<Vec<(String, String)>> = RefCell::new(Vec::new());
+    static EVENT_ID_STACK: RefCell<Vec<(String, String)>> = const { RefCell::new(Vec::new()) };
 
     /// Per-thread configuration override (falls back to DEFAULT_CONFIG).
     static EVENT_CONTEXT_CONFIG: RefCell<Option<EventContextConfig>> = const { RefCell::new(None) };

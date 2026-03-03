@@ -36,18 +36,15 @@ use crate::types::usage_metrics::UsageMetrics;
 /// Which OpenAI API to use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum OpenAIApiMode {
     /// Chat Completions API (default).
+    #[default]
     Completions,
     /// Responses API (newer, with built-in tools).
     Responses,
 }
 
-impl Default for OpenAIApiMode {
-    fn default() -> Self {
-        Self::Completions
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Responses API result types

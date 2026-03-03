@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::auth::ClientAuthScheme;
-use super::types::{PartsDict, ProtocolVersion, TransportType};
+use super::types::PartsDict;
 use super::updates::UpdateConfig;
 
 // ---------------------------------------------------------------------------

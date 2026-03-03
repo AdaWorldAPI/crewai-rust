@@ -150,17 +150,14 @@ fn default_api_key_name() -> String {
 /// Where to send the API key.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum APIKeyLocation {
+    #[default]
     Header,
     Query,
     Cookie,
 }
 
-impl Default for APIKeyLocation {
-    fn default() -> Self {
-        Self::Header
-    }
-}
 
 #[async_trait]
 impl ClientAuthScheme for APIKeyAuth {

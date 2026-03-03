@@ -18,19 +18,13 @@ use crate::rag::core::{BaseEmbedding, EmbeddingFunctionTrait, EmbeddingResult, E
 ///
 /// Port of crewai/rag/embeddings/providers/onnx/types.py ONNXProviderConfig.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct ONNXProviderConfig {
     /// Preferred ONNX execution providers (e.g., "CUDAExecutionProvider", "CPUExecutionProvider").
     #[serde(default)]
     pub preferred_providers: Vec<String>,
 }
 
-impl Default for ONNXProviderConfig {
-    fn default() -> Self {
-        Self {
-            preferred_providers: Vec::new(),
-        }
-    }
-}
 
 /// ONNX provider specification.
 ///

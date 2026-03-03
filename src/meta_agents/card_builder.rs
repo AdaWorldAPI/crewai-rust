@@ -24,7 +24,7 @@ pub fn build_card_from_blueprint(blueprint: &AgentBlueprint, base_url: &str) -> 
     let skills = blueprint
         .skills
         .iter()
-        .map(|s| skill_descriptor_to_a2a_skill(s))
+        .map(skill_descriptor_to_a2a_skill)
         .collect();
 
     AgentCard {
@@ -66,7 +66,7 @@ pub fn build_card_from_state(state: &SpawnedAgentState, base_url: &str) -> Agent
     let skills = state
         .skills
         .iter()
-        .map(|s| skill_descriptor_to_a2a_skill(s))
+        .map(skill_descriptor_to_a2a_skill)
         .collect();
 
     AgentCard {
@@ -116,7 +116,7 @@ pub fn update_card_skills(card: &mut AgentCard, state: &SpawnedAgentState) {
     card.skills = state
         .skills
         .iter()
-        .map(|s| skill_descriptor_to_a2a_skill(s))
+        .map(skill_descriptor_to_a2a_skill)
         .collect();
 
     // Update description to reflect performance changes

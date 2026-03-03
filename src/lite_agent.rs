@@ -20,6 +20,7 @@ use crate::utilities::types::LLMMessage;
 
 /// Represents the result of a `LiteAgent` execution.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct LiteAgentOutput {
     /// Raw output string from the agent.
     #[serde(default)]
@@ -36,17 +37,6 @@ pub struct LiteAgentOutput {
     pub messages: Vec<LLMMessage>,
 }
 
-impl Default for LiteAgentOutput {
-    fn default() -> Self {
-        Self {
-            raw: String::new(),
-            pydantic: None,
-            agent_role: String::new(),
-            usage_metrics: None,
-            messages: Vec::new(),
-        }
-    }
-}
 
 impl LiteAgentOutput {
     /// Create a new `LiteAgentOutput`.

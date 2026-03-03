@@ -3,7 +3,7 @@
 //! Port of crewai/memory/storage/ltm_sqlite_storage.py
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use rusqlite::{params, Connection};
 use serde_json::Value;

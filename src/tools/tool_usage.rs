@@ -153,7 +153,7 @@ impl ToolUsage {
 
         Self {
             i18n: I18N::default(),
-            printer: Printer::default(),
+            printer: Printer,
             run_attempts: 1,
             max_parsing_attempts: max_parsing,
             remember_format_after_usages: remember_format,
@@ -406,7 +406,7 @@ impl ToolUsage {
     /// Format a result string, optionally appending a format reminder.
     fn format_result(&mut self, result: &str) -> String {
         self.used_tools += 1;
-        let should_remind = self.used_tools % self.remember_format_after_usages == 0;
+        let should_remind = self.used_tools.is_multiple_of(self.remember_format_after_usages);
         if should_remind {
             format!(
                 "{}\n\nRemember to use the correct tool format. Available tools: {}",

@@ -113,7 +113,7 @@ impl SkillDescriptor {
         let task_tokens: Vec<&str> = task_lower.split_whitespace().collect();
 
         let mut score = 0.0;
-        let total_keywords = self.tags.len() + 1; // +1 for name
+        let _total_keywords = self.tags.len() + 1; // +1 for name
 
         // Check name match
         if task_lower.contains(&self.name.to_lowercase()) {
@@ -291,24 +291,23 @@ impl AgentBlueprint {
 /// Priority level for orchestrated tasks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum TaskPriority {
     Low,
+    #[default]
     Medium,
     High,
     Critical,
 }
 
-impl Default for TaskPriority {
-    fn default() -> Self {
-        Self::Medium
-    }
-}
 
 /// Current status of an orchestrated task.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum OrchestratedTaskStatus {
     /// Task is queued and waiting for assignment.
+    #[default]
     Pending,
     /// Task has been assigned to an agent.
     Assigned,
@@ -322,11 +321,6 @@ pub enum OrchestratedTaskStatus {
     Cancelled,
 }
 
-impl Default for OrchestratedTaskStatus {
-    fn default() -> Self {
-        Self::Pending
-    }
-}
 
 /// A task managed by the meta-orchestrator.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -500,7 +494,7 @@ impl SpawnedAgentState {
         } else {
             self.tasks_failed += 1;
             // Adjust performance score downward
-            self.performance_score = self.performance_score * 0.9;
+            self.performance_score *= 0.9;
         }
     }
 
