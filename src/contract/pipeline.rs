@@ -195,6 +195,9 @@ impl std::fmt::Debug for Pipeline {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::router::StepHandler;
+    use super::super::router::StepDomain;
+    use super::super::types::UnifiedStep;
     use serde_json::Value;
 
     // Simple handler that writes typed data to blackboard

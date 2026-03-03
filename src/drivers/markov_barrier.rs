@@ -635,7 +635,7 @@ mod tests {
 
     #[test]
     fn test_barrier_stats() {
-        let mut barrier = MarkovBarrier::default_barrier();
+        let barrier = MarkovBarrier::default_barrier();
         assert_eq!(barrier.stats().total_transactions, 0);
         assert_eq!(barrier.stats().commits, 0);
     }

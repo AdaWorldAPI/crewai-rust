@@ -1583,7 +1583,7 @@ mod tests {
 
         // Spawn a research agent
         let bp = savants::research_savant("openai/gpt-4o-mini");
-        let agent_id = orch.spawn_agent(&bp);
+        let _agent_id = orch.spawn_agent(&bp);
 
         // Submit delegation
         let request = DelegationRequest::new("agent-x", "Search web for patterns")
@@ -1647,7 +1647,7 @@ mod tests {
         let research_id = orch.spawn_domain_agent(SavantDomain::Research);
         let eng_id = orch.spawn_domain_agent(SavantDomain::Engineering);
 
-        let research_skills = orch.agent_pool.get(&research_id).unwrap().skills.len();
+        let _research_skills = orch.agent_pool.get(&research_id).unwrap().skills.len();
         let eng_skills_before = orch.agent_pool.get(&eng_id).unwrap().skills.len();
 
         let adjustments = orch.transfer_skills(&research_id, &eng_id, 0.3);

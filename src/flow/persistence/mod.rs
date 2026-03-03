@@ -442,7 +442,7 @@ mod tests {
         let loaded = persistence.load_pending_feedback("flow-123").unwrap();
         assert!(loaded.is_some());
 
-        let (loaded_state, loaded_context) = loaded.unwrap();
+        let (_loaded_state, loaded_context) = loaded.unwrap();
         assert_eq!(loaded_context.flow_id, "flow-123");
         assert_eq!(loaded_context.method_name, "review_step");
 

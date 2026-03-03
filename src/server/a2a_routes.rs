@@ -469,7 +469,7 @@ fn truncate(s: &str, max: usize) -> &str {
 mod tests {
     use super::*;
     use axum::body::Body;
-    use axum::http::Request;
+    use axum::http::{Request, StatusCode};
     use tower::ServiceExt;
 
     fn test_state() -> A2AState {

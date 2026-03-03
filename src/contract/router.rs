@@ -432,7 +432,7 @@ mod tests {
         let mut already_done = UnifiedStep::new("e1", "crew.agent", "Done", 0);
         already_done.mark_completed(serde_json::json!({"already": true}));
 
-        let mut pending = UnifiedStep::new("e1", "crew.agent", "New", 1);
+        let pending = UnifiedStep::new("e1", "crew.agent", "New", 1);
         let mut steps = vec![already_done, pending];
 
         router.dispatch_all(&mut steps, &mut bb).unwrap();

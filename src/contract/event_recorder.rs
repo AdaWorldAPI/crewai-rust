@@ -196,6 +196,7 @@ pub fn shared_recorder() -> Arc<RwLock<ContractRecorder>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::types::StepStatus;
 
     #[test]
     fn test_recorder_crew_lifecycle() {

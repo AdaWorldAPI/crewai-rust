@@ -502,6 +502,7 @@ mod tests {
     use super::*;
     use axum::body::Body;
     use axum::http::Request;
+    use crate::contract::types::UnifiedStep;
     use tower::ServiceExt;
 
     #[tokio::test]
