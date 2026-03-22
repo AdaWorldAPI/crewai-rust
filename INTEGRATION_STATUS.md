@@ -1,5 +1,26 @@
 # crewai-rust Integration Status Report
 
+## Updated Status (2026-03-22 Audit)
+
+### Build Status: BROKEN
+- 30 compilation errors (missing types: StepStatus, UnifiedStep, StepDomain)
+- Previous claim of "0 errors" is stale
+
+### Components Verified:
+- Core execution pipeline: DONE
+- OpenAI/Anthropic/xAI providers: DONE (full HTTP)
+- Azure provider: DONE (545 lines, full HTTP with retry loops — grew beyond "stub")
+- Bedrock provider: DONE (1011 lines — grew beyond "stub")
+- Gemini provider: DONE (610 lines — grew beyond "stub")
+- LiteLLM Bridge: OPEN (2 stub methods)
+- Blackboard + TypedSlots: DONE (7 files)
+- Drivers (NARS + SPO + MarkovBarrier): DONE (5 files)
+- Persona / JitLink / Triune: DONE (10 files)
+- A2A protocol: DONE
+- SubstrateView trait: DONE (defined, not impl'd by ladybug-rs)
+- crewai-tools-rust crate: NOT FOUND in repository (claimed 57+ tool stubs, 1743 tests — cannot verify)
+- MCP integration: OPEN (stubs)
+
 **Date**: 2026-02-13
 **Branch**: `claude/rust-port-HEyAb`
 **Latest Commit**: `b54640a` (source repo), `9364ee2` (target repo)
