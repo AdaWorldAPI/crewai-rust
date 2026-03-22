@@ -21,6 +21,11 @@
 - crewai-tools-rust crate: NOT FOUND in repository (claimed 57+ tool stubs, 1743 tests — cannot verify)
 - MCP integration: OPEN (stubs)
 
+> **Integration Plan Note (2026-03-22):** This status doc is partially stale.
+> Provider counts were updated but build status changed (30 errors as of 2026-03-22).
+> See `/home/user/INTEGRATION_PLAN.md` for the cross-repo integration strategy.
+> crewai-rust integration into rs-graph-llm is tracked under Plateau 1, Phase 1B.
+
 **Date**: 2026-02-13
 **Branch**: `claude/rust-port-HEyAb`
 **Latest Commit**: `b54640a` (source repo), `9364ee2` (target repo)
