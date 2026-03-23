@@ -428,6 +428,34 @@ Agent executes with compiled thinking textures
 
 ---
 
+## 11. Integration Path: crewai-rust → rs-graph-llm (2026-03-22)
+
+crewai-rust agent patterns will be consumed by rs-graph-llm's graph-flow
+execution engine. The integration depth is a **decision pending** at Plateau 1:
+
+- **Option A (conservative):** rs-graph-llm imports crewai-rust as Cargo dep, wraps agents as Tasks
+- **Option B (moderate):** Extract drivers + blackboard into shared crate
+- **Option C (aggressive):** Merge into lance-graph as lance-graph-agents (per CRATE_STRUCTURE.md)
+
+**What rs-graph-llm needs from crewai-rust:**
+- `drivers/nars.rs`: NARS inference (AwarenessFrame → NarsSemanticState)
+- `drivers/spo.rs`: SPO extraction (conversation → triples)
+- `blackboard/typed_slot.rs`: Zero-serde in-process state protocol
+- `blackboard/bind_bridge.rs`: SubstrateView trait (ladybug-rs implements)
+
+**What crewai-rust needs from rs-graph-llm (future):**
+- graph-flow-memory: TripletGraph + EpisodicStore (AriGraph schema, being ported)
+- graph-flow: Task orchestration replacing direct crew.rs sequential execution
+
+**What changes for ndarray migration:**
+- All `rustynum` references in CLAUDE.md will change to `ndarray`
+- SubstrateView trait methods (`read_fingerprint`, `hamming_search`) will use ndarray types
+- SIMD dispatch moves from rustynum-core to ndarray backend
+
+See: /home/user/INTEGRATION_PLAN.md (Plateau 1, Phase 1B)
+
+---
+
 ## OPEN TODOs — Wiring Checklist (SESSION-DURABLE)
 
 > **READ THIS EVERY SESSION.** Do NOT invent new code. Wire EXISTING.
